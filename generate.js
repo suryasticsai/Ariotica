@@ -1,246 +1,404 @@
-// generate.js — RAGina / Pollinations code generator, commits via Octokit.
-const fs = require('fs');
+// generate.js — agent with live progress tracking and code streaming.
 const { Octokit } = require('@octokit/rest');
 
-const RAGINA_URL      = process.env.RAGINA_URL || 'https://ragina-crawler-ragina.vercel.app/api/ask';
-const POLLINATIONS_URL = 'https://text.pollinations.ai/openai';
-const MANIFEST_PATH    = 'projects.json';
+const MANIFEST_PATH = 'projects.json';
+const PROGRESS_PATH = 'progress.json';
+const RAGINA_URL    = 'https://ragina-crawler-ragina.vercel.app/api/ask';
+const POLL_GET      = 'https://text.pollinations.ai';
+const POLL_POST     = 'https://text.pollinations.ai/openai';
+const DDG_STATUS    = 'https://duckduckgo.com/duckchat/v1/status';
+const DDG_CHAT      = 'https://duckduckgo.com/duckchat/v1/chat';
 
 const [OWNER, REPO] = (process.env.GITHUB_REPOSITORY || '').split('/');
 const BRANCH = process.env.GITHUB_REF_NAME || 'main';
-
-if (!OWNER || !REPO) {
-  console.error('GITHUB_REPOSITORY not set');
-  process.exit(1);
-}
+const RUN_ID = process.env.RUN_ID || String(Date.now());
+if (!OWNER || !REPO) { console.error('GITHUB_REPOSITORY not set'); process.exit(1); }
 
 const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
 
-/* ---------------- Vanilla JS rules ---------------- */
-const VANILLA_RULES = `HARD CONSTRAINTS - the output MUST be a pure vanilla JavaScript single-page app.
+/* ============================================================
+   PROGRESS TRACKER
+   ============================================================ */
+const steps = [];
+let currentDraft = '';
+let currentError = null;
+let started = new Date().toISOString();
 
-- ONE single HTML file. Inline ALL CSS in <style> and ALL JS in <script>.
-- Vanilla JavaScript only (ES2017+). No frameworks, no libraries, no build step.
-- FORBIDDEN: React, Vue, Svelte, Angular, Alpine.js, htmx, jQuery, Bootstrap, Tailwind, Bulma, Font Awesome, Lit, Stencil, Ember, Backbone.
-- FORBIDDEN: any external <script src="http..."> or <link href="http..."> (no CDNs).
-- FORBIDDEN: ES module import/export, require(), bundler configs.
-- FORBIDDEN: runtime network calls (fetch/XHR). Must work fully offline.
-- FORBIDDEN: external image URLs. Use inline SVG, emoji, or CSS shapes.
-- Fonts: system font stack only (system-ui, -apple-system, Segoe UI, sans-serif, Georgia, ui-monospace, Menlo).
-- Use only browser APIs: DOM, CSS, localStorage, Canvas, etc.
+async function pushProgress(update = {}) {
+  const payload = {
+    runId: RUN_ID,
+    started,
+    updated: new Date().toISOString(),
+    status: currentError ? 'error' : (update.status || 'running'),
+    steps,
+    draft: currentDraft.slice(0, 8000), // cap for GitHub API size
+    draftSize: currentDraft.length,
+    error: currentError,
+    ...update,
+  };
+  try {
+    await writeFile(PROGRESS_PATH, JSON.stringify(payload, null, 2),
+      `chore(progress): ${steps[steps.length - 1]?.name || 'init'}`);
+    console.log(`[progress] ${payload.status} — ${steps[steps.length - 1]?.name || 'init'}`);
+  } catch (e) {
+    console.log('[progress] write failed:', e.message);
+  }
+}
 
-Implement any framework-like behaviour with plain DOM manipulation:
-document.createElement, template literals, event delegation, a small render() function, CSS animations.
+async function step(name, fn, meta = {}) {
+  const s = { name, status: 'running', at: new Date().toISOString(), ...meta };
+  steps.push(s);
+  await pushProgress();
+  try {
+    const result = await fn();
+    s.status = 'done';
+    s.at = new Date().toISOString();
+    await pushProgress();
+    return result;
+  } catch (e) {
+    s.status = 'error';
+    s.error = String(e.message || e).slice(0, 300);
+    s.at = new Date().toISOString();
+    throw e;
+  }
+}
 
-Return ONLY the complete HTML file. No commentary. No markdown fences. No explanations.
+/* ============================================================
+   RULES + VALIDATOR
+   ============================================================ */
+const RULES = `Build a PURE VANILLA JAVASCRIPT single-page app.
+STRICT RULES:
+- ONE complete HTML file. Inline all CSS in <style>, all JS in <script>.
+- NO frameworks: no React/Vue/Svelte/Angular/Alpine/jQuery/Bootstrap/Tailwind/Font Awesome.
+- NO external URLs: no CDN scripts, no external fonts, no external images.
+- NO import/export/require. NO fetch/XHR at runtime.
+- Use ONLY: DOM APIs, CSS, localStorage, sessionStorage, Canvas, SVG, emoji.
+- System fonts only (system-ui, Georgia, ui-monospace, Menlo).
+- Always escape user input with textContent — never innerHTML for untrusted data.
+Reply with ONLY the complete HTML file, starting with <!DOCTYPE html>.
 
-USER REQUEST:
 `;
 
 const FORBIDDEN = [
   /<script[^>]+src\s*=\s*["']https?:\/\//i,
   /<link[^>]+href\s*=\s*["']https?:\/\//i,
-  /\breact\b/i, /\bpreact\b/i, /\bvue\b/i, /\bsvelte\b/i, /\bsolid-js\b/i,
-  /\balpine\.?js\b/i, /\bhtmx\b/i, /\bjquery\b/i, /\bzepto\b/i,
-  /\bbootstrap\b/i, /\btailwind\b/i, /\bbulma\b/i, /\bmaterialize\b/i,
-  /\bangular\b/i, /\bember\b/i, /\bbackbone\b/i, /\bknockout\b/i, /\bmithril\b/i,
-  /\bstimulus\b/i, /\bturbo(?:links)?\b/i, /\blit-html\b/i, /\bstencil\b/i,
-  /font-?awesome/i,
+  /\breact\b/i, /\bvue\b/i, /\bsvelte\b/i, /\balpine\.?js\b/i,
+  /\bhtmx\b/i, /\bjquery\b/i,
+  /\bbootstrap\b/i, /\btailwind\b/i, /font-?awesome/i,
   /unpkg\.com/i, /cdn\.jsdelivr\.net/i, /cdnjs\.cloudflare\.com/i,
-  /esm\.sh/i, /skypack\.dev/i, /esm\.run/i,
   /^\s*import\s+[\w{}\*\s,]+\s+from\s+["']/m,
   /\brequire\s*\(\s*["']/,
 ];
 
 function isVanilla(html) {
-  for (const re of FORBIDDEN) {
-    if (re.test(html)) return { ok: false, hit: String(re) };
-  }
+  for (const re of FORBIDDEN) if (re.test(html)) return { ok: false, hit: String(re) };
   return { ok: true, hit: null };
 }
 
-function stripFences(text) {
-  return text.trim()
-    .replace(/^```[a-z]*\n?/i, '')
-    .replace(/\n?```$/, '');
+function stripFences(t) {
+  t = String(t || '').trim();
+  t = t.replace(/^```(?:html|HTML)?\s*\n?/, '').replace(/\n?```\s*$/, '');
+  const i = t.search(/<!DOCTYPE|<html/i);
+  if (i > 0) t = t.slice(i);
+  return t.trim();
 }
 
-/* ---------------- Inputs ---------------- */
-function resolveInputs() {
-  const dProj = (process.env.DISPATCH_PROJECT || '').trim();
+function isUsable(html) {
+  return /<html[\s>]/i.test(html) && /<body[\s>]/i.test(html) && html.length > 500;
+}
 
-  if (dProj) {
-    return {
-      project: dProj,
-      prompt:  (process.env.DISPATCH_PROMPT || '').trim(),
-      improve: String(process.env.DISPATCH_IMPROVE || 'false') === 'true',
-      issue:   null,
-    };
+/* ============================================================
+   PROVIDERS — with streaming where possible
+   ============================================================ */
+async function withTimeout(promise, ms, label) {
+  let t;
+  const timeout = new Promise((_, rej) => {
+    t = setTimeout(() => rej(new Error(`${label} timed out`)), ms);
+  });
+  try { return await Promise.race([promise, timeout]); }
+  finally { clearTimeout(t); }
+}
+
+async function callPollinationsGet(prompt) {
+  const trimmed = prompt.length > 8000 ? prompt.slice(0, 8000) : prompt;
+  const url = `${POLL_GET}/${encodeURIComponent(trimmed)}?model=openai&private=true&seed=${Date.now() % 100000}`;
+  const res = await withTimeout(fetch(url, {
+    headers: {
+      'User-Agent': 'Mozilla/5.0 Ariotica/1.0',
+      'Referer': 'https://suryasticsai.github.io/Ariotica/',
+    },
+  }), 120000, 'Pollinations-GET');
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const text = await res.text();
+  if (!text || text.length < 200) throw new Error(`short (${text.length} chars)`);
+  return text;
+}
+
+async function callPollinationsPost(prompt) {
+  // Use streaming to update the draft live
+  const res = await withTimeout(fetch(POLL_POST, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Referer': 'https://suryasticsai.github.io/Ariotica/',
+      'User-Agent': 'Mozilla/5.0 Ariotica/1.0',
+    },
+    body: JSON.stringify({
+      model: 'openai',
+      stream: true,
+      messages: [
+        { role: 'system', content: 'You output raw HTML only. Start with <!DOCTYPE html>. No markdown fences.' },
+        { role: 'user', content: prompt },
+      ],
+    }),
+  }), 180000, 'Pollinations-POST');
+
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+  const contentType = res.headers.get('content-type') || '';
+  if (contentType.includes('text/event-stream') || contentType.includes('stream')) {
+    // SSE streaming
+    let out = '';
+    const reader = res.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let lastPush = Date.now();
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+
+      for (const line of lines) {
+        if (!line.startsWith('data: ')) continue;
+        const payload = line.slice(6).trim();
+        if (payload === '[DONE]') continue;
+        try {
+          const obj = JSON.parse(payload);
+          const chunk = obj.choices?.[0]?.delta?.content || '';
+          if (chunk) out += chunk;
+        } catch {}
+      }
+
+      // Push progress every 4 seconds
+      if (Date.now() - lastPush > 4000 && out.length > 0) {
+        currentDraft = stripFences(out);
+        await pushProgress();
+        lastPush = Date.now();
+      }
+    }
+
+    if (!out) throw new Error('empty stream');
+    return out;
+  } else {
+    // Non-streaming JSON fallback
+    const data = await res.json();
+    const text = data.choices?.[0]?.message?.content || data.text || '';
+    if (!text) throw new Error('empty response');
+    return text;
   }
-
-  const title = process.env.ISSUE_TITLE || '';
-  const body  = process.env.ISSUE_BODY  || '';
-  const num   = parseInt(process.env.ISSUE_NUMBER || '0', 10);
-
-  const m = title.match(/^\[BUILD\]\s+([A-Za-z0-9 _-]+?)\s*(\[improve\])?\s*$/);
-  if (!m) throw new Error('Issue title must be: [BUILD] project-name [improve]');
-
-  return {
-    project: m[1].trim(),
-    prompt:  body.trim(),
-    improve: !!m[2],
-    issue:   num || null,
-  };
 }
 
-function slugify(name) {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
-}
-
-/* ---------------- AI providers ---------------- */
 async function callRagina(prompt) {
-  const res = await fetch(RAGINA_URL, {
+  const res = await withTimeout(fetch(RAGINA_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ prompt }),
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  }), 120000, 'RAGina');
+  if (!res.ok) throw new Error(`HTTP ${res.status}: ${(await res.text()).slice(0, 150)}`);
   const data = await res.json();
-  if (data.error) throw new Error('error: ' + String(data.error).slice(0, 200));
-  const text = data.text || data.response || (data.choices && data.choices[0]?.message?.content) || '';
+  if (data.error) throw new Error(String(data.error).slice(0, 150));
+  const text = data.text || data.response || data.choices?.[0]?.message?.content || '';
   if (!text) throw new Error('empty response');
   return text;
 }
 
-async function callPollinations(prompt) {
-  const res = await fetch(POLLINATIONS_URL, {
+async function callDuckDuckGo(prompt) {
+  const statusRes = await withTimeout(fetch(DDG_STATUS, {
+    headers: { 'x-vqd-accept': '1', 'User-Agent': 'Mozilla/5.0' },
+  }), 30000, 'DDG-status');
+  const vqd = statusRes.headers.get('x-vqd-4');
+  if (!vqd) throw new Error('no vqd token');
+
+  const chatRes = await withTimeout(fetch(DDG_CHAT, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'x-vqd-4': vqd,
+      'User-Agent': 'Mozilla/5.0',
+    },
     body: JSON.stringify({
-      model: 'openai',
-      messages: [
-        { role: 'system', content: 'You output raw HTML files only. No markdown fences.' },
-        { role: 'user',   content: prompt },
-      ],
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt.slice(0, 12000) }],
     }),
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const data = await res.json();
-  const text = (data.choices && data.choices[0]?.message?.content) || data.text || data.response || '';
-  if (!text) throw new Error('empty response');
-  return text;
+  }), 120000, 'DDG-chat');
+  if (!chatRes.ok) throw new Error(`HTTP ${chatRes.status}`);
+
+  const raw = await chatRes.text();
+  let out = '';
+  for (const line of raw.split('\n')) {
+    if (line.startsWith('data: ') && line !== 'data: [DONE]') {
+      try { const o = JSON.parse(line.slice(6)); if (o.message) out += o.message; } catch {}
+    }
+  }
+  if (!out) throw new Error('empty response');
+  return out;
 }
 
 async function askAI(prompt) {
   const providers = [
-    ['RAGina',       callRagina],
-    ['Pollinations', callPollinations],
+    ['Pollinations-POST (streaming)', callPollinationsPost],
+    ['Pollinations-GET', callPollinationsGet],
+    ['RAGina', callRagina],
+    ['DuckDuckGo', callDuckDuckGo],
   ];
   const errors = [];
-
   for (const [name, fn] of providers) {
     for (let i = 1; i <= 2; i++) {
       try {
         console.log(`[${name}] attempt ${i}/2 ...`);
+        steps.push({ name: `${name} · attempt ${i}`, status: 'running', at: new Date().toISOString() });
+        await pushProgress();
         const text = await fn(prompt);
-        console.log(`[${name}] OK (${text.length} chars)`);
+        steps[steps.length - 1].status = 'done';
+        steps[steps.length - 1].at = new Date().toISOString();
+        steps[steps.length - 1].chars = text.length;
+        await pushProgress();
         return { text, provider: name };
       } catch (e) {
-        const msg = String(e.message || e).slice(0, 300);
+        const msg = String(e.message || e).slice(0, 220);
         errors.push(`${name} #${i}: ${msg}`);
-        console.log(`[${name}] failed: ${msg}`);
-        if (i < 2) await new Promise(r => setTimeout(r, 4000));
+        steps[steps.length - 1].status = 'error';
+        steps[steps.length - 1].error = msg;
+        steps[steps.length - 1].at = new Date().toISOString();
+        await pushProgress();
+        if (i < 2) await new Promise(r => setTimeout(r, 3000));
       }
     }
   }
   throw new Error('All providers failed:\n' + errors.join('\n'));
 }
 
-/* ---------------- Octokit helpers ---------------- */
+/* ============================================================
+   AUDIT
+   ============================================================ */
+function auditHtml(html) {
+  const findings = [];
+  if (/\.innerHTML\s*=\s*(?!['"`])/.test(html)) findings.push({ sev: 'high', type: 'xss', msg: 'innerHTML from variable' });
+  if (/\beval\s*\(/.test(html) || /\bnew\s+Function\s*\(/.test(html)) findings.push({ sev: 'high', type: 'injection', msg: 'eval/Function' });
+  if (/document\.write\s*\(/.test(html)) findings.push({ sev: 'medium', type: 'xss', msg: 'document.write' });
+  const inline = html.match(/on\w+\s*=\s*["'][^"']*["']/gi) || [];
+  const bad = inline.filter(h => /eval|Function|innerHTML/i.test(h));
+  if (bad.length) findings.push({ sev: 'medium', type: 'xss', msg: `${bad.length} inline handler(s)` });
+  const secretRe = [/(?:api[_-]?key|secret|token|password)\s*[:=]\s*["'][A-Za-z0-9_\-]{16,}["']/i, /sk-[A-Za-z0-9]{20,}/, /ghp_[A-Za-z0-9]{36}/];
+  for (const re of secretRe) if (re.test(html)) { findings.push({ sev: 'high', type: 'secret', msg: 'hardcoded secret' }); break; }
+  if (/<form[^>]+action\s*=\s*["']https?:\/\//i.test(html)) findings.push({ sev: 'medium', type: 'exfiltration', msg: 'external form action' });
+  if (/<iframe[^>]+src\s*=\s*["']https?:\/\//i.test(html)) findings.push({ sev: 'low', type: 'embedding', msg: 'external iframe' });
+  if (/target\s*=\s*["']_blank["'](?![^>]*rel\s*=\s*["'][^"']*noopener)/i.test(html)) findings.push({ sev: 'low', type: 'tabnabbing', msg: 'no rel=noopener' });
+  return findings;
+}
+
+/* ============================================================
+   OCTOKIT
+   ============================================================ */
 async function readFile(path) {
   try {
-    const { data } = await octokit.repos.getContent({
-      owner: OWNER, repo: REPO, path, ref: BRANCH,
-    });
+    const { data } = await octokit.repos.getContent({ owner: OWNER, repo: REPO, path, ref: BRANCH });
     if (Array.isArray(data)) return null;
     return Buffer.from(data.content, 'base64').toString('utf8');
-  } catch (e) {
-    if (e.status === 404) return null;
-    throw e;
-  }
+  } catch (e) { if (e.status === 404) return null; throw e; }
 }
 
 async function writeFile(path, content, message) {
   let sha = null;
   try {
-    const { data } = await octokit.repos.getContent({
-      owner: OWNER, repo: REPO, path, ref: BRANCH,
-    });
+    const { data } = await octokit.repos.getContent({ owner: OWNER, repo: REPO, path, ref: BRANCH });
     if (!Array.isArray(data)) sha = data.sha;
-  } catch (e) {
-    if (e.status !== 404) throw e;
-  }
-
+  } catch (e) { if (e.status !== 404) throw e; }
   await octokit.repos.createOrUpdateFileContents({
-    owner: OWNER, repo: REPO, path,
-    message,
+    owner: OWNER, repo: REPO, path, message,
     content: Buffer.from(content, 'utf8').toString('base64'),
     branch: BRANCH,
     ...(sha ? { sha } : {}),
   });
 }
 
-/* ---------------- Main ---------------- */
-async function main() {
-  const { project, prompt, improve, issue } = resolveInputs();
+async function deleteFile(path, message) {
+  try {
+    const { data } = await octokit.repos.getContent({ owner: OWNER, repo: REPO, path, ref: BRANCH });
+    if (Array.isArray(data)) return false;
+    await octokit.repos.deleteFile({ owner: OWNER, repo: REPO, path, message, sha: data.sha, branch: BRANCH });
+    return true;
+  } catch (e) { if (e.status === 404) return false; throw e; }
+}
 
-  if (!prompt) throw new Error('Prompt is empty');
+/* ============================================================
+   INPUTS
+   ============================================================ */
+function resolveInputs() {
+  const dProj = (process.env.DISPATCH_PROJECT || '').trim();
+  if (dProj) return {
+    project: dProj,
+    prompt: (process.env.DISPATCH_PROMPT || '').trim(),
+    mode: (process.env.DISPATCH_MODE || 'create').toLowerCase(),
+    issue: null,
+  };
+  const title = process.env.ISSUE_TITLE || '';
+  const body = process.env.ISSUE_BODY || '';
+  const num = parseInt(process.env.ISSUE_NUMBER || '0', 10);
+  const m = title.match(/^\[BUILD\]\s+([A-Za-z0-9 _-]+?)(?:\s*\[(improve|fix|audit|delete)\])?\s*$/);
+  if (!m) throw new Error('Title must be: [BUILD] name [improve|fix|audit|delete]');
+  return { project: m[1].trim(), prompt: body.trim(), mode: (m[2] || 'create').toLowerCase(), issue: num || null };
+}
+
+function slugify(name) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
+}
+
+/* ============================================================
+   RAG CONTEXT
+   ============================================================ */
+function tokenize(s) { return String(s || '').toLowerCase().match(/\w+/g) || []; }
+function similarity(a, b) {
+  const ta = new Set(tokenize(a)), tb = new Set(tokenize(b));
+  let inter = 0; for (const t of ta) if (tb.has(t)) inter++;
+  const union = ta.size + tb.size - inter;
+  return union === 0 ? 0 : inter / union;
+}
+
+async function buildRagContext(prompt, manifest, currentSlug) {
+  if (!manifest || manifest.length < 2) return { ctx: '', refs: [] };
+  const scored = manifest
+    .filter(e => e.project !== currentSlug)
+    .map(e => ({ ...e, score: similarity(prompt, e.prompt || '') }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 2)
+    .filter(e => e.score > 0.15);
+  if (!scored.length) return { ctx: '', refs: [] };
+  let ctx = '\n\nREFERENCE APPS (reuse patterns and conventions):\n';
+  const refs = [];
+  for (const e of scored) {
+    const file = await readFile(e.file);
+    if (!file) continue;
+    refs.push(e.project);
+    ctx += `\n--- ${e.project} ---\n${file.slice(0, 2500)}\n`;
+  }
+  return { ctx, refs };
+}
+
+/* ============================================================
+   MAIN
+   ============================================================ */
+async function main() {
+  await pushProgress({ status: 'running' });
+
+  const { project, prompt, mode, issue } = await step('Parse issue', async () => resolveInputs());
   const slug = slugify(project);
   if (!slug) throw new Error('Project name needs at least one letter or digit');
-
   const filename = `${slug}.html`;
 
-  // Load existing file if improving
-  let prevHtml = null;
-  if (improve) {
-    prevHtml = await readFile(filename);
-    if (prevHtml && prevHtml.length > 30000) {
-      console.log('Previous file too large for context — generating fresh.');
-      prevHtml = null;
-    }
-  }
-
-  let ask = prompt;
-  if (prevHtml) {
-    ask = 'Improve the existing app shown below. Keep everything that already works and apply this change: ' + prompt;
-  }
-
-  let fullPrompt = VANILLA_RULES + '\n' + ask;
-  if (prevHtml) fullPrompt += '\n\nCURRENT FILE (' + filename + '):\n' + prevHtml;
-
-  console.log(`Generating ${slug} → ${filename} ...`);
-  const { text, provider } = await askAI(fullPrompt);
-
-  let html = stripFences(text);
-  if (!/<html/i.test(html)) throw new Error(`${provider} did not return HTML`);
-
-  // Vanilla validation with one retry
-  let check = isVanilla(html);
-  if (!check.ok) {
-    console.log(`Validation failed (${check.hit}). Retrying...`);
-    const strict = `IMPORTANT: Previous attempt violated the vanilla-JS rules (matched ${check.hit}). Regenerate the complete HTML from scratch.\n\n` + fullPrompt;
-    const retry = await askAI(strict);
-    html = stripFences(retry.text);
-    check = isVanilla(html);
-    if (!check.ok) throw new Error(`Still non-vanilla (matched ${check.hit})`);
-  }
-
-  // Commit the project file
-  const commitMsg = `feat: ${slug}${improve ? ' (improve)' : ''}${issue ? ` (issue #${issue})` : ''}`;
-  await writeFile(filename, html, commitMsg);
-  console.log(`✅ Committed ${filename} (${html.length} bytes) via ${provider}`);
-
-  // Update manifest
   let manifest = [];
   try {
     const raw = await readFile(MANIFEST_PATH);
@@ -248,50 +406,124 @@ async function main() {
     if (!Array.isArray(manifest)) manifest = [];
   } catch { manifest = []; }
 
+  // Delete mode
+  if (mode === 'delete') {
+    const existed = await step('Delete file', () => deleteFile(filename, `chore: delete ${slug}`));
+    manifest = manifest.filter(e => e.project !== slug);
+    await writeFile(MANIFEST_PATH, JSON.stringify(manifest, null, 2) + '\n', `chore: manifest`);
+    if (issue) {
+      try {
+        await octokit.issues.createComment({ owner: OWNER, repo: REPO, issue_number: issue,
+          body: existed ? `🗑 Deleted \`${filename}\`.` : `Did not exist.` });
+        await octokit.issues.update({ owner: OWNER, repo: REPO, issue_number: issue, state: 'closed' });
+      } catch {}
+    }
+    await pushProgress({ status: 'done' });
+    return;
+  }
+
+  const existing = await readFile(filename);
+  if ((mode === 'improve' || mode === 'fix' || mode === 'audit') && !existing) {
+    throw new Error(`Cannot ${mode} "${slug}": no existing file.`);
+  }
+
+  // Build prompt
+  let ask, auditFindings = [];
+  if (mode === 'create' || (!existing && mode !== 'fix' && mode !== 'audit')) {
+    ask = existing ? 'Improve the existing app. Keep what works and apply: ' + prompt : prompt;
+  } else if (mode === 'improve') {
+    ask = 'Improve the existing app. Keep what works and apply: ' + prompt;
+  } else if (mode === 'fix') {
+    ask = `Fix ONLY the bug described.\n\nBUG: ${prompt}\n\nReturn the complete fixed HTML.`;
+  } else if (mode === 'audit') {
+    auditFindings = auditHtml(existing);
+    if (!auditFindings.length && !prompt) {
+      if (issue) {
+        await octokit.issues.createComment({ owner: OWNER, repo: REPO, issue_number: issue, body: `✅ Audit clean.` });
+        await octokit.issues.update({ owner: OWNER, repo: REPO, issue_number: issue, state: 'closed' });
+      }
+      await pushProgress({ status: 'done' });
+      return;
+    }
+    const report = auditFindings.length ? auditFindings.map(f => `- [${f.sev}] ${f.type}: ${f.msg}`).join('\n') : '(none)';
+    ask = `Fix security issues. Keep functionality.\n\nFINDINGS:\n${report}\n\nEXTRA: ${prompt || 'none'}`;
+  }
+
+  // RAG
+  const { ctx: ragCtx, refs } = await step('Build RAG context', () =>
+    (mode === 'create' || mode === 'improve') ? buildRagContext(prompt, manifest, slug) : Promise.resolve({ ctx: '', refs: [] })
+  );
+
+  let fullPrompt = RULES + ask + ragCtx;
+  if (existing) fullPrompt += '\n\nCURRENT HTML:\n' + existing.slice(0, 14000);
+
+  // Generate
+  const { text, provider } = await step('Generate with AI',
+    () => askAI(fullPrompt),
+    { promptChars: fullPrompt.length, ragRefs: refs.join(', ') || 'none' }
+  );
+
+  let html = stripFences(text);
+  if (!isUsable(html)) throw new Error(`${provider} returned unusable HTML`);
+
+  // Validate
+  let check = isVanilla(html);
+  if (!check.ok) {
+    currentDraft = html;
+    await pushProgress();
+    const strict = `Previous attempt used a forbidden library (${check.hit}). Regenerate with ONLY vanilla JavaScript.\n\n` + fullPrompt;
+    const r = await step('Retry (vanilla enforcement)', () => askAI(strict));
+    html = stripFences(r.text);
+    check = isVanilla(html);
+    if (!check.ok) throw new Error(`Still non-vanilla (${check.hit})`);
+  }
+
+  // Audit
+  const postAudit = await step('Security scan', async () => auditHtml(html));
+
+  // Commit
+  await step('Commit file', () => writeFile(filename, html,
+    `feat: ${slug} (${mode})${issue ? ` (issue #${issue})` : ''}`));
+
+  // Manifest
   const idx = manifest.findIndex(e => e.project === slug);
   const entry = {
-    project: slug,
-    file: filename,
+    project: slug, file: filename,
     prompt: prompt.slice(0, 240),
     created: new Date().toISOString().slice(0, 19),
-    improved: !!(idx !== -1),
-    provider,
+    mode, provider, findings: postAudit.length, size: html.length,
   };
   if (idx === -1) manifest.push(entry);
-  else manifest[idx] = { ...manifest[idx], ...entry };
+  else manifest[idx] = Object.assign({}, manifest[idx], entry);
+  await writeFile(MANIFEST_PATH, JSON.stringify(manifest, null, 2) + '\n', `chore: manifest for ${slug}`);
 
-  await writeFile(MANIFEST_PATH, JSON.stringify(manifest, null, 2) + '\n', `chore: update manifest for ${slug}`);
-  console.log('✅ Manifest updated');
-
-  // Comment on issue
   if (issue) {
     const url = `https://${OWNER}.github.io/${REPO}/${filename}`;
+    let body = `✅ **${mode}** complete: \`${filename}\` (${(html.length / 1024).toFixed(1)} KB) via **${provider}**\n\nLive in ~1 min: ${url}`;
+    if (postAudit.length) body += `\n\n**Findings:**\n` + postAudit.map(f => `- [${f.sev}] ${f.msg}`).join('\n');
     try {
-      await octokit.issues.createComment({
-        owner: OWNER, repo: REPO, issue_number: issue,
-        body: `✅ Generated \`${filename}\`\n\nLive in ~1 min: ${url}`,
-      });
-      await octokit.issues.update({
-        owner: OWNER, repo: REPO, issue_number: issue, state: 'closed',
-      });
-    } catch (e) {
-      console.log('Could not comment/close issue:', e.message);
-    }
+      await octokit.issues.createComment({ owner: OWNER, repo: REPO, issue_number: issue, body });
+      await octokit.issues.update({ owner: OWNER, repo: REPO, issue_number: issue, state: 'closed' });
+    } catch {}
   }
+
+  await pushProgress({ status: 'done' });
 }
 
-/* ---------------- Error handling ---------------- */
 main().catch(async (err) => {
   console.error('ERROR:', err.message);
+  currentError = String(err.message).slice(0, 1000);
+  steps.push({ name: 'Error', status: 'error', error: currentError, at: new Date().toISOString() });
+  await pushProgress({ status: 'error' });
 
   const num = parseInt(process.env.ISSUE_NUMBER || '0', 10);
   if (num && OWNER && REPO) {
     try {
       await octokit.issues.createComment({
         owner: OWNER, repo: REPO, issue_number: num,
-        body: `❌ Generation failed:\n\n\`\`\`\n${String(err.message).slice(0, 1500)}\n\`\`\``,
+        body: `❌ Failed:\n\n\`\`\`\n${currentError.slice(0, 1500)}\n\`\`\``,
       });
-    } catch { /* ignore */ }
+    } catch {}
   }
   process.exit(1);
 });
