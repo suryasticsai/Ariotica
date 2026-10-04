@@ -6,8 +6,10 @@
 <meta name="theme-color" content="#0b1410">
 <title>Ariotica</title>
 
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
-      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH"
+      crossorigin="anonymous">
 
 <style>
   :root{
@@ -22,7 +24,6 @@
     padding:env(safe-area-inset-top) env(safe-area-inset-right)
             env(safe-area-inset-bottom) env(safe-area-inset-left);
   }
-
   .ai-header{
     padding:2rem 1rem 1.25rem; text-align:center;
     border-bottom:1px solid var(--ai-line);
@@ -39,8 +40,7 @@
     font-family:ui-monospace,Menlo,monospace}
 
   .ai-card{background:var(--ai-card);border:1px solid var(--ai-line);
-    border-radius:14px;padding:1.25rem;
-    box-shadow:0 1px 0 rgba(255,255,255,.02) inset}
+    border-radius:14px;padding:1.25rem}
   .ai-card h2{margin:0 0 .9rem;font:600 .95rem ui-monospace,Menlo,monospace;
     letter-spacing:.1em;color:var(--ai-accent);text-transform:uppercase}
 
@@ -55,29 +55,15 @@
     color:var(--ai-fg);box-shadow:0 0 0 .2rem rgba(90,181,82,.25)}
   textarea.form-control{min-height:110px;resize:vertical;line-height:1.5}
 
-  .form-check-input{background-color:#0e1a14;border-color:var(--ai-line)}
-  .form-check-input:checked{background-color:var(--ai-accent);
-    border-color:var(--ai-accent)}
-  .form-check-input:focus{border-color:var(--ai-accent);
-    box-shadow:0 0 0 .2rem rgba(90,181,82,.25)}
-  .form-check-label{font:600 .74rem ui-monospace,Menlo,monospace;
-    color:var(--ai-muted);text-transform:uppercase;letter-spacing:.05em}
-
   .btn-ai{background:var(--ai-accent);color:#07120b;border:0;
     font-family:ui-monospace,Menlo,monospace;font-size:.82rem;
     font-weight:700;letter-spacing:.06em;text-transform:uppercase;
-    padding:.75rem 1.2rem;border-radius:8px;
-    transition:background .15s,transform .05s}
-  .btn-ai:hover,.btn-ai:focus{background:var(--ai-accent2);
-    color:#07120b;box-shadow:0 0 0 .2rem rgba(90,181,82,.25)}
-  .btn-ai:active{transform:scale(.98)}
-  .btn-ai:disabled{opacity:.4;cursor:not-allowed}
-
+    padding:.75rem 1.2rem;border-radius:8px}
+  .btn-ai:hover,.btn-ai:focus{background:var(--ai-accent2);color:#07120b}
   .btn-ai-ghost{background:#0e1a14;color:var(--ai-muted);
     border:1px solid var(--ai-line);font-family:ui-monospace,Menlo,monospace;
     font-size:.78rem;font-weight:700;letter-spacing:.06em;
-    text-transform:uppercase;padding:.6rem 1rem;border-radius:8px;
-    transition:all .15s}
+    text-transform:uppercase;padding:.6rem 1rem;border-radius:8px}
   .btn-ai-ghost:hover,.btn-ai-ghost:focus{background:#16261d;
     color:var(--ai-fg);border-color:var(--ai-accent)}
 
@@ -88,12 +74,6 @@
   .ai-status.ok  {color:#9ef0c0;background:#10261a;border-color:#23553a}
   .ai-status.err {color:#ff7a7a;background:#1e1010;border-color:#3a1f1f}
   .ai-status.info{color:#7ed17a;background:#0e1c14;border-color:#1f4a2a}
-
-  .ai-preview{background:#0e1a14;border:1px solid var(--ai-line);
-    border-radius:10px;padding:0;overflow:hidden;min-height:220px;
-    display:none;margin-top:.9rem}
-  .ai-preview.show{display:block}
-  .ai-preview iframe{width:100%;height:260px;border:0;background:#fff}
 
   .ai-steps{margin:0;padding-left:1.2rem;color:var(--ai-muted);
     font:.8rem ui-monospace,Menlo,monospace}
@@ -106,34 +86,21 @@
     flex-wrap:wrap;gap:.5rem}
   .ai-projects li:last-child{border-bottom:0}
   .ai-projects a{color:var(--ai-accent2);text-decoration:none;
-    font-family:ui-monospace,Menlo,monospace;font-weight:700;font-size:.88rem}
+    font-family:ui-monospace,Menlo,monospace;font-weight:700;font-size:.9rem}
   .ai-projects a:hover{color:var(--ai-fg)}
   .ai-projects .pver{color:var(--ai-muted);
     font:.72rem ui-monospace,Menlo,monospace}
-  .badge-vanilla{display:inline-block;margin-left:.4rem;
-    font:700 .62rem ui-monospace,Menlo,monospace;letter-spacing:.08em;
-    text-transform:uppercase;color:var(--ai-accent2);
-    border:1px solid #1f4a2a;background:#17301f;
-    padding:.1rem .5rem;border-radius:999px;vertical-align:middle}
 
   .ai-footer{text-align:center;color:var(--ai-muted);
     font:.7rem ui-monospace,Menlo,monospace;padding:1.5rem 1rem 2.5rem}
   .ai-footer a{color:var(--ai-accent2);text-decoration:none}
 
-  .ragina-dot{display:inline-block;width:8px;height:8px;border-radius:50%;
-    background:#7f9a8b;margin-right:.4rem;vertical-align:middle;
-    transition:background .2s}
-  .ragina-dot.on{background:var(--ai-accent);
-    box-shadow:0 0 8px rgba(90,181,82,.7)}
-
   @media (max-width:576px){
     .ai-header{padding:1.5rem .75rem 1rem}
     .ai-logo{width:64px;height:64px}
     .ai-card{padding:1rem;border-radius:12px}
-    .ai-card h2{font-size:.88rem}
     .btn-ai,.btn-ai-ghost{width:100%}
   }
-  :focus-visible{outline:2px solid var(--ai-accent);outline-offset:2px}
 </style>
 </head>
 <body>
@@ -148,74 +115,57 @@
       <small>Generate · Vanilla JS</small>
     </h1>
   </div>
-  <p class="ai-sub mb-0">
-    <span class="ragina-dot" id="raginaDot"></span>
-    <span id="raginaStatus">loading ragina-pro.js…</span>
-  </p>
+  <p class="ai-sub mb-0">Describe an app → get a single-file vanilla JS page</p>
 </header>
 
 <main class="container py-3 py-md-4" style="max-width:820px">
 
-  <!-- 1. New Project -->
   <section class="ai-card mb-3">
     <h2>1 · New Project</h2>
 
     <div class="mb-3">
       <label for="name" class="form-label">Project name</label>
       <input id="name" type="text" class="form-control"
-             placeholder="kanban-board" autocomplete="off" inputmode="text">
+             placeholder="kanban" autocomplete="off">
     </div>
 
     <div class="mb-3">
       <label for="prompt" class="form-label">What should it build?</label>
       <textarea id="prompt" class="form-control"
-                placeholder="a kanban board with drag-and-drop, localStorage, dark theme"></textarea>
+                placeholder="a kanban board with three columns, drag and drop, localStorage, dark theme"></textarea>
     </div>
 
     <div class="form-check mb-3">
       <input class="form-check-input" type="checkbox" id="improve">
       <label class="form-check-label" for="improve">
-        Improve the latest version instead of starting fresh
+        Improve the existing file instead of starting fresh
       </label>
     </div>
 
-    <div class="d-grid d-sm-flex gap-2">
-      <button id="previewBtn" type="button" class="btn btn-ai-ghost" disabled>
-        👁 Preview with RAGina
-      </button>
-      <button id="generate" type="button" class="btn btn-ai">
-        ⚡ Generate
-      </button>
+    <div class="d-grid d-sm-block">
+      <button id="generate" type="button" class="btn btn-ai">⚡ Generate</button>
     </div>
 
     <div id="genStatus" class="ai-status"></div>
-
-    <!-- Live preview iframe -->
-    <div class="ai-preview" id="previewBox">
-      <iframe id="previewFrame" sandbox="allow-scripts allow-same-origin"
-              title="RAGina preview"></iframe>
-    </div>
   </section>
 
-  <!-- 2. How it works -->
   <section class="ai-card mb-3">
     <h2>2 · How it works</h2>
     <ol class="ai-steps">
-      <li><b>Preview</b> uses ragina-pro.js right here in the browser to draft the app.</li>
-      <li>Happy with it? Tap <b>Generate</b> → a GitHub issue opens pre-filled.</li>
-      <li>Tap <b>Submit new issue</b> — the workflow runs on GitHub (~2 min).</li>
-      <li>Refresh this page — your project appears below.</li>
+      <li>Fill the form and tap <b>Generate</b>.</li>
+      <li>A GitHub issue opens — tap <b>Submit new issue</b>.</li>
+      <li>The workflow runs on GitHub (~1 min). It commits <b>projectname.html</b>.</li>
+      <li>Refresh this page to see it in the list.</li>
     </ol>
   </section>
 
-  <!-- 3. Projects -->
   <section class="ai-card mb-3">
     <h2>3 · Projects</h2>
     <ul class="ai-projects" id="projectList">
       <li style="color:var(--ai-muted);display:block">Loading…</li>
     </ul>
     <div class="d-grid d-sm-block mt-3">
-      <button id="refreshList" type="button" class="btn btn-ai-ghost">↻ Refresh list</button>
+      <button id="refreshList" type="button" class="btn btn-ai-ghost">↻ Refresh</button>
     </div>
   </section>
 
@@ -223,159 +173,16 @@
 
 <footer class="ai-footer">
   <a href="https://github.com/suryasticsai/Ariotica" target="_blank" rel="noopener">
-    suryasticsai/Ariotica</a>
-  · powered by ragina-pro
+    suryasticsai/Ariotica</a> · vanilla JS only
 </footer>
-
-<!-- Bootstrap JS -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-        integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz"
-        crossorigin="anonymous"></script>
-
-<!-- RAGina PRO (browser agent) -->
-<script src="https://suryasticsai.github.io/RAGina/ragina-pro.js" onerror="window.__raginaLoadFailed=true"></script>
 
 <script>
 (function () {
   'use strict';
-
   const OWNER = 'suryasticsai';
   const REPO  = 'Ariotica';
   const $ = (id) => document.getElementById(id);
 
-  /* ---------------- Vanilla JS guard ---------------- */
-  const FORBIDDEN = [
-    /<script[^>]+src\s*=\s*["']https?:\/\//i,
-    /<link[^>]+href\s*=\s*["']https?:\/\//i,
-    /\breact\b/i, /\bvue\b/i, /\bsvelte\b/i, /\balpine\.?js\b/i,
-    /\bhtmx\b/i, /\bjquery\b/i,
-    /\bbootstrap\b/i, /\btailwind\b/i, /\bbulma\b/i,
-    /font-?awesome/i,
-    /unpkg\.com/i, /cdn\.jsdelivr\.net/i, /cdnjs\.cloudflare\.com/i,
-    /^\s*import\s+[\w{}\*\s,]+\s+from\s+["']/m,
-    /\brequire\s*\(\s*["']/,
-  ];
-
-  function looksVanilla(html) {
-    for (const re of FORBIDDEN) if (re.test(html)) return false;
-    return true;
-  }
-
-  function stripFences(text) {
-    return text.trim()
-      .replace(/^```[a-z]*\n?/i, '')
-      .replace(/\n?```$/, '');
-  }
-
-  /* ---------------- RAGina detection ---------------- */
-  const dot    = $('raginaDot');
-  const rstat  = $('raginaStatus');
-  const previewBtn = $('previewBtn');
-
-  function findRagina() {
-    // ragina-pro.js may expose RAGina, ragina, or window.RAGinaPro.
-    // We probe for common method names.
-    const candidates = [];
-    if (typeof window.RAGina !== 'undefined')    candidates.push(window.RAGina);
-    if (typeof window.ragina !== 'undefined')    candidates.push(window.ragina);
-    if (typeof window.RAGinaPro !== 'undefined') candidates.push(window.RAGinaPro);
-
-    for (const obj of candidates) {
-      for (const m of ['runAgent', 'ask', 'query', 'chat', 'generate']) {
-        if (obj && typeof obj[m] === 'function') {
-          return { obj, method: m };
-        }
-      }
-    }
-    return null;
-  }
-
-  const ragina = window.__raginaLoadFailed ? null : findRagina();
-
-  if (ragina) {
-    dot.classList.add('on');
-    rstat.textContent = 'ragina-pro.js ready (' + ragina.method + ')';
-    previewBtn.disabled = false;
-  } else {
-    dot.classList.remove('on');
-    rstat.textContent = window.__raginaLoadFailed
-      ? 'ragina-pro.js failed to load — falling back to issue flow'
-      : 'ragina-pro.js loaded but no known API found';
-    previewBtn.disabled = true;
-    previewBtn.title = 'Preview unavailable — you can still Generate';
-  }
-
-  /* ---------------- Preview ---------------- */
-  $('previewBtn').addEventListener('click', async () => {
-    const name   = $('name').value.trim();
-    const prompt = $('prompt').value.trim();
-    const st     = $('genStatus');
-    const box    = $('previewBox');
-    const frame  = $('previewFrame');
-
-    if (!prompt) { toast(st, 'Describe what it should build first.', 'err'); $('prompt').focus(); return; }
-    if (!ragina) { toast(st, 'ragina-pro.js is not available.', 'err'); return; }
-
-    $('previewBtn').disabled = true;
-    $('previewBtn').textContent = '👁 Generating…';
-    toast(st, 'RAGina is drafting the app locally…', 'info');
-
-    const fullPrompt =
-      'You are a vanilla-JS-only code generator. Output ONLY a complete single index.html. ' +
-      'No markdown fences. No frameworks. No CDN links. No external fonts. Inline everything.\n\n' +
-      'PROJECT: ' + (name || 'untitled') + '\n' +
-      'REQUEST: ' + prompt;
-
-    let text = '';
-    try {
-      const fn = ragina.obj[ragina.method];
-      const out = await fn.call(ragina.obj, fullPrompt);
-      text = (typeof out === 'string') ? out : (out && (out.text || out.response)) || '';
-    } catch (err) {
-      toast(st, 'RAGina failed: ' + err.message, 'err');
-      $('previewBtn').disabled = false;
-      $('previewBtn').textContent = '👁 Preview with RAGina';
-      return;
-    }
-
-    text = stripFences(text);
-
-    if (!/<html/i.test(text)) {
-      toast(st, 'RAGina did not return HTML. Try a different description.', 'err');
-    } else if (!looksVanilla(text)) {
-      toast(st, 'RAGina used a forbidden library — you can still Generate on GitHub to retry.', 'err');
-    } else {
-      toast(st, '✅ Preview ready. Not happy? Tweak the description and try again.', 'ok');
-    }
-
-    frame.srcdoc = text;
-    box.classList.add('show');
-
-    $('previewBtn').disabled = false;
-    $('previewBtn').textContent = '👁 Preview with RAGina';
-  });
-
-  /* ---------------- Generate → issue ---------------- */
-  $('generate').addEventListener('click', () => {
-    const name    = $('name').value.trim();
-    const prompt  = $('prompt').value.trim();
-    const improve = $('improve').checked;
-    const st      = $('genStatus');
-
-    if (!name)   { toast(st, 'Give the project a name.', 'err'); $('name').focus(); return; }
-    if (!prompt) { toast(st, 'Describe what it should build.', 'err'); $('prompt').focus(); return; }
-
-    const title = '[BUILD] ' + name + (improve ? ' [improve]' : '');
-    const url =
-      'https://github.com/' + OWNER + '/' + REPO + '/issues/new' +
-      '?title=' + encodeURIComponent(title) +
-      '&body='  + encodeURIComponent(prompt);
-
-    window.open(url, '_blank', 'noopener');
-    toast(st, '✅ GitHub opened. Tap "Submit new issue" — the workflow runs automatically.', 'ok');
-  });
-
-  /* ---------------- Toast ---------------- */
   function toast(el, msg, kind) {
     el.textContent = msg;
     el.className = 'ai-status show ' + (kind || 'info');
@@ -387,48 +194,56 @@
     }
   }
 
-  /* ---------------- Project list ---------------- */
+  $('generate').addEventListener('click', () => {
+    const name    = $('name').value.trim();
+    const prompt  = $('prompt').value.trim();
+    const improve = $('improve').checked;
+    const st      = $('genStatus');
+
+    if (!name)   { toast(st, 'Give the project a name.', 'err'); $('name').focus(); return; }
+    if (!prompt) { toast(st, 'Describe what it should build.', 'err'); $('prompt').focus(); return; }
+
+    const title = '[BUILD] ' + name + (improve ? ' [improve]' : '');
+    const url = 'https://github.com/' + OWNER + '/' + REPO + '/issues/new'
+              + '?title=' + encodeURIComponent(title)
+              + '&body='  + encodeURIComponent(prompt);
+
+    window.open(url, '_blank', 'noopener');
+    toast(st, '✅ GitHub opened. Tap "Submit new issue" — the workflow runs automatically.', 'ok');
+  });
+
   async function loadProjects() {
     const list = $('projectList');
     list.innerHTML = '<li style="color:var(--ai-muted);display:block">Loading…</li>';
 
     try {
-      const res = await fetch('projects/projects.json?t=' + Date.now(), { cache: 'no-store' });
+      const res = await fetch('projects.json?t=' + Date.now(), { cache: 'no-store' });
       if (!res.ok) throw new Error('HTTP ' + res.status);
       const items = await res.json();
 
-      if (!items.length) {
+      if (!Array.isArray(items) || !items.length) {
         list.innerHTML = '<li style="color:var(--ai-muted);display:block">No projects yet — generate one above.</li>';
         return;
       }
 
-      const groups = {};
-      items.forEach((it) => { (groups[it.project] = groups[it.project] || []).push(it); });
+      items.sort((a, b) => (b.created || '').localeCompare(a.created || ''));
 
       list.innerHTML = '';
-      Object.keys(groups).sort().forEach((name) => {
-        const versions = groups[name].sort((a, b) => b.version - a.version);
+      items.forEach((it) => {
         const li = document.createElement('li');
 
-        const left = document.createElement('div');
         const a = document.createElement('a');
-        a.href   = 'projects/' + versions[0].file;
+        a.href = it.file;
         a.target = '_blank';
-        a.rel    = 'noopener';
-        a.textContent = name + ' v' + versions[0].version;
-        left.appendChild(a);
+        a.rel = 'noopener';
+        a.textContent = it.project;
 
-        const b = document.createElement('span');
-        b.className = 'badge-vanilla';
-        b.textContent = 'vanilla JS';
-        left.appendChild(b);
+        const meta = document.createElement('span');
+        meta.className = 'pver';
+        meta.textContent = (it.provider || '') + (it.improved ? ' · improved' : '');
 
-        const right = document.createElement('span');
-        right.className = 'pver';
-        right.textContent = versions.length + ' version' + (versions.length > 1 ? 's' : '');
-
-        li.appendChild(left);
-        li.appendChild(right);
+        li.appendChild(a);
+        li.appendChild(meta);
         list.appendChild(li);
       });
     } catch (err) {
