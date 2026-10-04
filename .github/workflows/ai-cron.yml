@@ -1,342 +1,289 @@
-name: Generate Project
+- name: Generate project
+  id: gen
+  env:
+    PROJECT:        ${{ steps.parse.outputs.project }}
+    PROMPT:         ${{ steps.parse.outputs.prompt }}
+    IMPROVE:        ${{ steps.parse.outputs.improve }}
+    RAGINA_ASK_URL: 'https://ragina-crawler-ragina.vercel.app/api/ask'
+  run: |
+    python - <<'PYEOF'
+    import os, re, sys, json, time
+    from datetime import datetime, timezone
+    from pathlib import Path
+    import requests
 
-on:
-  issues:
-    types: [opened]
+    SUMMARY = os.environ.get('GITHUB_STEP_SUMMARY', os.devnull)
 
-permissions:
-  contents: write
-  issues: write
+    def fail(msg):
+        print('ERROR: ' + msg)
+        with open(SUMMARY, 'a', encoding='utf-8') as f:
+            f.write('### ❌ Generation failed\n\n' + msg + '\n')
+        sys.exit(1)
 
-concurrency:
-  group: generate-project
-  cancel-in-progress: false
+    # ---------- Vanilla JS rules ----------
+    VANILLA_JS_RULES = """\
+    HARD CONSTRAINTS - the output MUST be a pure vanilla JavaScript single-page app.
+    - ONE single index.html file. Inline ALL CSS inside a <style> tag and ALL JavaScript inside a <script> tag.
+    - Vanilla JavaScript only (ES2017+). No frameworks, no libraries, no transpilers, no build step, no bundlers.
+    - FORBIDDEN frameworks/libraries: React, Preact, Vue, Svelte, Solid, Angular, Alpine.js, htmx, jQuery, Bootstrap, Tailwind, Bulma, Materialize, Lit, Stencil, Ember, Backbone, Knockout, Mithril, Stimulus, Turbo.
+    - FORBIDDEN: any external <script src="http..."> or <link rel="stylesheet" href="http..."> (no unpkg, jsdelivr, cdnjs, esm.sh, skypack, esm.run, or any other CDN).
+    - FORBIDDEN: ES module `import` / `export` statements, `require(...)`, or any module bundler config.
+    - FORBIDDEN: runtime network calls (fetch/XHR to external APIs). The app must work fully offline.
+    - FORBIDDEN: external image URLs. Use inline SVG, emoji, or CSS shapes only. Font Awesome is FORBIDDEN - use unicode/emoji instead.
+    - Fonts: system font stack only (system-ui, -apple-system, Segoe UI, sans-serif, Georgia, ui-monospace, Menlo).
+    - Use only browser APIs: DOM, CSS, localStorage, sessionStorage, Canvas, Web Audio, IndexedDB, etc.
 
-jobs:
-  generate:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    if: startsWith(github.event.issue.title, '[BUILD]')
+    If the user's prompt normally needs a framework or library, implement it with vanilla DOM
+    manipulation instead: use document.createElement, template literals, event delegation,
+    a small render() function, and CSS animations. No shortcuts.
 
-    steps:
-      - name: Check out this repo
-        uses: actions/checkout@v4
+    Return a single index.html. No commentary. No markdown fences. Just the file.
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
+    USER REQUEST:
+    """
 
-      - name: Install dependencies
-        run: pip install requests
+    FORBIDDEN_PATTERNS = [
+        r'<script[^>]+src\s*=\s*["\']https?://',
+        r'<link[^>]+href\s*=\s*["\']https?://',
+        r'\breact\b', r'\bpreact\b', r'\bvue\b', r'\bsvelte\b', r'\bsolid-js\b',
+        r'\balpinejs\b', r'\balpine\.js\b', r'\bhtmx\b', r'\bjquery\b', r'\bzepto\b',
+        r'\bbootstrap\b', r'\btailwind\b', r'\bbulma\b', r'\bmaterialize\b',
+        r'\bangular\b', r'\bember\b', r'\bbackbone\b', r'\bknockout\b', r'\bmithril\b',
+        r'\bstimulus\b', r'\bturbo(?:links)?\b', r'\blit-html\b', r'\bstencil\b',
+        r'font-?awesome', r'\bfa[srlbd]?\b',
+        r'unpkg\.com', r'cdn\.jsdelivr\.net', r'cdnjs\.cloudflare\.com',
+        r'esm\.sh', r'skypack\.dev', r'esm\.run',
+        r'\brequire\s*\(\s*["\']',
+        r'^\s*import\s+[\w{}\*\s,]+\s+from\s+["\']',
+    ]
 
-      - name: Parse issue
-        id: parse
-        env:
-          ISSUE_TITLE: ${{ github.event.issue.title }}
-          ISSUE_BODY:  ${{ github.event.issue.body }}
-          ISSUE_NUM:   ${{ github.event.issue.number }}
-        run: |
-          python - <<'PYEOF'
-          import os, re
-          title = os.environ.get('ISSUE_TITLE', '')
-          body  = os.environ.get('ISSUE_BODY', '') or ''
-          num   = os.environ.get('ISSUE_NUM', '0')
+    def is_vanilla(html_text):
+        low = html_text.lower()
+        for pat in FORBIDDEN_PATTERNS:
+        # note: 'fa' patterns are anchored loosely to avoid false positives
+            if re.search(pat, low, flags=re.MULTILINE):
+                return False, pat
+        return True, None
 
-          m = re.match(r'^\[BUILD\]\s+([A-Za-z0-9 _-]+?)\s*(\[improve\])?\s*$', title)
-          if not m:
-              print('Title must be: [BUILD] project-name  (optionally [improve])')
-              raise SystemExit(1)
+    # ---------- Inputs ----------
+    PROJECT    = os.environ.get('PROJECT', '').strip()
+    PROMPT     = os.environ.get('PROMPT', '').strip()[:4000]
+    IMPROVE    = os.environ.get('IMPROVE', 'false') == 'true'
+    RAGINA_URL = os.environ.get('RAGINA_ASK_URL', 'https://ragina-crawler-ragina.vercel.app/api/ask')
 
-          project = m.group(1).strip()
-          improve = bool(m.group(2))
-          prompt  = body.strip()[:4000]
+    if not PROMPT:
+        fail('The prompt is empty.')
+    slug = re.sub(r'[^a-z0-9]+', '-', PROJECT.lower()).strip('-')[:40]
+    if not slug:
+        fail('The project name needs at least one letter or digit.')
 
-          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
-              f.write('project=' + project + '\n')
-              f.write('prompt<<EOF\n' + prompt + '\nEOF\n')
-              f.write('improve=' + ('true' if improve else 'false') + '\n')
-              f.write('issue=' + num + '\n')
-          PYEOF
+    # ---------- Next version ----------
+    out = Path('projects')
+    out.mkdir(exist_ok=True)
+    pat = re.compile('^' + re.escape(slug) + r'_v(\d+)\.html$')
+    versions = sorted(int(m.group(1)) for m in (pat.match(p.name) for p in out.iterdir()) if m)
+    version = (versions[-1] if versions else 0) + 1
+    filename = '%s_v%d.html' % (slug, version)
 
-      - name: Generate project
-        id: gen
-        env:
-          PROJECT:        ${{ steps.parse.outputs.project }}
-          PROMPT:         ${{ steps.parse.outputs.prompt }}
-          IMPROVE:        ${{ steps.parse.outputs.improve }}
-          RAGINA_ASK_URL: 'https://ragina-crawler-ragina.vercel.app/api/ask'
-        run: |
-          python - <<'PYEOF'
-          import os, re, sys, json, time
-          from datetime import datetime, timezone
-          from pathlib import Path
-          import requests
+    # ---------- Build prompt ----------
+    ask = PROMPT
+    prev_html = None
+    improved_from = None
+    if IMPROVE and versions:
+        prev_html = (out / ('%s_v%d.html' % (slug, versions[-1]))).read_text(encoding='utf-8')
+        if len(prev_html) > 30000:
+            print('Previous version too large - generating fresh.')
+            prev_html = None
+        else:
+            improved_from = versions[-1]
+            ask = ('Improve the existing app shown in the current codebase. Keep everything that '
+                   'already works and apply this change: ' + PROMPT)
 
-          SUMMARY = os.environ.get('GITHUB_STEP_SUMMARY', os.devnull)
+    full_prompt = VANILLA_JS_RULES + '\n\n' + ask
+    if prev_html:
+        full_prompt += '\n\nCURRENT index.html:\n' + prev_html
 
-          def fail(msg):
-              print('ERROR: ' + msg)
-              with open(SUMMARY, 'a', encoding='utf-8') as f:
-                  f.write('### ❌ Generation failed\n\n' + msg + '\n')
-              sys.exit(1)
+    # =========================================================
+    # Providers - try in order
+    # =========================================================
+    def call_ragina(prompt_text):
+        resp = requests.post(
+            RAGINA_URL,
+            json={'prompt': prompt_text},   # no model param - RAGina routes it to HF
+            timeout=180,
+            headers={'Content-Type': 'application/json'}
+        )
+        if resp.status_code != 200:
+            raise RuntimeError(f'RAGina HTTP {resp.status_code}: {resp.text[:200]}')
+        data = resp.json()
+        if data.get('error'):
+            raise RuntimeError('RAGina error: ' + str(data['error'])[:200])
+        text = data.get('text') or data.get('response') or ''
+        if not text and isinstance(data.get('choices'), list) and data['choices']:
+            text = data['choices'][0].get('message', {}).get('content', '')
+        if not text:
+            raise RuntimeError('RAGina returned empty response')
+        return text
 
-          # ---------- Vanilla JS rules ----------
-          VANILLA_JS_RULES = """\
-          HARD CONSTRAINTS - the output MUST be a pure vanilla JavaScript single-page app.
-          - ONE single index.html file. Inline ALL CSS inside a <style> tag and ALL JavaScript inside a <script> tag.
-          - Vanilla JavaScript only (ES2017+). No frameworks, no libraries, no transpilers, no build step, no bundlers.
-          - FORBIDDEN frameworks/libraries: React, Preact, Vue, Svelte, Solid, Angular, Alpine.js, htmx, jQuery, Bootstrap, Tailwind, Bulma, Materialize, Lit, Stencil, Ember, Backbone, Knockout, Mithril, Stimulus, Turbo.
-          - FORBIDDEN: any external <script src="http..."> or <link rel="stylesheet" href="http..."> (no unpkg, jsdelivr, cdnjs, esm.sh, skypack, esm.run, or any other CDN).
-          - FORBIDDEN: ES module `import` / `export` statements, `require(...)`, or any module bundler config.
-          - FORBIDDEN: runtime network calls (fetch/XHR to external APIs). The app must work fully offline.
-          - FORBIDDEN: external image URLs. Use inline SVG, emoji, or CSS shapes only.
-          - Fonts: system font stack only (system-ui, -apple-system, Segoe UI, sans-serif, Georgia, ui-monospace, Menlo).
-          - Use only browser APIs: DOM, CSS, localStorage, sessionStorage, Canvas, Web Audio, IndexedDB, etc.
+    def call_pollinations(prompt_text):
+        # Free, no key, OpenAI-compatible. Rate-limited but reliable.
+        resp = requests.post(
+            'https://text.pollinations.ai/openai',
+            json={
+                'model': 'openai',
+                'messages': [
+                    {'role': 'system', 'content': 'You output raw HTML files only. No markdown fences.'},
+                    {'role': 'user',   'content': prompt_text},
+                ],
+                'temperature': 0.5,
+            },
+            timeout=180,
+            headers={'Content-Type': 'application/json'}
+        )
+        if resp.status_code != 200:
+            raise RuntimeError(f'Pollinations HTTP {resp.status_code}: {resp.text[:200]}')
+        data = resp.json()
+        text = ''
+        if isinstance(data.get('choices'), list) and data['choices']:
+            text = data['choices'][0].get('message', {}).get('content', '')
+        if not text:
+            text = data.get('text') or data.get('response') or ''
+        if not text:
+            raise RuntimeError('Pollinations returned empty response')
+        return text
 
-          If the user's prompt normally needs a framework or library, implement it with vanilla DOM
-          manipulation instead: use document.createElement, template literals, event delegation,
-          a small render() function, and CSS animations. No shortcuts.
+    PROVIDERS = [
+        ('RAGina',       call_ragina),
+        ('Pollinations', call_pollinations),
+    ]
 
-          Return a single index.html. No commentary. No markdown fences. Just the file.
+    def ask_ai(prompt_text):
+        errors = []
+        for name, fn in PROVIDERS:
+            for attempt in range(1, 3):
+                try:
+                    print(f'[{name}] attempt {attempt}/2 ...')
+                    text = fn(prompt_text)
+                    print(f'[{name}] OK ({len(text)} chars)')
+                    return text, name
+                except Exception as e:
+                    msg = str(e)[:300]
+                    errors.append(f'{name} #{attempt}: {msg}')
+                    print(f'[{name}] failed: {msg}')
+                    if attempt < 2:
+                        time.sleep(4)
+        raise RuntimeError('All providers failed:\n' + '\n'.join(errors))
 
-          USER REQUEST:
-          """
+    print(f'Generating {slug} (v{version}) ...')
+    try:
+        response_text, provider_used = ask_ai(full_prompt)
+    except Exception as e:
+        fail(str(e)[:500])
 
-          FORBIDDEN_PATTERNS = [
-              r'<script[^>]+src\s*=\s*["\']https?://',
-              r'<link[^>]+href\s*=\s*["\']https?://',
-              r'\breact\b', r'\bpreact\b', r'\bvue\b', r'\bsvelte\b', r'\bsolid-js\b',
-              r'\balpinejs\b', r'\balpine\.js\b', r'\bhtmx\b', r'\bjquery\b', r'\bzepto\b',
-              r'\bbootstrap\b', r'\btailwind\b', r'\bbulma\b', r'\bmaterialize\b',
-              r'\bangular\b', r'\bember\b', r'\bbackbone\b', r'\bknockout\b', r'\bmithril\b',
-              r'\bstimulus\b', r'\bturbo(?:links)?\b', r'\blit-html\b', r'\bstencil\b',
-              r'unpkg\.com', r'cdn\.jsdelivr\.net', r'cdnjs\.cloudflare\.com',
-              r'esm\.sh', r'skypack\.dev', r'esm\.run',
-              r'\brequire\s*\(\s*["\']',
-              r'^\s*import\s+[\w{}\*\s,]+\s+from\s+["\']',
-          ]
+    # ---------- Extract HTML ----------
+    html = response_text.strip()
+    html = re.sub(r'^```[a-z]*\n?', '', html, flags=re.I)
+    html = re.sub(r'\n?```$', '', html)
+    if '<html' not in html.lower():
+        fail(f'{provider_used} did not return a usable index.html.')
 
-          def is_vanilla(html_text):
-              low = html_text.lower()
-              for pat in FORBIDDEN_PATTERNS:
-                  if re.search(pat, low, flags=re.MULTILINE):
-                      return False, pat
-              return True, None
+    # ---------- Validate vanilla JS ----------
+    ok, hit = is_vanilla(html)
+    if not ok:
+        print(f'Validation failed (/{hit}/). Re-asking with stricter rules...')
+        strict_prompt = (
+            f'IMPORTANT: The previous attempt violated the vanilla-JS-only rules '
+            f'(matched /{hit}/). Regenerate the COMPLETE index.html from scratch.\n\n'
+        ) + full_prompt
+        try:
+            response_text, provider_used = ask_ai(strict_prompt)
+            html = response_text.strip()
+            html = re.sub(r'^```[a-z]*\n?', '', html, flags=re.I)
+            html = re.sub(r'\n?```$', '', html)
+            ok, hit = is_vanilla(html)
+        except Exception as e:
+            print(f'Strict retry failed: {e}')
+        if not ok:
+            fail(f'Model kept producing non-vanilla output (last match: /{hit}/).')
 
-          # ---------- Inputs ----------
-          PROJECT    = os.environ.get('PROJECT', '').strip()
-          PROMPT     = os.environ.get('PROMPT', '').strip()[:4000]
-          IMPROVE    = os.environ.get('IMPROVE', 'false') == 'true'
-          RAGINA_URL = os.environ.get('RAGINA_ASK_URL', 'https://ragina-crawler-ragina.vercel.app/api/ask')
+    # ---------- Write file ----------
+    (out / filename).write_text(html.rstrip() + '\n', encoding='utf-8')
+    print(f'Wrote projects/{filename} ({len(html)} bytes) via {provider_used}')
 
-          if not PROMPT:
-              fail('The prompt is empty.')
-          slug = re.sub(r'[^a-z0-9]+', '-', PROJECT.lower()).strip('-')[:40]
-          if not slug:
-              fail('The project name needs at least one letter or digit.')
+    # ---------- Manifest ----------
+    mpath = out / 'projects.json'
+    try:
+        manifest = json.loads(mpath.read_text(encoding='utf-8'))
+    except Exception:
+        manifest = []
+    manifest.append({
+        'project': slug, 'version': version, 'file': filename, 'prompt': PROMPT,
+        'created': datetime.now(timezone.utc).isoformat(timespec='seconds'),
+        'improved_from': improved_from,
+        'vanilla': True,
+        'provider': provider_used,
+    })
+    mpath.write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
 
-          # ---------- Next version ----------
-          out = Path('projects')
-          out.mkdir(exist_ok=True)
-          pat = re.compile('^' + re.escape(slug) + r'_v(\d+)\.html$')
-          versions = sorted(int(m.group(1)) for m in (pat.match(p.name) for p in out.iterdir()) if m)
-          version = (versions[-1] if versions else 0) + 1
-          filename = '%s_v%d.html' % (slug, version)
+    # ---------- Gallery ----------
+    GALLERY = '''<!DOCTYPE html>
+    <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Ariotica Projects</title>
+    <style>
+      :root{--bg:#0b1410;--card:#12201a;--line:#1d332a;--fg:#e6f2ea;--muted:#7f9a8b;--accent:#5ab552;--accent2:#7ed17a}
+      *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font-family:Georgia,serif;line-height:1.5}
+      header{padding:1.6rem 1rem 1.1rem;text-align:center;border-bottom:1px solid var(--line);background:radial-gradient(ellipse at top,#14261d,#0b1410 70%)}
+      header img{width:64px;height:64px;object-fit:contain;filter:drop-shadow(0 0 14px rgba(90,181,82,.35))}
+      h1{margin:.4rem 0 0;font-size:1.2rem;letter-spacing:.2em;text-transform:uppercase}
+      .sub{color:var(--muted);font:.78rem ui-monospace,Menlo,monospace;margin:.5rem 0 0}
+      main{max-width:820px;margin:0 auto;padding:1.1rem 1rem 3rem;display:grid;gap:1rem}
+      .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:1.1rem}
+      .card h2{margin:0 0 .4rem;font:600 .95rem ui-monospace,Menlo,monospace;letter-spacing:.08em;color:var(--accent)}
+      .prompt{margin:.2rem 0 .8rem;font-size:.9rem;word-break:break-word}
+      .vs{display:flex;flex-wrap:wrap;gap:.5rem}
+      .v{font:700 .78rem ui-monospace,Menlo,monospace;text-decoration:none;color:var(--accent2);border:1px solid #1f4a2a;background:#17301f;padding:.35rem .7rem;border-radius:999px}
+      .v.latest{background:var(--accent);color:#07120b;border-color:var(--accent)}
+      .meta{color:var(--muted);font:.7rem ui-monospace,Menlo,monospace;margin:.7rem 0 0}
+      .empty{color:var(--muted);text-align:center;font:.85rem ui-monospace,Menlo,monospace}
+      .badge{display:inline-block;margin-left:.5rem;font:700 .65rem ui-monospace,Menlo,monospace;letter-spacing:.08em;
+             text-transform:uppercase;color:var(--accent2);border:1px solid #1f4a2a;background:#17301f;padding:.15rem .5rem;border-radius:999px}
+    </style></head><body>
+    <header><img src="https://raw.githubusercontent.com/suryasticsai/Ariotica/main/Ariotica-logo.png?raw=true" alt="" onerror="this.style.display='none'">
+    <h1>Ariotica Projects</h1><p class="sub">vanilla JS only &middot; powered by RAGina + Pollinations</p></header>
+    <main>
+    %%CARDS%%
+    </main></body></html>
+    '''
+    groups = {}
+    for e in manifest:
+        groups.setdefault(e['project'], []).append(e)
+    cards = []
+    for name, items in sorted(groups.items(), key=lambda kv: max(i['created'] for i in kv[1]), reverse=True):
+        items.sort(key=lambda i: i['version'], reverse=True)
+        latest = items[0]
+        links = []
+        for idx, i in enumerate(items):
+            cls = 'v latest' if idx == 0 else 'v'
+            links.append('<a class="%s" href="projects/%s">v%d</a>' % (cls, i['file'], i['version']))
+        when = latest['created'][:16].replace('T', ' ')
+        cards.append(
+            '<article class="card"><h2>%s<span class="badge">vanilla JS</span></h2>'
+            '<p class="prompt">%s</p><div class="vs">%s</div>'
+            '<p class="meta">latest v%d &middot; %s UTC</p></article>'
+            % (name, latest['prompt'][:240], ''.join(links), latest['version'], when))
+    body = '\n'.join(cards) if cards else '<p class="empty">Nothing yet.</p>'
+    Path('index.html').write_text(GALLERY.replace('%%CARDS%%', body), encoding='utf-8')
 
-          # ---------- Build prompt ----------
-          ask = PROMPT
-          prev_html = None
-          improved_from = None
-          if IMPROVE and versions:
-              prev_html = (out / ('%s_v%d.html' % (slug, versions[-1]))).read_text(encoding='utf-8')
-              if len(prev_html) > 30000:
-                  print('Previous version too large - generating fresh.')
-                  prev_html = None
-              else:
-                  improved_from = versions[-1]
-                  ask = ('Improve the existing app shown in the current codebase. Keep everything that '
-                         'already works and apply this change: ' + PROMPT)
-
-          full_prompt = VANILLA_JS_RULES + '\n\n' + ask
-          if prev_html:
-              full_prompt += '\n\nCURRENT index.html:\n' + prev_html
-
-          # ---------- Call RAGina ----------
-          def call_ragina(prompt_text):
-              last_err = None
-              for attempt in range(1, 4):
-                  try:
-                      resp = requests.post(
-                          RAGINA_URL,
-                          json={'prompt': prompt_text, 'model': 'openai'},
-                          timeout=180
-                      )
-                      if resp.status_code != 200:
-                          raise RuntimeError(f'HTTP {resp.status_code}: {resp.text[:200]}')
-                      data = resp.json()
-                      if data.get('error'):
-                          raise RuntimeError(data['error'])
-                      text = data.get('text') or data.get('response') or ''
-                      if not text and isinstance(data.get('choices'), list) and data['choices']:
-                          text = data['choices'][0].get('message', {}).get('content', '')
-                      if not text:
-                          raise RuntimeError('Empty response from RAGina')
-                      return text
-                  except Exception as e:
-                      last_err = e
-                      print(f'Attempt {attempt}/3 failed: {str(e)[:300]}')
-                      if attempt < 3:
-                          time.sleep(5 * attempt)
-              raise last_err
-
-          print(f'Generating {slug} (v{version}) via RAGina...')
-          try:
-              response_text = call_ragina(full_prompt)
-          except Exception as e:
-              fail(f'RAGina call failed after 3 attempts: {str(e)[:400]}')
-
-          # ---------- Extract HTML ----------
-          html = response_text.strip()
-          html = re.sub(r'^```[a-z]*\n?', '', html, flags=re.I)
-          html = re.sub(r'\n?```$', '', html)
-          if '<html' not in html.lower():
-              fail('RAGina did not return a usable index.html.')
-
-          # ---------- Validate vanilla JS ----------
-          ok, hit = is_vanilla(html)
-          if not ok:
-              print(f'Validation failed (matched /{hit}/). Re-asking with stricter rules...')
-              strict_prompt = (
-                  'IMPORTANT: The previous attempt violated the vanilla-JS-only rules '
-                  f'(matched pattern: /{hit}/). Regenerate the COMPLETE index.html from scratch.\n\n'
-              ) + full_prompt
-              try:
-                  response_text = call_ragina(strict_prompt)
-                  html = response_text.strip()
-                  html = re.sub(r'^```[a-z]*\n?', '', html, flags=re.I)
-                  html = re.sub(r'\n?```$', '', html)
-                  ok, hit = is_vanilla(html)
-              except Exception as e:
-                  print(f'Strict retry failed: {e}')
-              if not ok:
-                  fail(f'Model kept producing non-vanilla output (last match: /{hit}/).')
-
-          # ---------- Write file ----------
-          (out / filename).write_text(html.rstrip() + '\n', encoding='utf-8')
-          print(f'Wrote projects/{filename} ({len(html)} bytes)')
-
-          # ---------- Manifest ----------
-          mpath = out / 'projects.json'
-          try:
-              manifest = json.loads(mpath.read_text(encoding='utf-8'))
-          except Exception:
-              manifest = []
-          manifest.append({
-              'project': slug, 'version': version, 'file': filename, 'prompt': PROMPT,
-              'created': datetime.now(timezone.utc).isoformat(timespec='seconds'),
-              'improved_from': improved_from,
-              'vanilla': True
-          })
-          mpath.write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
-
-          # ---------- Gallery ----------
-          GALLERY = '''<!DOCTYPE html>
-          <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-          <title>Ariotica Projects</title>
-          <style>
-            :root{--bg:#0b1410;--card:#12201a;--line:#1d332a;--fg:#e6f2ea;--muted:#7f9a8b;--accent:#5ab552;--accent2:#7ed17a}
-            *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font-family:Georgia,serif;line-height:1.5}
-            header{padding:1.6rem 1rem 1.1rem;text-align:center;border-bottom:1px solid var(--line);background:radial-gradient(ellipse at top,#14261d,#0b1410 70%)}
-            header img{width:64px;height:64px;object-fit:contain;filter:drop-shadow(0 0 14px rgba(90,181,82,.35))}
-            h1{margin:.4rem 0 0;font-size:1.2rem;letter-spacing:.2em;text-transform:uppercase}
-            .sub{color:var(--muted);font:.78rem ui-monospace,Menlo,monospace;margin:.5rem 0 0}
-            main{max-width:820px;margin:0 auto;padding:1.1rem 1rem 3rem;display:grid;gap:1rem}
-            .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:1.1rem}
-            .card h2{margin:0 0 .4rem;font:600 .95rem ui-monospace,Menlo,monospace;letter-spacing:.08em;color:var(--accent)}
-            .prompt{margin:.2rem 0 .8rem;font-size:.9rem;word-break:break-word}
-            .vs{display:flex;flex-wrap:wrap;gap:.5rem}
-            .v{font:700 .78rem ui-monospace,Menlo,monospace;text-decoration:none;color:var(--accent2);border:1px solid #1f4a2a;background:#17301f;padding:.35rem .7rem;border-radius:999px}
-            .v.latest{background:var(--accent);color:#07120b;border-color:var(--accent)}
-            .meta{color:var(--muted);font:.7rem ui-monospace,Menlo,monospace;margin:.7rem 0 0}
-            .empty{color:var(--muted);text-align:center;font:.85rem ui-monospace,Menlo,monospace}
-            .badge{display:inline-block;margin-left:.5rem;font:700 .65rem ui-monospace,Menlo,monospace;letter-spacing:.08em;
-                   text-transform:uppercase;color:var(--accent2);border:1px solid #1f4a2a;background:#17301f;padding:.15rem .5rem;border-radius:999px}
-          </style></head><body>
-          <header><img src="https://raw.githubusercontent.com/suryasticsai/Ariotica/main/Ariotica-logo.png?raw=true" alt="" onerror="this.style.display='none'">
-          <h1>Ariotica Projects</h1><p class="sub">Actions &rarr; Generate Project &rarr; Run workflow &middot; vanilla JS only</p></header>
-          <main>
-          %%CARDS%%
-          </main></body></html>
-          '''
-          groups = {}
-          for e in manifest:
-              groups.setdefault(e['project'], []).append(e)
-          cards = []
-          for name, items in sorted(groups.items(), key=lambda kv: max(i['created'] for i in kv[1]), reverse=True):
-              items.sort(key=lambda i: i['version'], reverse=True)
-              latest = items[0]
-              links = []
-              for idx, i in enumerate(items):
-                  cls = 'v latest' if idx == 0 else 'v'
-                  links.append('<a class="%s" href="projects/%s">v%d</a>' % (cls, i['file'], i['version']))
-              when = latest['created'][:16].replace('T', ' ')
-              cards.append(
-                  '<article class="card"><h2>%s<span class="badge">vanilla JS</span></h2>'
-                  '<p class="prompt">%s</p><div class="vs">%s</div>'
-                  '<p class="meta">latest v%d &middot; %s UTC</p></article>'
-                  % (name, latest['prompt'][:240], ''.join(links), latest['version'], when))
-          body = '\n'.join(cards) if cards else '<p class="empty">Nothing yet.</p>'
-          Path('index.html').write_text(GALLERY.replace('%%CARDS%%', body), encoding='utf-8')
-
-          # ---------- Outputs + summary ----------
-          repo = os.environ.get('GITHUB_REPOSITORY', 'suryasticsai/Ariotica')
-          owner, name_ = repo.split('/', 1)
-          base = 'https://%s.github.io/%s/' % (owner, name_)
-          with open(os.environ.get('GITHUB_OUTPUT', os.devnull), 'a') as f:
-              f.write('file=projects/%s\n' % filename)
-          with open(SUMMARY, 'a', encoding='utf-8') as f:
-              f.write('### ✅ Generated `%s`\n\n' % filename)
-              f.write('- Project **%s**, version **v%d**%s\n' % (slug, version, (' (improved from v%d)' % improved_from) if improved_from else ''))
-              f.write('- Constraint: **pure vanilla JS** (validated)\n')
-              f.write('- Powered by **RAGina API** (no API key)\n')
-              f.write('- Open it: %sprojects/%s  (live about a minute after the commit)\n' % (base, filename))
-              f.write('- All projects: %s\n' % base)
-          PYEOF
-
-      - name: Commit result
-        env:
-          FILE: ${{ steps.gen.outputs.file }}
-        run: |
-          git config user.name  "ariotica-bot"
-          git config user.email "ariotica-bot@users.noreply.github.com"
-          git add projects index.html
-          if git diff --staged --quiet; then
-            echo "Nothing to commit."
-            exit 0
-          fi
-          git commit -m "feat(projects): ${FILE} (issue #${{ steps.parse.outputs.issue }})"
-          git pull --rebase
-          git push
-
-      - name: Comment on the issue
-        if: always()
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ISSUE: ${{ steps.parse.outputs.issue }}
-          FILE:  ${{ steps.gen.outputs.file }}
-        run: |
-          if [ -n "$FILE" ]; then
-            gh issue comment "$ISSUE" --body "✅ Generated \`$FILE\`.
-
-          Live in ~1 min: https://suryasticsai.github.io/Ariotica/projects/$FILE"
-          else
-            gh issue comment "$ISSUE" --body "❌ Generation failed. Check the Actions log."
-          fi
-
-      - name: Close the issue
-        if: success()
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ISSUE: ${{ steps.parse.outputs.issue }}
-        run: gh issue close "$ISSUE"
+    # ---------- Outputs + summary ----------
+    repo = os.environ.get('GITHUB_REPOSITORY', 'suryasticsai/Ariotica')
+    owner, name_ = repo.split('/', 1)
+    base = 'https://%s.github.io/%s/' % (owner, name_)
+    with open(os.environ.get('GITHUB_OUTPUT', os.devnull), 'a') as f:
+        f.write('file=projects/%s\n' % filename)
+    with open(SUMMARY, 'a', encoding='utf-8') as f:
+        f.write('### ✅ Generated `%s`\n\n' % filename)
+        f.write('- Project **%s**, version **v%d**%s\n' % (slug, version, (' (improved from v%d)' % improved_from) if improved_from else ''))
+        f.write('- Constraint: **pure vanilla JS** (validated)\n')
+        f.write('- Provider: **%s**\n' % provider_used)
+        f.write('- Open it: %sprojects/%s\n' % (base, filename))
+    PYEOF
