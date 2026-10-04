@@ -1,7 +1,7 @@
 {
   "runId": "1791139225068",
   "started": "2026-10-04T18:40:25.069Z",
-  "updated": "2026-10-04T18:45:12.953Z",
+  "updated": "2026-10-04T18:45:14.305Z",
   "status": "running",
   "steps": [
     {
@@ -44,6 +44,11 @@
       "status": "error",
       "at": "2026-10-04T18:45:12.953Z",
       "error": "HTTP 402"
+    },
+    {
+      "name": "RAGina · attempt 1",
+      "status": "running",
+      "at": "2026-10-04T18:45:14.305Z"
     }
   ],
   "draft": "",
