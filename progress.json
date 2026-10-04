@@ -1,7 +1,7 @@
 {
   "runId": "1791139225068",
   "started": "2026-10-04T18:40:25.069Z",
-  "updated": "2026-10-04T18:45:31.240Z",
+  "updated": "2026-10-04T18:45:32.727Z",
   "status": "running",
   "steps": [
     {
@@ -59,8 +59,9 @@
     },
     {
       "name": "DuckDuckGo · attempt 1",
-      "status": "running",
-      "at": "2026-10-04T18:45:31.240Z"
+      "status": "error",
+      "at": "2026-10-04T18:45:32.727Z",
+      "error": "no vqd token"
     }
   ],
   "draft": "",
