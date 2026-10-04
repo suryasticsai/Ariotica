@@ -1,8 +1,8 @@
 {
   "runId": "1791139225068",
   "started": "2026-10-04T18:40:25.069Z",
-  "updated": "2026-10-04T18:45:38.054Z",
-  "status": "running",
+  "updated": "2026-10-04T18:45:39.124Z",
+  "status": "error",
   "steps": [
     {
       "name": "Parse issue",
@@ -16,10 +16,11 @@
     },
     {
       "name": "Generate with AI",
-      "status": "running",
-      "at": "2026-10-04T18:40:31.046Z",
+      "status": "error",
+      "at": "2026-10-04T18:45:39.124Z",
       "promptChars": 837,
-      "ragRefs": "none"
+      "ragRefs": "none",
+      "error": "All providers failed:\nPollinations-POST (streaming) #1: HTTP 524\nPollinations-POST (streaming) #2: HTTP 524\nPollinations-GET #1: HTTP 500\nPollinations-GET #2: HTTP 402\nRAGina #1: HTTP 500: {\"error\":\"HuggingFace failed: fetch failed\"}\nRAGina #2: HTTP 500: {\"error\":\"HuggingFace failed: fetch failed\"}\n"
     },
     {
       "name": "Pollinations-POST (streaming) · attempt 1",
@@ -68,9 +69,15 @@
       "status": "error",
       "at": "2026-10-04T18:45:38.054Z",
       "error": "no vqd token"
+    },
+    {
+      "name": "Error",
+      "status": "error",
+      "error": "All providers failed:\nPollinations-POST (streaming) #1: HTTP 524\nPollinations-POST (streaming) #2: HTTP 524\nPollinations-GET #1: HTTP 500\nPollinations-GET #2: HTTP 402\nRAGina #1: HTTP 500: {\"error\":\"HuggingFace failed: fetch failed\"}\nRAGina #2: HTTP 500: {\"error\":\"HuggingFace failed: fetch failed\"}\nDuckDuckGo #1: no vqd token\nDuckDuckGo #2: no vqd token",
+      "at": "2026-10-04T18:45:39.124Z"
     }
   ],
   "draft": "",
   "draftSize": 0,
-  "error": null
+  "error": "All providers failed:\nPollinations-POST (streaming) #1: HTTP 524\nPollinations-POST (streaming) #2: HTTP 524\nPollinations-GET #1: HTTP 500\nPollinations-GET #2: HTTP 402\nRAGina #1: HTTP 500: {\"error\":\"HuggingFace failed: fetch failed\"}\nRAGina #2: HTTP 500: {\"error\":\"HuggingFace failed: fetch failed\"}\nDuckDuckGo #1: no vqd token\nDuckDuckGo #2: no vqd token"
 }
