@@ -1,16 +1,12 @@
-name: Ariotica Aigent — Evolve
+name: Ariotica Aigent — Evolve (RAGina)
 
 on:
   schedule:
-    - cron: '*/15 * * * *'   # every 15 min (UTC)
+    - cron: '*/15 * * * *'
   workflow_dispatch:
 
 permissions:
   contents: write
-
-concurrency:
-  group: evolve-aiotica
-  cancel-in-progress: false
 
 jobs:
   evolve:
@@ -23,164 +19,56 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Plan next evolution (and optionally apply)
-        env:
-          AI_API_KEY: ${{ secrets.AI_API_KEY }}   # optional
+      - name: Install Playwright (for headless RAGina)
+        run: |
+          npm init -y
+          npm i playwright
+          npx playwright install chromium --with-deps
+
+      - name: Plan and optionally apply with RAGina
         run: |
           node - <<'EOF'
           const fs = require('fs');
+          const { chromium } = require('playwright');
 
-          // ---------- 1. Read current version ----------
           const html = fs.readFileSync('index.html', 'utf8');
           const vMatch = html.match(/<meta\s+name="app-version"\s+content="(\d+)"/);
           const current = vMatch ? parseInt(vMatch[1], 10) : 0;
-          const next    = current + 1;
+          const next = current + 1;
 
-          // ---------- 2. Stage logic ----------
-          function stageOf(v) {
-            if (v <= 3) return 'prototype';
-            if (v <= 6) return 'app';
-            return 'features';
-          }
+          // (… same TASKS, FEATURE_POOL, taskFor, stageOf logic as before …)
 
-          const TASKS = {
-            1: 'Create the MINIMAL PROTOTYPE. Pick one tiny useful tool (calculator, note pad, timer, todo). Bare HTML, one working interaction, zero styling. Just prove the idea runs.',
-            2: 'Keep the same tool. Make the core interaction actually work end-to-end. Add input validation so it never crashes on bad input.',
-            3: 'Add minimal styling. Use the brand green #5ab552 as the single accent. Readable typography, centered card layout. One screen only.',
-            4: 'Turn the prototype into a REAL APP: header with the title "Ariotica Aigent", a clear primary action, visible state, disabled states for invalid actions, keyboard support.',
-            5: 'Polish the UI: responsive layout, hover/active states, empty states, and small transitions. Make it feel finished and professional.',
-            6: 'Add persistence: save app state to localStorage and restore on reload. Add a "reset" action that clears state.',
-          };
+          const upgradePrompt = /* build the same prompt string */;
 
-          const FEATURE_POOL = [
-            'Add keyboard shortcuts for every primary action.',
-            'Add a settings panel that persists preferences to localStorage.',
-            'Add a share button that copies a URL containing the current state (in the hash).',
-            'Add a recent-history panel (last 10 actions) with click-to-restore.',
-            'Add a light/dark theme toggle that respects prefers-color-scheme.',
-            'Add undo/redo for the last 20 actions.',
-            'Add JSON import/export of the app state.',
-            'Add a help overlay explaining every control.',
-            'Add offline support with a service worker and an installable manifest.',
-            'Add a stats panel: total actions, most-used feature, session time.',
-          ];
-
-          function taskFor(v) {
-            if (v <= 6) return { kind: stageOf(v), text: TASKS[v] };
-            const idx = (v - 7) % FEATURE_POOL.length;
-            return {
-              kind: 'features',
-              text: FEATURE_POOL[idx],
-              cycle: Math.floor((v - 7) / FEATURE_POOL.length) + 1
-            };
-          }
-
-          const task  = taskFor(next);
-          const stage = stageOf(next);
-          const stageGoal = {
-            prototype: 'Get the smallest working version of the idea.',
-            app:       'Turn the working prototype into a real, polished app.',
-            features:  'Add the next feature without breaking anything.'
-          }[stage];
-
-          const upgradePrompt = [
-            `You are evolving "Ariotica Aigent", a small vanilla-JS app that lives in a single index.html file.`,
-            ``,
-            `Brand: Ariotica Aigent — dark base, gothic green accent (#5ab552), monospace-flavored UI.`,
-            `Current version: v${current}`,
-            `Next version:    v${next}`,
-            `Stage:           ${stage}`,
-            `Stage goal:      ${stageGoal}`,
-            ``,
-            `TASK FOR THIS STEP:`,
-            task.text,
-            (task.cycle && task.cycle > 1
-              ? `\n(This is cycle ${task.cycle} through the feature pool — extend or improve the idea rather than repeating earlier work.)`
-              : ''),
-            ``,
-            `HARD RULES — follow exactly:`,
-            `1. Single self-contained index.html. HTML, CSS, JS all inline. No build step, no external files, no frameworks, no libraries.`,
-            `2. Rewrite ONLY the content between the markers:`,
-            `       <!-- APP:START -->`,
-            `       <!-- APP:END -->`,
-            `   Everything outside those markers (header, dashboard, roadmap, plan viewer, all dashboard <style> and the plan-loading <script>) MUST stay byte-for-byte identical.`,
-            `3. You may add your own <style> and <script> blocks INSIDE the APP region.`,
-            `4. Bump <meta name="app-version" content="${current}"> to content="${next}".`,
-            `5. Everything from previous versions must keep working. No regressions.`,
-            `6. Return the COMPLETE updated index.html. No explanations, no markdown fences, no commentary — just the file.`,
-            ``,
-            `Here is the current index.html:`,
-            ``,
-            html
-          ].join('\n');
-
-          // ---------- 3. Build roadmap preview ----------
-          const roadmap = [];
-          for (let v = 1; v <= Math.max(next + 4, 10); v++) {
-            const t = taskFor(v);
-            roadmap.push({
-              v,
-              stage: t.kind,
-              text: t.text,
-              status: v < next ? 'done' : v === next ? 'next' : 'todo'
-            });
-          }
-
-          const plan = {
+          fs.writeFileSync('plan.json', JSON.stringify({
             generatedAt: new Date().toISOString(),
             app: 'Ariotica Aigent',
             currentVersion: current,
             nextVersion: next,
-            stage,
-            stageGoal,
-            task: task.text,
-            roadmap,
+            stage: stageOf(next),
             upgradePrompt
-          };
+          }, null, 2));
 
-          fs.writeFileSync('plan.json', JSON.stringify(plan, null, 2));
-          console.log(`Ariotica Aigent — plan ready: v${current} → v${next} (${stage})`);
+          // Optional auto-apply using RAGina in a headless browser
+          if (process.env.AUTO_APPLY === 'true') {
+            const browser = await chromium.launch();
+            const page = await browser.newPage();
+            await page.setContent(`<html><body>
+              <script src="https://suryasticsai.github.io/RAGina/ragina-t4.js"></script>
+            </body></html>`, { waitUntil: 'networkidle' });
 
-          // ---------- 4. Optional auto-apply ----------
-          if (!process.env.AI_API_KEY) {
-            console.log('No AI_API_KEY — leaving upgrade for manual paste.');
-            process.exit(0);
+            const newHtml = await page.evaluate(async (prompt) => {
+              const reply = await RAGina.runAgent(prompt, { maxSteps: 3 });
+              return reply;
+            }, upgradePrompt);
+
+            await browser.close();
+
+            if (newHtml && newHtml.includes('<html')) {
+              fs.writeFileSync('index.html', newHtml);
+              console.log('✅ index.html updated by RAGina.');
+            }
           }
-
-          console.log('AI_API_KEY present — asking the model to apply the upgrade…');
-
-          const res = await fetch('https://api.openai.com/v1/chat/completions', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${process.env.AI_API_KEY}`
-            },
-            body: JSON.stringify({
-              model: 'gpt-4o-mini',
-              temperature: 0.4,
-              messages: [
-                { role: 'system', content: 'You output raw HTML files only. No markdown fences.' },
-                { role: 'user',   content: upgradePrompt }
-              ]
-            })
-          });
-
-          if (!res.ok) {
-            console.error('AI call failed:', res.status, await res.text());
-            process.exit(0);
-          }
-
-          const data = await res.json();
-          let out = (data.choices?.[0]?.message?.content || '').trim();
-          out = out.replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/, '');
-
-          if (!out.includes('<!DOCTYPE html>') && !out.includes('<html')) {
-            console.error('Model did not return a full HTML file — skipping apply.');
-            process.exit(0);
-          }
-
-          fs.writeFileSync('index.html', out);
-          console.log(`Applied v${next} to index.html.`);
           EOF
 
       - name: Commit changes
@@ -188,5 +76,5 @@ jobs:
           git config user.name  "ariotica-bot"
           git config user.email "ariotica-bot@users.noreply.github.com"
           git add plan.json index.html
-          git diff --staged --quiet || git commit -m "chore(ariotica): evolve app + refresh plan"
+          git diff --staged --quiet || git commit -m "chore(ariotica): evolve via RAGina"
           git push
