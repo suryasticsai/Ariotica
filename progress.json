@@ -1,7 +1,7 @@
 {
   "runId": "1791139225068",
   "started": "2026-10-04T18:40:25.069Z",
-  "updated": "2026-10-04T18:40:32.035Z",
+  "updated": "2026-10-04T18:42:39.394Z",
   "status": "running",
   "steps": [
     {
@@ -23,8 +23,9 @@
     },
     {
       "name": "Pollinations-POST (streaming) · attempt 1",
-      "status": "running",
-      "at": "2026-10-04T18:40:32.035Z"
+      "status": "error",
+      "at": "2026-10-04T18:42:39.394Z",
+      "error": "HTTP 524"
     }
   ],
   "draft": "",
