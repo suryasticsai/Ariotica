@@ -1,38 +1,12 @@
 name: Generate Project
 
-# One click, no console, no token pasting:
-#   GitHub -> this repo -> Actions -> "Generate Project" -> Run workflow
-#   fill in the project name + what to build, press the green button.
-# Result: projects/<project>_v<N>.html  (N goes up by one every run)
-#
-# Every generated project is enforced to be PURE VANILLA JS:
-#   - single index.html, inline <style> + <script>
-#   - no frameworks, no CDNs, no bundlers, no external fetch()
-#   - validator rejects output that violates the rules and retries.
-#
-# Code generation uses your grishtesync-backend repo (ai_client.py) with your
-# Groq key. One-time setup:
-#   Settings -> Secrets and variables -> Actions -> New repository secret
-#   Name: GROQ_API_KEY   Value: your key from console.groq.com
 on:
-  workflow_dispatch:
-    inputs:
-      project:
-        description: 'Project name (e.g. todo-app). Same name again = next version'
-        type: string
-        required: true
-      prompt:
-        description: 'What should it build? (vanilla JS only, e.g. a todo app with dark mode and filters)'
-        type: string
-        required: true
-      improve:
-        description: 'Improve the latest version of this project instead of starting fresh'
-        type: boolean
-        required: false
-        default: false
+  issues:
+    types: [opened]
 
 permissions:
   contents: write
+  issues: write
 
 concurrency:
   group: generate-project
@@ -42,16 +16,11 @@ jobs:
   generate:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    if: startsWith(github.event.issue.title, '[BUILD]')
 
     steps:
       - name: Check out this repo
         uses: actions/checkout@v4
-
-      - name: Check out grishtesync-backend (code-gen engine)
-        uses: actions/checkout@v4
-        with:
-          repository: suryasticsai/grishtesync-backend
-          path: backend-src
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -61,18 +30,48 @@ jobs:
       - name: Install dependencies
         run: pip install requests
 
+      - name: Parse issue
+        id: parse
+        env:
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          ISSUE_BODY:  ${{ github.event.issue.body }}
+          ISSUE_NUM:   ${{ github.event.issue.number }}
+        run: |
+          python - <<'PYEOF'
+          import os, re
+          title = os.environ.get('ISSUE_TITLE', '')
+          body  = os.environ.get('ISSUE_BODY', '') or ''
+          num   = os.environ.get('ISSUE_NUM', '0')
+
+          m = re.match(r'^\[BUILD\]\s+([A-Za-z0-9 _-]+?)\s*(\[improve\])?\s*$', title)
+          if not m:
+              print('Title must be: [BUILD] project-name  (optionally [improve])')
+              raise SystemExit(1)
+
+          project = m.group(1).strip()
+          improve = bool(m.group(2))
+          prompt  = body.strip()[:4000]
+
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as f:
+              f.write('project=' + project + '\n')
+              f.write('prompt<<EOF\n' + prompt + '\nEOF\n')
+              f.write('improve=' + ('true' if improve else 'false') + '\n')
+              f.write('issue=' + num + '\n')
+          PYEOF
+
       - name: Generate project
         id: gen
         env:
-          PROJECT: ${{ inputs.project }}
-          PROMPT: ${{ inputs.prompt }}
-          IMPROVE: ${{ inputs.improve }}
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          PROJECT:        ${{ steps.parse.outputs.project }}
+          PROMPT:         ${{ steps.parse.outputs.prompt }}
+          IMPROVE:        ${{ steps.parse.outputs.improve }}
+          RAGINA_ASK_URL: 'https://ragina-crawler-ragina.vercel.app/api/ask'
         run: |
           python - <<'PYEOF'
-          import os, re, sys, json, time, html as H
+          import os, re, sys, json, time
           from datetime import datetime, timezone
           from pathlib import Path
+          import requests
 
           SUMMARY = os.environ.get('GITHUB_STEP_SUMMARY', os.devnull)
 
@@ -82,9 +81,7 @@ jobs:
                   f.write('### ❌ Generation failed\n\n' + msg + '\n')
               sys.exit(1)
 
-          # =========================================================
-          # VANILLA JS ENFORCEMENT
-          # =========================================================
+          # ---------- Vanilla JS rules ----------
           VANILLA_JS_RULES = """\
           HARD CONSTRAINTS - the output MUST be a pure vanilla JavaScript single-page app.
           - ONE single index.html file. Inline ALL CSS inside a <style> tag and ALL JavaScript inside a <script> tag.
@@ -121,34 +118,25 @@ jobs:
           ]
 
           def is_vanilla(html_text):
-              """Return (True, None) if clean, else (False, offending_regex)."""
               low = html_text.lower()
               for pat in FORBIDDEN_PATTERNS:
                   if re.search(pat, low, flags=re.MULTILINE):
                       return False, pat
               return True, None
 
-          # =========================================================
-          # Inputs
-          # =========================================================
-          PROJECT = os.environ.get('PROJECT', '').strip()
-          PROMPT = os.environ.get('PROMPT', '').strip()[:4000]
-          IMPROVE = os.environ.get('IMPROVE', 'false') == 'true'
-          RETRY_WAIT = int(os.environ.get('RETRY_WAIT', '20'))
+          # ---------- Inputs ----------
+          PROJECT    = os.environ.get('PROJECT', '').strip()
+          PROMPT     = os.environ.get('PROMPT', '').strip()[:4000]
+          IMPROVE    = os.environ.get('IMPROVE', 'false') == 'true'
+          RAGINA_URL = os.environ.get('RAGINA_ASK_URL', 'https://ragina-crawler-ragina.vercel.app/api/ask')
 
-          if not os.environ.get('GROQ_API_KEY'):
-              fail('The GROQ_API_KEY secret is missing. Add it under Settings -> Secrets and variables -> Actions -> New repository secret.')
           if not PROMPT:
               fail('The prompt is empty.')
           slug = re.sub(r'[^a-z0-9]+', '-', PROJECT.lower()).strip('-')[:40]
           if not slug:
               fail('The project name needs at least one letter or digit.')
-          if not Path('backend-src/ai_client.py').exists():
-              fail('Could not find backend-src/ai_client.py (grishtesync-backend checkout failed).')
 
-          # =========================================================
-          # Next version number
-          # =========================================================
+          # ---------- Next version ----------
           out = Path('projects')
           out.mkdir(exist_ok=True)
           pat = re.compile('^' + re.escape(slug) + r'_v(\d+)\.html$')
@@ -156,125 +144,89 @@ jobs:
           version = (versions[-1] if versions else 0) + 1
           filename = '%s_v%d.html' % (slug, version)
 
-          # =========================================================
-          # Build the request (always prefixed with vanilla JS rules)
-          # =========================================================
+          # ---------- Build prompt ----------
           ask = PROMPT
-          repo_code = None
+          prev_html = None
           improved_from = None
-          if IMPROVE:
-              if not versions:
-                  print('No earlier version of "%s" - generating fresh.' % slug)
+          if IMPROVE and versions:
+              prev_html = (out / ('%s_v%d.html' % (slug, versions[-1]))).read_text(encoding='utf-8')
+              if len(prev_html) > 30000:
+                  print('Previous version too large - generating fresh.')
+                  prev_html = None
               else:
-                  prev_html = (out / ('%s_v%d.html' % (slug, versions[-1]))).read_text(encoding='utf-8')
-                  if len(prev_html) > 30000:
-                      print('Previous version is too large to send as context - generating fresh.')
-                  else:
-                      repo_code = {'index.html': prev_html}
-                      improved_from = versions[-1]
-                      ask = ('Improve the existing app shown in the current codebase. Keep everything that '
-                             'already works and apply this change: ' + PROMPT)
+                  improved_from = versions[-1]
+                  ask = ('Improve the existing app shown in the current codebase. Keep everything that '
+                         'already works and apply this change: ' + PROMPT)
 
-          full_ask = VANILLA_JS_RULES + ask
+          full_prompt = VANILLA_JS_RULES + '\n\n' + ask
+          if prev_html:
+              full_prompt += '\n\nCURRENT index.html:\n' + prev_html
 
-          # =========================================================
-          # Generate with grishtesync-backend
-          # =========================================================
-          sys.path.insert(0, 'backend-src')
-          import ai_client  # reads GROQ_API_KEY at import time
-
-          def call_backend(question):
-              last = None
+          # ---------- Call RAGina ----------
+          def call_ragina(prompt_text):
+              last_err = None
               for attempt in range(1, 4):
                   try:
-                      return ai_client.generate_simple(question, 'github_generate', 'github', repo_code=repo_code)
+                      resp = requests.post(
+                          RAGINA_URL,
+                          json={'prompt': prompt_text, 'model': 'openai'},
+                          timeout=180
+                      )
+                      if resp.status_code != 200:
+                          raise RuntimeError(f'HTTP {resp.status_code}: {resp.text[:200]}')
+                      data = resp.json()
+                      if data.get('error'):
+                          raise RuntimeError(data['error'])
+                      text = data.get('text') or data.get('response') or ''
+                      if not text and isinstance(data.get('choices'), list) and data['choices']:
+                          text = data['choices'][0].get('message', {}).get('content', '')
+                      if not text:
+                          raise RuntimeError('Empty response from RAGina')
+                      return text
                   except Exception as e:
-                      last = e
-                      msg = str(e)
-                      print('Attempt %d/3 failed: %s' % (attempt, msg[:300]))
+                      last_err = e
+                      print(f'Attempt {attempt}/3 failed: {str(e)[:300]}')
                       if attempt < 3:
-                          limited = '429' in msg or 'rate' in msg.lower()
-                          time.sleep(RETRY_WAIT * attempt if limited else 5)
-              raise last
+                          time.sleep(5 * attempt)
+              raise last_err
 
-          # --- Pass 1: normal generation ---
-          print('Generating %s (v%d)%s ...' % (slug, version, ' - improving v%d' % improved_from if improved_from else ''))
+          print(f'Generating {slug} (v{version}) via RAGina...')
           try:
-              files = call_backend(full_ask)
+              response_text = call_ragina(full_prompt)
           except Exception as e:
-              fail('Code generation failed after 3 attempts: ' + str(e)[:400])
+              fail(f'RAGina call failed after 3 attempts: {str(e)[:400]}')
 
-          if not isinstance(files, dict) or not files:
-              fail('The model returned no files.')
-          texts = {k: v for k, v in files.items() if isinstance(v, str)}
-          page = texts.get('index.html') or next((v for k, v in texts.items() if k.lower().endswith('.html')), '')
-          css  = texts.get('style.css')  or next((v for k, v in texts.items() if k.lower().endswith('.css')),  '')
-          js   = texts.get('script.js')  or next((v for k, v in texts.items() if k.lower().endswith('.js')),   '')
-          if '<html' not in page.lower():
-              fail('The model did not return a usable index.html.')
+          # ---------- Extract HTML ----------
+          html = response_text.strip()
+          html = re.sub(r'^```[a-z]*\n?', '', html, flags=re.I)
+          html = re.sub(r'\n?```$', '', html)
+          if '<html' not in html.lower():
+              fail('RAGina did not return a usable index.html.')
 
-          # Merge css/js into the page (unchanged logic)
-          if css:
-              tag = '<style>\n' + css + '\n</style>'
-              page, n = re.subn(r'<link[^>]*href=["\']\.?/?style\.css["\'][^>]*>', lambda m: tag, page, count=1, flags=re.I)
-              if n == 0:
-                  page = page.replace('</head>', tag + '\n</head>', 1) if '</head>' in page else tag + '\n' + page
-          if js:
-              tag = '<script>\n' + js.replace('</script>', '<\\/script>') + '\n</script>'
-              page, n = re.subn(r'<script[^>]*src=["\']\.?/?script\.js["\'][^>]*>\s*</script>', lambda m: tag, page, count=1, flags=re.I)
-              if n == 0:
-                  page = page.replace('</body>', tag + '\n</body>', 1) if '</body>' in page else page + '\n' + tag
-
-          # --- Validate: must be vanilla JS ---
-          ok, hit = is_vanilla(page)
+          # ---------- Validate vanilla JS ----------
+          ok, hit = is_vanilla(html)
           if not ok:
-              print('Validation failed (matched /%s/). Re-asking with stricter rules...' % hit)
-              strict_ask = (
+              print(f'Validation failed (matched /{hit}/). Re-asking with stricter rules...')
+              strict_prompt = (
                   'IMPORTANT: The previous attempt violated the vanilla-JS-only rules '
-                  '(matched pattern: /%s/). Regenerate the COMPLETE index.html from scratch.\n\n' % hit
-              ) + full_ask
+                  f'(matched pattern: /{hit}/). Regenerate the COMPLETE index.html from scratch.\n\n'
+              ) + full_prompt
+              try:
+                  response_text = call_ragina(strict_prompt)
+                  html = response_text.strip()
+                  html = re.sub(r'^```[a-z]*\n?', '', html, flags=re.I)
+                  html = re.sub(r'\n?```$', '', html)
+                  ok, hit = is_vanilla(html)
+              except Exception as e:
+                  print(f'Strict retry failed: {e}')
+              if not ok:
+                  fail(f'Model kept producing non-vanilla output (last match: /{hit}/).')
 
-              for extra in range(1, 3):  # up to 2 extra attempts
-                  try:
-                      files2 = call_backend(strict_ask)
-                      texts2 = {k: v for k, v in (files2 or {}).items() if isinstance(v, str)}
-                      page2 = texts2.get('index.html') or next((v for k, v in texts2.items() if k.lower().endswith('.html')), '')
-                      css2  = texts2.get('style.css')  or next((v for k, v in texts2.items() if k.lower().endswith('.css')),  '')
-                      js2   = texts2.get('script.js')  or next((v for k, v in texts2.items() if k.lower().endswith('.js')),   '')
-                      if '<html' not in page2.lower():
-                          print('Extra attempt %d: no index.html, retrying.' % extra)
-                          continue
-                      if css2:
-                          tag = '<style>\n' + css2 + '\n</style>'
-                          page2, n = re.subn(r'<link[^>]*href=["\']\.?/?style\.css["\'][^>]*>', lambda m: tag, page2, count=1, flags=re.I)
-                          if n == 0:
-                              page2 = page2.replace('</head>', tag + '\n</head>', 1) if '</head>' in page2 else tag + '\n' + page2
-                      if js2:
-                          tag = '<script>\n' + js2.replace('</script>', '<\\/script>') + '\n</script>'
-                          page2, n = re.subn(r'<script[^>]*src=["\']\.?/?script\.js["\'][^>]*>\s*</script>', lambda m: tag, page2, count=1, flags=re.I)
-                          if n == 0:
-                              page2 = page2.replace('</body>', tag + '\n</body>', 1) if '</body>' in page2 else page2 + '\n' + tag
-                      ok2, hit2 = is_vanilla(page2)
-                      if ok2:
-                          print('Extra attempt %d produced clean vanilla JS. Using it.' % extra)
-                          page = page2
-                          ok, hit = True, None
-                          break
-                      else:
-                          print('Extra attempt %d still matched /%s/.' % (extra, hit2))
-                  except Exception as e:
-                      print('Extra attempt %d errored: %s' % (extra, str(e)[:200]))
+          # ---------- Write file ----------
+          (out / filename).write_text(html.rstrip() + '\n', encoding='utf-8')
+          print(f'Wrote projects/{filename} ({len(html)} bytes)')
 
-          if not ok:
-              fail('Model kept producing non-vanilla output (last match: /%s/). '
-                   'Try rephrasing the prompt or rerun.' % hit)
-
-          # =========================================================
-          # Write file + manifest + gallery
-          # =========================================================
-          (out / filename).write_text(page.rstrip() + '\n', encoding='utf-8')
-          print('Wrote projects/' + filename + ' (%d bytes)' % len(page))
-
+          # ---------- Manifest ----------
           mpath = out / 'projects.json'
           try:
               manifest = json.loads(mpath.read_text(encoding='utf-8'))
@@ -288,6 +240,7 @@ jobs:
           })
           mpath.write_text(json.dumps(manifest, indent=2) + '\n', encoding='utf-8')
 
+          # ---------- Gallery ----------
           GALLERY = '''<!DOCTYPE html>
           <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
           <title>Ariotica Projects</title>
@@ -326,17 +279,17 @@ jobs:
               links = []
               for idx, i in enumerate(items):
                   cls = 'v latest' if idx == 0 else 'v'
-                  links.append('<a class="%s" href="projects/%s">v%d</a>' % (cls, H.escape(i['file']), i['version']))
+                  links.append('<a class="%s" href="projects/%s">v%d</a>' % (cls, i['file'], i['version']))
               when = latest['created'][:16].replace('T', ' ')
               cards.append(
                   '<article class="card"><h2>%s<span class="badge">vanilla JS</span></h2>'
                   '<p class="prompt">%s</p><div class="vs">%s</div>'
                   '<p class="meta">latest v%d &middot; %s UTC</p></article>'
-                  % (H.escape(name), H.escape(latest['prompt'][:240]), ''.join(links), latest['version'], H.escape(when)))
+                  % (name, latest['prompt'][:240], ''.join(links), latest['version'], when))
           body = '\n'.join(cards) if cards else '<p class="empty">Nothing yet.</p>'
           Path('index.html').write_text(GALLERY.replace('%%CARDS%%', body), encoding='utf-8')
 
-          # Outputs + summary
+          # ---------- Outputs + summary ----------
           repo = os.environ.get('GITHUB_REPOSITORY', 'suryasticsai/Ariotica')
           owner, name_ = repo.split('/', 1)
           base = 'https://%s.github.io/%s/' % (owner, name_)
@@ -346,6 +299,7 @@ jobs:
               f.write('### ✅ Generated `%s`\n\n' % filename)
               f.write('- Project **%s**, version **v%d**%s\n' % (slug, version, (' (improved from v%d)' % improved_from) if improved_from else ''))
               f.write('- Constraint: **pure vanilla JS** (validated)\n')
+              f.write('- Powered by **RAGina API** (no API key)\n')
               f.write('- Open it: %sprojects/%s  (live about a minute after the commit)\n' % (base, filename))
               f.write('- All projects: %s\n' % base)
           PYEOF
@@ -361,6 +315,28 @@ jobs:
             echo "Nothing to commit."
             exit 0
           fi
-          git commit -m "feat(projects): ${FILE}"
+          git commit -m "feat(projects): ${FILE} (issue #${{ steps.parse.outputs.issue }})"
           git pull --rebase
           git push
+
+      - name: Comment on the issue
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE: ${{ steps.parse.outputs.issue }}
+          FILE:  ${{ steps.gen.outputs.file }}
+        run: |
+          if [ -n "$FILE" ]; then
+            gh issue comment "$ISSUE" --body "✅ Generated \`$FILE\`.
+
+          Live in ~1 min: https://suryasticsai.github.io/Ariotica/projects/$FILE"
+          else
+            gh issue comment "$ISSUE" --body "❌ Generation failed. Check the Actions log."
+          fi
+
+      - name: Close the issue
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE: ${{ steps.parse.outputs.issue }}
+        run: gh issue close "$ISSUE"
