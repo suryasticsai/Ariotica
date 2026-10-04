@@ -1,1 +1,10 @@
-[]
+[
+  {
+    "project": "helloapp",
+    "file": "helloapp.html",
+    "prompt": "A board with hello world card on simple html card",
+    "created": "2026-10-04T17:24:06",
+    "improved": false,
+    "provider": "RAGina"
+  }
+]
