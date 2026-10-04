@@ -1,7 +1,7 @@
 {
   "runId": "1791139225068",
   "started": "2026-10-04T18:40:25.069Z",
-  "updated": "2026-10-04T18:40:30.101Z",
+  "updated": "2026-10-04T18:40:31.046Z",
   "status": "running",
   "steps": [
     {
@@ -13,6 +13,13 @@
       "name": "Build RAG context",
       "status": "done",
       "at": "2026-10-04T18:40:30.101Z"
+    },
+    {
+      "name": "Generate with AI",
+      "status": "running",
+      "at": "2026-10-04T18:40:31.046Z",
+      "promptChars": 837,
+      "ragRefs": "none"
     }
   ],
   "draft": "",
