@@ -16,4 +16,34 @@
   }
   .board {
     display:flex;
-    flex-wrap
+    flex-wrap:wrap;
+    gap:20px;
+    max-width: 800px;
+    width:100%;
+    padding:20px;
+    box-sizing:border-box;
+  }
+  .card {
+    background:#fff;
+    border-radius:8px;
+    padding:20px;
+    box-shadow:0 4px 8px rgba(0,0,0,0.1);
+    flex:1 1 200px;
+    text-align:center;
+  }
+  .card:hover {
+    box-shadow:0 6px 12px rgba(0,0,0,0.15);
+  }
+</style>
+</head>
+<body>
+<div class="board">
+  <div class="card">Hello World</div>
+</div>
+<script>
+  // No runtime network or external dependencies. All functionality is built into
+  // the static structure above. The simple application displays a card with
+  // "Hello World" text inside a responsive board layout.
+</script>
+</body>
+</html>
