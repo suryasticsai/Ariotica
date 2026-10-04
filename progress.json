@@ -1,7 +1,7 @@
 {
   "runId": "1791139225068",
   "started": "2026-10-04T18:40:25.069Z",
-  "updated": "2026-10-04T18:45:24.491Z",
+  "updated": "2026-10-04T18:45:29.954Z",
   "status": "running",
   "steps": [
     {
@@ -53,8 +53,9 @@
     },
     {
       "name": "RAGina · attempt 2",
-      "status": "running",
-      "at": "2026-10-04T18:45:24.491Z"
+      "status": "error",
+      "at": "2026-10-04T18:45:29.954Z",
+      "error": "HTTP 500: {\"error\":\"HuggingFace failed: fetch failed\"}"
     }
   ],
   "draft": "",
