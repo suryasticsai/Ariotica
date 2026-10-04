@@ -1,24 +1,44 @@
-name: Ariotica Aigent — Evolve
+name: Ariotica Aigent — Console
 
+# Human-controlled: this workflow NEVER runs on a timer.
+# It only runs when you press a button in the console (index.html).
+#   mode=plan   -> turn your prompt into a plan (or revise the current one)
+#   mode=apply  -> build the plan you approved, exactly once
+#   mode=reset  -> discard the current plan / conversation
 on:
-  schedule:
-    - cron: '*/15 * * * *'
   workflow_dispatch:
+    inputs:
+      mode:
+        description: 'plan | apply | reset'
+        type: choice
+        required: true
+        default: plan
+        options:
+          - plan
+          - apply
+          - reset
+      prompt:
+        description: 'Your instruction (used by mode=plan)'
+        type: string
+        required: false
+        default: ''
+      plan_rev:
+        description: 'Plan revision you approved (used by mode=apply)'
+        type: string
+        required: false
+        default: ''
 
 permissions:
   contents: write
 
 concurrency:
-  group: evolve-ariotica
+  group: ariotica-console
   cancel-in-progress: false
 
 jobs:
-  evolve:
+  console:
     runs-on: ubuntu-latest
-
-    # Scheduled runs only proceed if the user sets the repo variable
-    # SCHEDULE_ENABLED=true. Manual runs always proceed.
-    if: github.event_name == 'workflow_dispatch' || vars.SCHEDULE_ENABLED == 'true'
+    timeout-minutes: 10
 
     steps:
       - uses: actions/checkout@v4
@@ -28,170 +48,261 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install Playwright (for headless RAGina)
-        run: |
-          npm init -y
-          npm i playwright
-          npx playwright install chromium --with-deps
-
-      - name: Plan and optionally apply with RAGina
+      - name: Run console action
         env:
-          AUTO_APPLY: 'true'
-          SCHEDULE_ENABLED: ${{ vars.SCHEDULE_ENABLED }}
+          # Passed through env (never pasted into the script) so a prompt can't inject shell/JS.
+          MODE: ${{ inputs.mode }}
+          PROMPT: ${{ inputs.prompt }}
+          PLAN_REV: ${{ inputs.plan_rev }}
+          RAGINA_ENDPOINT: https://ragina-crawler-ragina.vercel.app/api/ask
+          RAGINA_MODEL: openai
         run: |
-          node - <<'EOF'
-          const fs = require('fs');
-          const { chromium } = require('playwright');
+          node --input-type=module - <<'EOF'
+          import fs from 'node:fs';
 
-          // ---------- 1. Read current version ----------
+          const START = '<!-- APP:START -->';
+          const END   = '<!-- APP:END -->';
+          const ENDPOINT = process.env.RAGINA_ENDPOINT;
+          const MODEL    = process.env.RAGINA_MODEL || 'openai';
+          const MODE     = (process.env.MODE || '').trim();
+          const PROMPT   = (process.env.PROMPT || '').trim().slice(0, 4000);
+          const PLAN_REV = parseInt(process.env.PLAN_REV || '0', 10) || 0;
+          const now = () => new Date().toISOString();
+
+          // ---------- Read page + state ----------
           const html = fs.readFileSync('index.html', 'utf8');
           const vMatch = html.match(/<meta\s+name="app-version"\s+content="(\d+)"/);
           const current = vMatch ? parseInt(vMatch[1], 10) : 0;
-          const next    = current + 1;
+          const appStart = html.indexOf(START);
+          const appEnd   = html.indexOf(END);
+          if (appStart === -1 || appEnd === -1 || appEnd < appStart) {
+            console.error('index.html is missing the APP:START / APP:END markers.');
+            process.exit(1);
+          }
+          const currentRegion = html.slice(appStart + START.length, appEnd);
 
-          // ---------- 2. Stage logic ----------
-          function stageOf(v) {
-            if (v <= 3) return 'prototype';
-            if (v <= 6) return 'app';
-            return 'features';
+          let state;
+          try { state = JSON.parse(fs.readFileSync('state.json', 'utf8')); }
+          catch { state = { schemaVersion: 1, status: 'empty', prompts: [], plan: null, history: [], planCounter: 0, lastError: null }; }
+          state.prompts ||= [];
+          state.history ||= [];
+          state.planCounter ||= 0;
+          state.status ||= 'empty';
+          state.appVersion = current;
+
+          function addHistory(type, text) {
+            state.history.push({ type, at: now(), text: String(text).slice(0, 300) });
+            if (state.history.length > 50) state.history = state.history.slice(-50);
           }
 
-          const TASKS = {
-            1: 'Create the MINIMAL PROTOTYPE. Pick one tiny useful tool (calculator, note pad, timer, todo). Bare HTML, one working interaction, zero styling. Just prove the idea runs.',
-            2: 'Keep the same tool. Make the core interaction actually work end-to-end. Add input validation so it never crashes on bad input.',
-            3: 'Add minimal styling. Use the brand green #5ab552 as the single accent. Readable typography, centered card layout. One screen only.',
-            4: 'Turn the prototype into a REAL APP: header with the title "Ariotica Aigent", a clear primary action, visible state, disabled states for invalid actions, keyboard support.',
-            5: 'Polish the UI: responsive layout, hover/active states, empty states, and small transitions. Make it feel finished and professional.',
-            6: 'Add persistence: save app state to localStorage and restore on reload. Add a "reset" action that clears state.'
-          };
-
-          const FEATURE_POOL = [
-            'Add keyboard shortcuts for every primary action.',
-            'Add a settings panel that persists preferences to localStorage.',
-            'Add a share button that copies a URL containing the current state (in the hash).',
-            'Add a recent-history panel (last 10 actions) with click-to-restore.',
-            'Add a light/dark theme toggle that respects prefers-color-scheme.',
-            'Add undo/redo for the last 20 actions.',
-            'Add JSON import/export of the app state.',
-            'Add a help overlay explaining every control.',
-            'Add offline support with a service worker and an installable manifest.',
-            'Add a stats panel: total actions, most-used feature, session time.'
-          ];
-
-          function taskFor(v) {
-            if (v <= 6) return { kind: stageOf(v), text: TASKS[v] };
-            const idx = (v - 7) % FEATURE_POOL.length;
-            return {
-              kind: 'features',
-              text: FEATURE_POOL[idx],
-              cycle: Math.floor((v - 7) / FEATURE_POOL.length) + 1
-            };
-          }
-
-          const task  = taskFor(next);
-          const stage = stageOf(next);
-          const stageGoal = {
-            prototype: 'Get the smallest working version of the idea.',
-            app:       'Turn the working prototype into a real, polished app.',
-            features:  'Add the next feature without breaking anything.'
-          }[stage];
-
-          const upgradePrompt = [
-            'You are evolving "Ariotica Aigent", a small vanilla-JS app that lives in a single index.html file.',
-            '',
-            'Brand: Ariotica Aigent — dark base, gothic green accent (#5ab552), monospace-flavored UI.',
-            'Current version: v' + current,
-            'Next version:    v' + next,
-            'Stage:           ' + stage,
-            'Stage goal:      ' + stageGoal,
-            '',
-            'TASK FOR THIS STEP:',
-            task.text,
-            (task.cycle && task.cycle > 1
-              ? '\n(This is cycle ' + task.cycle + ' through the feature pool — extend or improve the idea rather than repeating earlier work.)'
-              : ''),
-            '',
-            'HARD RULES — follow exactly:',
-            '1. Single self-contained index.html. HTML, CSS, JS all inline. No build step, no external files, no frameworks, no libraries.',
-            '2. Rewrite ONLY the content between the markers:',
-            '       <!-- APP:START -->',
-            '       <!-- APP:END -->',
-            '   Everything outside those markers (header, dashboard, roadmap, plan viewer, all dashboard <style> and the plan-loading <script>) MUST stay byte-for-byte identical.',
-            '3. You may add your own <style> and <script> blocks INSIDE the APP region.',
-            '4. Bump <meta name="app-version" content="' + current + '"> to content="' + next + '".',
-            '5. Everything from previous versions must keep working. No regressions.',
-            '6. Return the COMPLETE updated index.html. No explanations, no markdown fences, no commentary — just the file.',
-            '',
-            'Here is the current index.html:',
-            '',
-            html
-          ].join('\n');
-
-          const roadmap = [];
-          for (let v = 1; v <= Math.max(next + 4, 10); v++) {
-            const t = taskFor(v);
-            roadmap.push({
-              v: v,
-              stage: t.kind,
-              text: t.text,
-              status: v < next ? 'done' : v === next ? 'next' : 'todo'
-            });
-          }
-
-          const plan = {
-            generatedAt: new Date().toISOString(),
-            app: 'Ariotica Aigent',
-            currentVersion: current,
-            nextVersion: next,
-            stage: stage,
-            stageGoal: stageGoal,
-            task: task.text,
-            scheduleEnabled: process.env.SCHEDULE_ENABLED === 'true',
-            roadmap: roadmap,
-            upgradePrompt: upgradePrompt
-          };
-
-          fs.writeFileSync('plan.json', JSON.stringify(plan, null, 2));
-          console.log('Plan ready: v' + current + ' -> v' + next + ' (' + stage + ')');
-          console.log('Schedule enabled: ' + plan.scheduleEnabled);
-
-          // ---------- 4. Auto-apply with RAGina ----------
-          if (process.env.AUTO_APPLY !== 'true') {
-            console.log('AUTO_APPLY is not true — skipping code generation.');
-            process.exit(0);
-          }
-
-          console.log('Launching headless browser to run RAGina...');
-          const browser = await chromium.launch();
-          const page = await browser.newPage();
-
-          await page.setContent(
-            '<html><body><script src="https://suryasticsai.github.io/RAGina/ragina-t4.js"></script></body></html>',
-            { waitUntil: 'networkidle' }
-          );
-
-          const newHtml = await page.evaluate(async (prompt) => {
-            if (typeof RAGina === 'undefined' || typeof RAGina.runAgent !== 'function') {
-              throw new Error('RAGina failed to load or runAgent is missing.');
+          // ---------- Backend ----------
+          async function ask(prompt) {
+            let lastErr;
+            for (let attempt = 1; attempt <= 3; attempt++) {
+              try {
+                const res = await fetch(ENDPOINT, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ prompt, model: MODEL }),
+                  signal: AbortSignal.timeout(180000)
+                });
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                if (data.error) throw new Error(String(data.error));
+                const text = data.text || data.choices?.[0]?.message?.content || data.response || '';
+                if (!text.trim()) throw new Error('empty response');
+                return text;
+              } catch (err) {
+                lastErr = err;
+                console.warn('Attempt ' + attempt + '/3 failed: ' + err.message);
+                if (attempt < 3) await new Promise((r) => setTimeout(r, attempt * 5000));
+              }
             }
-            return await RAGina.runAgent(prompt, { maxSteps: 3 });
-          }, upgradePrompt);
-
-          await browser.close();
-
-          if (newHtml && newHtml.includes('<html')) {
-            const cleanHtml = newHtml.trim().replace(/^```[a-z]*\n?/i, '').replace(/\n?```$/, '');
-            fs.writeFileSync('index.html', cleanHtml);
-            console.log('index.html updated to v' + next + ' by RAGina.');
-          } else {
-            console.error('RAGina did not return valid HTML. Skipping update.');
+            throw new Error('RAGina backend failed: ' + lastErr.message);
           }
+
+          // ---------- Plan helpers ----------
+          function list(x) {
+            return Array.isArray(x) ? x.map((s) => String(s).trim().slice(0, 300)).filter(Boolean).slice(0, 12) : [];
+          }
+
+          function parsePlan(text) {
+            const s = text.indexOf('{'), e = text.lastIndexOf('}');
+            if (s === -1 || e < s) throw new Error('The plan reply was not JSON.');
+            let o;
+            try { o = JSON.parse(text.slice(s, e + 1)); }
+            catch { throw new Error('The plan reply was not valid JSON.'); }
+            const plan = {
+              title: String(o.title || '').trim().slice(0, 120),
+              summary: String(o.summary || '').trim().slice(0, 800),
+              steps: list(o.steps),
+              acceptance: list(o.acceptance),
+              risks: list(o.risks)
+            };
+            if (!plan.title || plan.steps.length === 0) throw new Error('The plan had no title or no steps.');
+            return plan;
+          }
+
+          function buildPlanPrompt(prompts, prevPlan) {
+            const lines = [
+              'You are the planning assistant inside "Ariotica Aigent Console", a human-controlled tool that evolves a small vanilla-JS app living in ONE region of a web page.',
+              'The human gives instructions; you turn them into a concrete build plan. Do NOT write code now.',
+              '',
+              'CURRENT APP (version v' + current + ') — contents of the APP region (a placeholder means nothing is built yet):',
+              currentRegion.trim().slice(0, 15000),
+              '',
+              'CONVERSATION SO FAR (oldest first):'
+            ];
+            prompts.forEach((p) => lines.push(p.n + '. ' + p.text));
+            if (prevPlan) {
+              lines.push('', 'LATEST PLAN (revise it to satisfy the newest instruction; keep whatever the human did not object to):',
+                JSON.stringify({ title: prevPlan.title, summary: prevPlan.summary, steps: prevPlan.steps, acceptance: prevPlan.acceptance, risks: prevPlan.risks }));
+            }
+            lines.push(
+              '',
+              'CONSTRAINTS FOR THE FUTURE BUILD: one self-contained HTML/CSS/JS region, vanilla only, no libraries, no network calls, dark base with green #5ab552 accent and monospace-flavored UI, root element #app-root, everything built earlier must keep working.',
+              '',
+              'Reply with ONLY a JSON object, no markdown fences, no commentary, in exactly this shape:',
+              '{"title":"short name","summary":"2-3 sentences","steps":["concrete build step"],"acceptance":["observable check"],"risks":["risk or open question"]}',
+              'Use 3-8 steps, 2-5 acceptance checks and 0-3 risks.'
+            );
+            return lines.join('\n');
+          }
+
+          function buildApplyPrompt(plan) {
+            return [
+              'You are building the next version of "Ariotica Aigent", a small vanilla-JS app. You control ONE region of a page.',
+              'The human has reviewed and APPROVED the plan below. Implement exactly this plan — nothing more, nothing less.',
+              '',
+              'Current version: v' + current + '  ->  next version: v' + (current + 1),
+              '',
+              'APPROVED PLAN:',
+              JSON.stringify({ title: plan.title, summary: plan.summary, steps: plan.steps, acceptance: plan.acceptance }),
+              '',
+              'HARD RULES — follow exactly:',
+              '1. Reply with ONLY the replacement contents of the APP region. No <html>, <head>, <body> or <!DOCTYPE>. No ' + START + ' / ' + END + ' markers. No markdown fences. No commentary.',
+              '2. Pure HTML + inline <style> + inline <script>. No external files, no frameworks, no libraries, no network calls.',
+              '3. Keep one root element with id="app-root" wrapping the whole app.',
+              '4. Everything from previous versions must keep working. No regressions.',
+              '5. Scope your CSS to #app-root so it cannot restyle the page around it.',
+              '',
+              'Here is the CURRENT contents of the APP region:',
+              '',
+              currentRegion.trim()
+            ].join('\n');
+          }
+
+          // ---------- Region helpers ----------
+          function cleanRegion(raw) {
+            let t = raw.trim();
+            const s = t.indexOf(START), e = t.indexOf(END);
+            if (s !== -1 && e > s) t = t.slice(s + START.length, e);
+            t = t.replace(/^```[a-z]*\s*\n?/i, '').replace(/\n?```\s*$/, '').trim();
+            return t;
+          }
+
+          function validate(region) {
+            const count = (re) => (region.match(re) || []).length;
+            if (region.length < 40) return 'region is too short';
+            if (/<!doctype|<html|<head[\s>]|<body[\s>]|<\/body>|<\/html>/i.test(region)) return 'contains page-level tags';
+            if (region.includes(START) || region.includes(END)) return 'contains APP markers';
+            if (count(/<script\b/gi) !== count(/<\/script>/gi)) return 'unbalanced <script> tags';
+            if (count(/<style\b/gi) !== count(/<\/style>/gi)) return 'unbalanced <style> tags';
+            if (!/id=["']app-root["']/.test(region)) return 'missing #app-root';
+            return null;
+          }
+
+          // ---------- Modes ----------
+          async function main() {
+            if (MODE === 'plan') {
+              if (!PROMPT) throw new Error('Empty prompt.');
+              const continuing = state.status === 'planned' && !!state.plan;
+              const prompts = continuing ? [...state.prompts] : [];
+              prompts.push({ n: prompts.length + 1, text: PROMPT, at: now() });
+
+              console.log((continuing ? 'Revising' : 'Drafting') + ' plan from ' + prompts.length + ' prompt(s)...');
+              const plan = parsePlan(await ask(buildPlanPrompt(prompts, continuing ? state.plan : null)));
+
+              state.planCounter += 1;
+              state.plan = { rev: state.planCounter, ...plan, generatedAt: now() };
+              state.prompts = prompts;
+              state.status = 'planned';
+              state.lastError = null;
+              addHistory('plan', 'Plan rev ' + state.plan.rev + (continuing ? ' (revised)' : '') + ': ' + plan.title);
+              console.log('Plan rev ' + state.plan.rev + ' ready.');
+              return;
+            }
+
+            if (MODE === 'apply') {
+              if (state.status !== 'planned' || !state.plan) {
+                throw new Error('Nothing to build: there is no open plan (status: ' + state.status + ').');
+              }
+              if (state.plan.rev !== PLAN_REV) {
+                throw new Error('Plan changed: you approved rev ' + PLAN_REV + ' but the current plan is rev ' + state.plan.rev + '.');
+              }
+              const next = current + 1;
+              console.log('Building v' + next + ' from plan rev ' + PLAN_REV + '...');
+              const region = cleanRegion(await ask(buildApplyPrompt(state.plan)));
+              const problem = validate(region);
+              if (problem) throw new Error('Generated code rejected: ' + problem + '. index.html left unchanged.');
+
+              // Splice into the ORIGINAL file so everything outside the markers stays byte-identical.
+              let out = html.slice(0, appStart + START.length) + '\n' + region + '\n    ' + html.slice(appEnd);
+              if (vMatch) out = out.replace(/(<meta\s+name="app-version"\s+content=")\d+(")/, (m, a, b) => a + next + b);
+              fs.writeFileSync('index.html', out);
+
+              state.appVersion = next;
+              state.status = 'built';
+              state.plan.builtAt = now();
+              state.plan.builtVersion = next;
+              state.lastError = null;
+              addHistory('build', 'Built v' + next + ' from plan rev ' + state.plan.rev + ': ' + state.plan.title);
+              console.log('index.html updated to v' + next + '.');
+              return;
+            }
+
+            if (MODE === 'reset') {
+              state.plan = null;
+              state.prompts = [];
+              state.status = current > 0 ? 'built' : 'empty';
+              state.lastError = null;
+              addHistory('reset', 'Plan discarded.');
+              console.log('Reset.');
+              return;
+            }
+
+            throw new Error('Unknown mode "' + MODE + '".');
+          }
+
+          let ok = true;
+          try {
+            await main();
+          } catch (err) {
+            ok = false;
+            const message = String((err && err.message) || err).slice(0, 300);
+            state.lastError = { message, mode: MODE, at: now() };
+            addHistory('error', MODE + ' failed: ' + message);
+            console.error(message);
+          }
+
+          state.updatedAt = now();
+          fs.writeFileSync('state.json', JSON.stringify(state, null, 2) + '\n');
+          if (!ok) process.exitCode = 1;
           EOF
 
+      # Runs even when the step above failed, so errors are recorded in state.json.
       - name: Commit changes
+        if: always()
+        env:
+          MODE: ${{ inputs.mode }}
         run: |
           git config user.name  "ariotica-bot"
           git config user.email "ariotica-bot@users.noreply.github.com"
-          git add plan.json index.html
-          git diff --staged --quiet || git commit -m "chore(ariotica): evolve via RAGina"
+          git add state.json index.html
+          if git diff --staged --quiet; then
+            echo "Nothing to commit."
+            exit 0
+          fi
+          git commit -m "chore(console): ${MODE}"
+          git pull --rebase
           git push
