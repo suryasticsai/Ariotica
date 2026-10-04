@@ -1,9 +1,15 @@
 {
   "runId": "1791139225068",
   "started": "2026-10-04T18:40:25.069Z",
-  "updated": "2026-10-04T18:40:25.069Z",
+  "updated": "2026-10-04T18:40:26.640Z",
   "status": "running",
-  "steps": [],
+  "steps": [
+    {
+      "name": "Parse issue",
+      "status": "running",
+      "at": "2026-10-04T18:40:26.640Z"
+    }
+  ],
   "draft": "",
   "draftSize": 0,
   "error": null
