@@ -1,8 +1,11 @@
 // generate.js — agentic code generator with multi-scanner security audit.
 // Providers: GitHub Models → uncloseai → OVHcloud → KeylessAI → Pollinations
 // Scanners:  custom heuristics + ESLint + Sparrow SAST (+ SonarCloud via workflow)
+// Files:     projects/<slug>.html
+// Manifest:  projects.json (at repo root)
 const { Octokit } = require('@octokit/rest');
 
+const PROJECTS_DIR  = 'projects';
 const MANIFEST_PATH = 'projects.json';
 const PROGRESS_PATH = 'progress.json';
 const POLL_POST     = 'https://text.pollinations.ai/openai';
@@ -249,46 +252,45 @@ async function askAI(prompt) {
 }
 
 /* ============================================================
-   SECURITY SCANNERS — combined pipeline
+   SECURITY SCANNERS
    ============================================================ */
 
-/* --- 1. Custom heuristics (targeted XSS / secrets / injection) --- */
+/* --- 1. Custom heuristics --- */
 function customAudit(html) {
   const findings = [];
   if (/\.innerHTML\s*=\s*(?!['"`])/.test(html))
-    findings.push({ sev: 'high', type: 'xss', msg: 'innerHTML from variable — use textContent' });
+    findings.push({ sev: 'high', type: 'custom', msg: 'innerHTML from variable — use textContent' });
   if (/\beval\s*\(/.test(html) || /\bnew\s+Function\s*\(/.test(html))
-    findings.push({ sev: 'high', type: 'injection', msg: 'eval/Function constructor' });
+    findings.push({ sev: 'high', type: 'custom', msg: 'eval/Function constructor' });
   if (/document\.write\s*\(/.test(html))
-    findings.push({ sev: 'medium', type: 'xss', msg: 'document.write() is unsafe' });
+    findings.push({ sev: 'medium', type: 'custom', msg: 'document.write() is unsafe' });
   const inline = html.match(/on\w+\s*=\s*["'][^"']*["']/gi) || [];
   const bad = inline.filter(h => /eval|Function|innerHTML/i.test(h));
   if (bad.length)
-    findings.push({ sev: 'medium', type: 'xss', msg: `${bad.length} suspicious inline handler(s)` });
+    findings.push({ sev: 'medium', type: 'custom', msg: `${bad.length} suspicious inline handler(s)` });
   const secretRe = [
     /(?:api[_-]?key|secret|token|password)\s*[:=]\s*["'][A-Za-z0-9_\-]{16,}["']/i,
     /sk-[A-Za-z0-9]{20,}/, /ghp_[A-Za-z0-9]{36}/,
   ];
   for (const re of secretRe) if (re.test(html)) {
-    findings.push({ sev: 'high', type: 'secret', msg: 'possible hardcoded secret' }); break;
+    findings.push({ sev: 'high', type: 'custom', msg: 'possible hardcoded secret' }); break;
   }
   if (/<form[^>]+action\s*=\s*["']https?:\/\//i.test(html))
-    findings.push({ sev: 'medium', type: 'exfiltration', msg: 'external form action' });
+    findings.push({ sev: 'medium', type: 'custom', msg: 'external form action' });
   if (/<iframe[^>]+src\s*=\s*["']https?:\/\//i.test(html))
-    findings.push({ sev: 'low', type: 'embedding', msg: 'external iframe' });
+    findings.push({ sev: 'low', type: 'custom', msg: 'external iframe' });
   if (/target\s*=\s*["']_blank["'](?![^>]*rel\s*=\s*["'][^"']*noopener)/i.test(html))
-    findings.push({ sev: 'low', type: 'tabnabbing', msg: 'no rel=noopener' });
+    findings.push({ sev: 'low', type: 'custom', msg: 'no rel=noopener on target="_blank"' });
   return findings;
 }
 
-/* --- 2. ESLint (in-process via npm) --- */
+/* --- 2. ESLint (in-process) --- */
 async function eslintAudit(html) {
   const findings = [];
   try {
     const { Linter } = require('eslint');
     const linter = new Linter();
 
-    // Extract <script> blocks (skip src= ones — those are already forbidden)
     const scriptBlocks = [];
     const re = /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi;
     let m;
@@ -306,7 +308,7 @@ async function eslintAudit(html) {
       'no-unsafe-negation': 'error',
       'no-unsafe-optional-chaining': 'error',
       'no-unused-vars': 'warn',
-      'no-undef': 'off', // browser globals not declared
+      'no-undef': 'off',
       'no-empty': 'warn',
       'no-constant-condition': 'warn',
       'no-dupe-keys': 'error',
@@ -325,14 +327,14 @@ async function eslintAudit(html) {
             window: 'readonly', document: 'readonly', console: 'readonly',
             localStorage: 'readonly', sessionStorage: 'readonly',
             fetch: 'readonly', setTimeout: 'readonly', setInterval: 'readonly',
-            clearTimeout: 'readonly', clearInterval: 'readonly', alert: 'readonly',
-            confirm: 'readonly', prompt: 'readonly', navigator: 'readonly',
-            location: 'readonly', history: 'readonly', URL: 'readonly',
-            Blob: 'readonly', FileReader: 'readonly', Image: 'readonly',
+            clearTimeout: 'readonly', clearInterval: 'readonly',
+            alert: 'readonly', confirm: 'readonly', prompt: 'readonly',
+            navigator: 'readonly', location: 'readonly', history: 'readonly',
+            URL: 'readonly', Blob: 'readonly', FileReader: 'readonly',
+            Image: 'readonly', Event: 'readonly', CustomEvent: 'readonly',
+            Node: 'readonly', Element: 'readonly', HTMLElement: 'readonly',
             requestAnimationFrame: 'readonly', cancelAnimationFrame: 'readonly',
             MutationObserver: 'readonly', IntersectionObserver: 'readonly',
-            CustomEvent: 'readonly', Event: 'readonly', Node: 'readonly',
-            HTMLElement: 'readonly', Element: 'readonly', CustomEvent: 'readonly',
           },
         },
         rules,
@@ -356,7 +358,6 @@ async function eslintAudit(html) {
 async function sparrowAudit(html) {
   const findings = [];
   try {
-    // Sparrow works on files — write to a temp file and scan
     const fs = require('fs');
     const path = require('path');
     const os = require('os');
@@ -396,27 +397,20 @@ async function sparrowAudit(html) {
   return findings;
 }
 
-/* --- Combined scanner --- */
+/* --- Combined --- */
 async function runAllScanners(html) {
   const results = { custom: [], eslint: [], sparrow: [] };
 
   results.custom = customAudit(html);
 
-  try {
-    results.eslint = await eslintAudit(html);
-  } catch (e) { console.log('eslint scan error:', e.message); }
+  try { results.eslint = await eslintAudit(html); }
+  catch (e) { console.log('eslint scan error:', e.message); }
 
-  try {
-    results.sparrow = await sparrowAudit(html);
-  } catch (e) { console.log('sparrow scan error:', e.message); }
+  try { results.sparrow = await sparrowAudit(html); }
+  catch (e) { console.log('sparrow scan error:', e.message); }
 
-  const all = [
-    ...results.custom,
-    ...results.eslint,
-    ...results.sparrow,
-  ];
+  const all = [...results.custom, ...results.eslint, ...results.sparrow];
 
-  // Deduplicate by message prefix
   const seen = new Set();
   const deduped = [];
   for (const f of all) {
@@ -430,12 +424,12 @@ async function runAllScanners(html) {
     findings: deduped,
     counts: {
       total: deduped.length,
-      high: deduped.filter(f => f.sev === 'high').length,
+      high:   deduped.filter(f => f.sev === 'high').length,
       medium: deduped.filter(f => f.sev === 'medium').length,
-      low: deduped.filter(f => f.sev === 'low').length,
+      low:    deduped.filter(f => f.sev === 'low').length,
       byTool: {
-        custom: results.custom.length,
-        eslint: results.eslint.length,
+        custom:  results.custom.length,
+        eslint:  results.eslint.length,
         sparrow: results.sparrow.length,
       },
     },
@@ -454,11 +448,16 @@ function resolveInputs() {
     issue: null,
   };
   const title = process.env.ISSUE_TITLE || '';
-  const body = process.env.ISSUE_BODY || '';
-  const num = parseInt(process.env.ISSUE_NUMBER || '0', 10);
+  const body  = process.env.ISSUE_BODY  || '';
+  const num   = parseInt(process.env.ISSUE_NUMBER || '0', 10);
   const m = title.match(/^\[BUILD\]\s+([A-Za-z0-9 _-]+?)(?:\s*\[(improve|fix|audit|delete)\])?\s*$/);
   if (!m) throw new Error('Title must be: [BUILD] name [improve|fix|audit|delete]');
-  return { project: m[1].trim(), prompt: body.trim(), mode: (m[2] || 'create').toLowerCase(), issue: num || null };
+  return {
+    project: m[1].trim(),
+    prompt: body.trim(),
+    mode: (m[2] || 'create').toLowerCase(),
+    issue: num || null,
+  };
 }
 
 function slugify(name) {
@@ -494,7 +493,9 @@ async function deleteFile(path, message) {
   try {
     const { data } = await octokit.repos.getContent({ owner: OWNER, repo: REPO, path, ref: BRANCH });
     if (Array.isArray(data)) return false;
-    await octokit.repos.deleteFile({ owner: OWNER, repo: REPO, path, message, sha: data.sha, branch: BRANCH });
+    await octokit.repos.deleteFile({
+      owner: OWNER, repo: REPO, path, message, sha: data.sha, branch: BRANCH,
+    });
     return true;
   } catch (e) { if (e.status === 404) return false; throw e; }
 }
@@ -539,7 +540,9 @@ async function main() {
   const { project, prompt, mode, issue } = await step('Parse issue', async () => resolveInputs());
   const slug = slugify(project);
   if (!slug) throw new Error('Project name needs at least one letter or digit');
-  const filename = `${slug}.html`;
+
+  // >>> Files now live inside projects/ <<<
+  const filename = `${PROJECTS_DIR}/${slug}.html`;
 
   let manifest = [];
   try {
@@ -548,15 +551,19 @@ async function main() {
     if (!Array.isArray(manifest)) manifest = [];
   } catch { manifest = []; }
 
-  // Delete mode
+  // ---- Delete mode ----
   if (mode === 'delete') {
-    const existed = await step('Delete file', () => deleteFile(filename, `chore: delete ${slug}`));
+    // Try new location first, then legacy root location
+    let existed = await deleteFile(filename, `chore: delete ${slug}`);
+    if (!existed) {
+      existed = await deleteFile(`${slug}.html`, `chore: delete legacy ${slug}`);
+    }
     manifest = manifest.filter(e => e.project !== slug);
     await writeFile(MANIFEST_PATH, JSON.stringify(manifest, null, 2) + '\n', `chore: manifest`);
     if (issue) {
       try {
         await octokit.issues.createComment({ owner: OWNER, repo: REPO, issue_number: issue,
-          body: existed ? `🗑 Deleted \`${filename}\`.` : `Did not exist.` });
+          body: existed ? `🗑 Deleted \`${slug}\`.` : `Did not exist.` });
         await octokit.issues.update({ owner: OWNER, repo: REPO, issue_number: issue, state: 'closed' });
       } catch {}
     }
@@ -564,13 +571,25 @@ async function main() {
     return;
   }
 
-  const existing = await readFile(filename);
+  // ---- Load existing (new location first, legacy root second) ----
+  let existing = await readFile(filename);
+  let legacyPath = null;
+  if (!existing) {
+    const legacy = await readFile(`${slug}.html`);
+    if (legacy) {
+      console.log(`Found legacy file at root: ${slug}.html — will migrate to ${filename}`);
+      existing = legacy;
+      legacyPath = `${slug}.html`;
+    }
+  }
+
   if ((mode === 'improve' || mode === 'fix' || mode === 'audit') && !existing) {
     throw new Error(`Cannot ${mode} "${slug}": no existing file.`);
   }
 
-  // Build prompt
+  // ---- Build prompt ----
   let ask, initialFindings = null;
+
   if (mode === 'create' || (!existing && mode !== 'fix' && mode !== 'audit')) {
     ask = existing ? 'Improve the existing app. Keep what works and apply: ' + prompt : prompt;
   } else if (mode === 'improve') {
@@ -594,15 +613,17 @@ async function main() {
     ask = `Fix the security issues below. Keep functionality intact.\n\nFINDINGS:\n${report}\n\nEXTRA: ${prompt || 'none'}\n\nReturn the complete fixed HTML.`;
   }
 
-  // RAG
+  // ---- RAG ----
   const { ctx: ragCtx, refs } = await step('Build RAG context', () =>
-    (mode === 'create' || mode === 'improve') ? buildRagContext(prompt, manifest, slug) : Promise.resolve({ ctx: '', refs: [] })
+    (mode === 'create' || mode === 'improve')
+      ? buildRagContext(prompt, manifest, slug)
+      : Promise.resolve({ ctx: '', refs: [] })
   );
 
   let fullPrompt = RULES + ask + ragCtx;
   if (existing) fullPrompt += '\n\nCURRENT HTML:\n' + existing.slice(0, 14000);
 
-  // Generate
+  // ---- Generate ----
   const { text, provider } = await step('Generate with AI',
     () => askAI(fullPrompt),
     { promptChars: fullPrompt.length, ragRefs: refs.join(', ') || 'none' }
@@ -611,7 +632,7 @@ async function main() {
   let html = stripFences(text);
   if (!isUsable(html)) throw new Error(`${provider} returned unusable HTML`);
 
-  // Validate vanilla
+  // ---- Vanilla retry ----
   let check = isVanilla(html);
   if (!check.ok) {
     currentDraft = html;
@@ -623,7 +644,7 @@ async function main() {
     if (!check.ok) throw new Error(`Still non-vanilla (${check.hit})`);
   }
 
-  // Multi-scanner security audit
+  // ---- Scanners ----
   const security = await step('Security scan (ESLint + Sparrow + heuristics)',
     () => runAllScanners(html),
     { scanners: 'custom + eslint + sparrow' }
@@ -631,21 +652,33 @@ async function main() {
 
   console.log(`Security: ${security.counts.total} total — ${security.counts.high} high, ${security.counts.medium} medium, ${security.counts.low} low`);
 
-  // Commit
-  await step('Commit file', () => writeFile(filename, html,
+  // ---- Commit file to projects/ ----
+  await step(`Commit ${filename}`, () => writeFile(filename, html,
     `feat: ${slug} (${mode})${issue ? ` (issue #${issue})` : ''}`));
 
-  // Manifest
+  // ---- Migrate legacy root file if it exists (create the file's been moved) ----
+  if (legacyPath && mode !== 'create') {
+    try {
+      await deleteFile(legacyPath, `chore: migrate ${slug} to ${PROJECTS_DIR}/`);
+      console.log(`Migrated ${legacyPath} → ${filename}`);
+    } catch (e) {
+      console.log('legacy delete failed (non-fatal):', e.message);
+    }
+  }
+
+  // ---- Manifest ----
   const idx = manifest.findIndex(e => e.project === slug);
   const entry = {
-    project: slug, file: filename,
+    project: slug,
+    file: filename,                // -> projects/<slug>.html
     prompt: prompt.slice(0, 240),
     created: new Date().toISOString().slice(0, 19),
-    mode, provider,
+    mode,
+    provider,
     findings: security.counts.total,
-    findingsHigh: security.counts.high,
+    findingsHigh:   security.counts.high,
     findingsMedium: security.counts.medium,
-    findingsLow: security.counts.low,
+    findingsLow:    security.counts.low,
     scanByTool: security.counts.byTool,
     size: html.length,
   };
@@ -653,7 +686,7 @@ async function main() {
   else manifest[idx] = Object.assign({}, manifest[idx], entry);
   await writeFile(MANIFEST_PATH, JSON.stringify(manifest, null, 2) + '\n', `chore: manifest for ${slug}`);
 
-  // Issue comment
+  // ---- Issue comment ----
   if (issue) {
     const url = `https://${OWNER}.github.io/${REPO}/${filename}`;
     let body = `✅ **${mode}** complete: \`${filename}\` (${(html.length / 1024).toFixed(1)} KB) via **${provider}**\n\n`;
