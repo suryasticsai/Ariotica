@@ -1,95 +1,10 @@
 {
   "runId": "37254297959",
-  "started": "2026-10-05T02:21:38.362Z",
-  "updated": "2026-10-05T02:22:25.421Z",
-  "status": "error",
-  "steps": [
-    {
-      "name": "Parse issue",
-      "status": "done",
-      "at": "2026-10-05T02:21:40.662Z"
-    },
-    {
-      "name": "Build RAG context",
-      "status": "done",
-      "at": "2026-10-05T02:21:43.117Z"
-    },
-    {
-      "name": "Generate with AI",
-      "status": "error",
-      "at": "2026-10-05T02:22:25.421Z",
-      "promptChars": 759,
-      "ragRefs": "none",
-      "error": "All providers failed:\nGitHub Models #1: Unexpected token 'O', \"OK\r\n\" is not valid JSON\nGitHub Models #2: Unexpected token 'O', \"OK\r\n\" is not valid JSON\nuncloseai #1: HTTP 404\nuncloseai #2: HTTP 404\nOVHcloud #1: fetch failed\nOVHcloud #2: fetch failed\nKeylessAI #1: fetch failed\nKeylessAI #2: fetch fai"
-    },
-    {
-      "name": "GitHub Models · attempt 1",
-      "status": "error",
-      "at": "2026-10-05T02:21:46.073Z",
-      "error": "Unexpected token 'O', \"OK\r\n\" is not valid JSON"
-    },
-    {
-      "name": "GitHub Models · attempt 2",
-      "status": "error",
-      "at": "2026-10-05T02:21:51.307Z",
-      "error": "Unexpected token 'O', \"OK\r\n\" is not valid JSON"
-    },
-    {
-      "name": "uncloseai · attempt 1",
-      "status": "error",
-      "at": "2026-10-05T02:21:53.456Z",
-      "error": "HTTP 404"
-    },
-    {
-      "name": "uncloseai · attempt 2",
-      "status": "error",
-      "at": "2026-10-05T02:21:58.871Z",
-      "error": "HTTP 404"
-    },
-    {
-      "name": "OVHcloud · attempt 1",
-      "status": "error",
-      "at": "2026-10-05T02:22:02.254Z",
-      "error": "fetch failed"
-    },
-    {
-      "name": "OVHcloud · attempt 2",
-      "status": "error",
-      "at": "2026-10-05T02:22:08.598Z",
-      "error": "fetch failed"
-    },
-    {
-      "name": "KeylessAI · attempt 1",
-      "status": "error",
-      "at": "2026-10-05T02:22:10.395Z",
-      "error": "fetch failed"
-    },
-    {
-      "name": "KeylessAI · attempt 2",
-      "status": "error",
-      "at": "2026-10-05T02:22:15.479Z",
-      "error": "fetch failed"
-    },
-    {
-      "name": "Pollinations · attempt 1",
-      "status": "error",
-      "at": "2026-10-05T02:22:18.527Z",
-      "error": "HTTP 500"
-    },
-    {
-      "name": "Pollinations · attempt 2",
-      "status": "error",
-      "at": "2026-10-05T02:22:24.426Z",
-      "error": "HTTP 402"
-    },
-    {
-      "name": "Error",
-      "status": "error",
-      "error": "All providers failed:\nGitHub Models #1: Unexpected token 'O', \"OK\r\n\" is not valid JSON\nGitHub Models #2: Unexpected token 'O', \"OK\r\n\" is not valid JSON\nuncloseai #1: HTTP 404\nuncloseai #2: HTTP 404\nOVHcloud #1: fetch failed\nOVHcloud #2: fetch failed\nKeylessAI #1: fetch failed\nKeylessAI #2: fetch failed\nPollinations #1: HTTP 500\nPollinations #2: HTTP 402",
-      "at": "2026-10-05T02:22:25.421Z"
-    }
-  ],
+  "started": "2026-10-05T02:30:09.660Z",
+  "updated": "2026-10-05T02:30:09.660Z",
+  "status": "running",
+  "steps": [],
   "draft": "",
   "draftSize": 0,
-  "error": "All providers failed:\nGitHub Models #1: Unexpected token 'O', \"OK\r\n\" is not valid JSON\nGitHub Models #2: Unexpected token 'O', \"OK\r\n\" is not valid JSON\nuncloseai #1: HTTP 404\nuncloseai #2: HTTP 404\nOVHcloud #1: fetch failed\nOVHcloud #2: fetch failed\nKeylessAI #1: fetch failed\nKeylessAI #2: fetch failed\nPollinations #1: HTTP 500\nPollinations #2: HTTP 402"
+  "error": null
 }
