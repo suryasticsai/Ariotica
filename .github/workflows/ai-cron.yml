@@ -8,13 +8,14 @@ on:
         type: string
         required: true
       prompt:
-        description: 'What should it build?'
+        description: 'What should it build / change / fix?'
         type: string
         required: true
-      improve:
-        description: 'Improve the existing file instead of starting fresh'
-        type: boolean
-        default: false
+      mode:
+        description: 'Mode'
+        type: choice
+        options: [create, improve, fix, audit, delete]
+        default: create
 
   issues:
     types: [opened]
@@ -24,13 +25,15 @@ permissions:
   issues: write
   models: read
 
+concurrency:
+  group: generate-project
+  cancel-in-progress: false
+
 jobs:
   generate:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
 
-    # Only run for issues whose title starts with [BUILD].
-    # workflow_dispatch always runs.
     if: |
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'issues' && startsWith(github.event.issue.title, '[BUILD]'))
@@ -44,8 +47,8 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install Octokit
-        run: npm install @octokit/rest@20
+      - name: Install Octokit + scanners
+        run: npm install @octokit/rest@20 eslint@9 sparrow-sast@1
 
       - name: Generate
         env:
@@ -55,6 +58,6 @@ jobs:
           ISSUE_NUMBER: ${{ github.event.issue.number }}
           DISPATCH_PROJECT: ${{ inputs.project }}
           DISPATCH_PROMPT: ${{ inputs.prompt }}
-          DISPATCH_IMPROVE: ${{ inputs.improve }}
-          RAGINA_URL: 'https://ragina-crawler-ragina.vercel.app/api/ask'
+          DISPATCH_MODE: ${{ inputs.mode }}
+          RUN_ID: ${{ github.run_id }}
         run: node generate.js
