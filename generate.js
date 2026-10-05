@@ -1,5 +1,5 @@
 // generate.js — agentic code generator with multi-scanner security audit.
-// Providers: GitHub Models → uncloseai → OVHcloud → KeylessAI → Pollinations
+// Providers: GitHub Models → api.airforce → OVHcloud → KeylessAI → Pollinations
 // Scanners:  custom heuristics + ESLint + Sparrow SAST (+ SonarCloud via workflow)
 // Files:     projects/<slug>.html
 // Manifest:  projects.json (at repo root)
@@ -123,34 +123,48 @@ async function withTimeout(promise, ms, label) {
 
 const SYS_PROMPT = 'You output raw HTML files only. Start with <!DOCTYPE html>. No markdown fences.';
 
+/* --- 1. GitHub Models (Azure-hosted endpoint — returns real JSON) --- */
 async function callGitHubModels(prompt) {
   const token = process.env.GITHUB_TOKEN;
   if (!token) throw new Error('GITHUB_TOKEN not available');
-  const res = await withTimeout(fetch('https://models.github.ai/inference/chat/completions', {
+  const res = await withTimeout(fetch('https://models.inference.ai.azure.com/chat/completions', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    },
     body: JSON.stringify({
-      model: 'openai/gpt-4o-mini',
-      messages: [{ role: 'system', content: SYS_PROMPT }, { role: 'user', content: prompt }],
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: SYS_PROMPT },
+        { role: 'user', content: prompt },
+      ],
       temperature: 0.5,
     }),
   }), 120000, 'GitHubModels');
-  if (!res.ok) throw new Error(`HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
-  const data = await res.json();
+  const raw = await res.text();
+  if (!res.ok) throw new Error(`HTTP ${res.status}: ${raw.slice(0, 200)}`);
+  let data;
+  try { data = JSON.parse(raw); }
+  catch (e) { throw new Error(`Non-JSON response: ${raw.slice(0, 120)}`); }
   const text = data.choices?.[0]?.message?.content || '';
   if (!text) throw new Error('empty response');
   return text;
 }
 
-async function callUncloseAI(prompt) {
-  const res = await withTimeout(fetch('https://hermes.ai.unturf.com/v1/chat/completions', {
+/* --- 2. api.airforce (keyless community proxy) --- */
+async function callAirforce(prompt) {
+  const res = await withTimeout(fetch('https://api.airforce/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      model: 'Hermes-3-Llama-3.1-8B',
-      messages: [{ role: 'system', content: SYS_PROMPT }, { role: 'user', content: prompt.slice(0, 12000) }],
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: SYS_PROMPT },
+        { role: 'user', content: prompt.slice(0, 12000) },
+      ],
     }),
-  }), 120000, 'uncloseai');
+  }), 120000, 'airforce');
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   const data = await res.json();
   const text = data.choices?.[0]?.message?.content || '';
@@ -158,6 +172,7 @@ async function callUncloseAI(prompt) {
   return text;
 }
 
+/* --- 3. OVHcloud (keyless) --- */
 async function callOVHCloud(prompt) {
   const models = ['Qwen3-Coder-30B-A3B-Instruct', 'gpt-oss-120b', 'Qwen3-32B'];
   let last;
@@ -168,7 +183,10 @@ async function callOVHCloud(prompt) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model,
-          messages: [{ role: 'system', content: SYS_PROMPT }, { role: 'user', content: prompt.slice(0, 12000) }],
+          messages: [
+            { role: 'system', content: SYS_PROMPT },
+            { role: 'user', content: prompt.slice(0, 12000) },
+          ],
         }),
       }), 90000, `OVH-${model}`);
       if (!res.ok) { last = new Error(`${model}: HTTP ${res.status}`); continue; }
@@ -181,13 +199,17 @@ async function callOVHCloud(prompt) {
   throw last || new Error('all OVH models failed');
 }
 
+/* --- 4. KeylessAI --- */
 async function callKeylessAI(prompt) {
   const res = await withTimeout(fetch('https://keylessai.thryx.workers.dev/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       model: 'gpt-4o',
-      messages: [{ role: 'system', content: SYS_PROMPT }, { role: 'user', content: prompt.slice(0, 12000) }],
+      messages: [
+        { role: 'system', content: SYS_PROMPT },
+        { role: 'user', content: prompt.slice(0, 12000) },
+      ],
     }),
   }), 120000, 'KeylessAI');
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -197,6 +219,7 @@ async function callKeylessAI(prompt) {
   return text;
 }
 
+/* --- 5. Pollinations --- */
 async function callPollinations(prompt) {
   const res = await withTimeout(fetch(POLL_POST, {
     method: 'POST',
@@ -206,7 +229,10 @@ async function callPollinations(prompt) {
     },
     body: JSON.stringify({
       model: 'openai',
-      messages: [{ role: 'system', content: SYS_PROMPT }, { role: 'user', content: prompt }],
+      messages: [
+        { role: 'system', content: SYS_PROMPT },
+        { role: 'user', content: prompt },
+      ],
     }),
   }), 120000, 'Pollinations');
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
@@ -219,7 +245,7 @@ async function callPollinations(prompt) {
 async function askAI(prompt) {
   const providers = [
     ['GitHub Models', callGitHubModels],
-    ['uncloseai',     callUncloseAI],
+    ['api.airforce',  callAirforce],
     ['OVHcloud',      callOVHCloud],
     ['KeylessAI',     callKeylessAI],
     ['Pollinations',  callPollinations],
