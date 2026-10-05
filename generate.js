@@ -255,7 +255,6 @@ async function askAI(prompt) {
    SECURITY SCANNERS
    ============================================================ */
 
-/* --- 1. Custom heuristics --- */
 function customAudit(html) {
   const findings = [];
   if (/\.innerHTML\s*=\s*(?!['"`])/.test(html))
@@ -284,7 +283,6 @@ function customAudit(html) {
   return findings;
 }
 
-/* --- 2. ESLint (in-process) --- */
 async function eslintAudit(html) {
   const findings = [];
   try {
@@ -354,7 +352,6 @@ async function eslintAudit(html) {
   return findings;
 }
 
-/* --- 3. Sparrow SAST --- */
 async function sparrowAudit(html) {
   const findings = [];
   try {
@@ -397,7 +394,6 @@ async function sparrowAudit(html) {
   return findings;
 }
 
-/* --- Combined --- */
 async function runAllScanners(html) {
   const results = { custom: [], eslint: [], sparrow: [] };
 
@@ -550,7 +546,6 @@ async function main() {
     if (!Array.isArray(manifest)) manifest = [];
   } catch { manifest = []; }
 
-  // ---- Delete mode ----
   if (mode === 'delete') {
     let existed = await deleteFile(filename, `chore: delete ${slug}`);
     if (!existed) {
@@ -569,7 +564,6 @@ async function main() {
     return;
   }
 
-  // ---- Load existing (new location first, legacy root second) ----
   let existing = await readFile(filename);
   let legacyPath = null;
   if (!existing) {
@@ -585,7 +579,6 @@ async function main() {
     throw new Error(`Cannot ${mode} "${slug}": no existing file.`);
   }
 
-  // ---- Build prompt ----
   let ask, initialFindings = null;
 
   if (mode === 'create' || (!existing && mode !== 'fix' && mode !== 'audit')) {
@@ -611,7 +604,6 @@ async function main() {
     ask = `Fix the security issues below. Keep functionality intact.\n\nFINDINGS:\n${report}\n\nEXTRA: ${prompt || 'none'}\n\nReturn the complete fixed HTML.`;
   }
 
-  // ---- RAG ----
   const { ctx: ragCtx, refs } = await step('Build RAG context', () =>
     (mode === 'create' || mode === 'improve')
       ? buildRagContext(prompt, manifest, slug)
@@ -621,7 +613,6 @@ async function main() {
   let fullPrompt = RULES + ask + ragCtx;
   if (existing) fullPrompt += '\n\nCURRENT HTML:\n' + existing.slice(0, 14000);
 
-  // ---- Generate ----
   const { text, provider } = await step('Generate with AI',
     () => askAI(fullPrompt),
     { promptChars: fullPrompt.length, ragRefs: refs.join(', ') || 'none' }
@@ -630,7 +621,6 @@ async function main() {
   let html = stripFences(text);
   if (!isUsable(html)) throw new Error(`${provider} returned unusable HTML`);
 
-  // ---- Vanilla retry ----
   let check = isVanilla(html);
   if (!check.ok) {
     currentDraft = html;
@@ -642,7 +632,6 @@ async function main() {
     if (!check.ok) throw new Error(`Still non-vanilla (${check.hit})`);
   }
 
-  // ---- Scanners ----
   const security = await step('Security scan (ESLint + Sparrow + heuristics)',
     () => runAllScanners(html),
     { scanners: 'custom + eslint + sparrow' }
@@ -650,11 +639,9 @@ async function main() {
 
   console.log(`Security: ${security.counts.total} total — ${security.counts.high} high, ${security.counts.medium} medium, ${security.counts.low} low`);
 
-  // ---- Commit file to projects/ ----
   await step(`Commit ${filename}`, () => writeFile(filename, html,
     `feat: ${slug} (${mode})${issue ? ` (issue #${issue})` : ''}`));
 
-  // ---- Migrate legacy root file if it exists ----
   if (legacyPath && mode !== 'create') {
     try {
       await deleteFile(legacyPath, `chore: migrate ${slug} to ${PROJECTS_DIR}/`);
@@ -664,7 +651,6 @@ async function main() {
     }
   }
 
-  // ---- Manifest ----
   const idx = manifest.findIndex(e => e.project === slug);
   const entry = {
     project: slug,
@@ -684,7 +670,6 @@ async function main() {
   else manifest[idx] = Object.assign({}, manifest[idx], entry);
   await writeFile(MANIFEST_PATH, JSON.stringify(manifest, null, 2) + '\n', `chore: manifest for ${slug}`);
 
-  // ---- Issue comment ----
   if (issue) {
     const url = `https://${OWNER}.github.io/${REPO}/${filename}`;
     let body = `✅ **${mode}** complete: \`${filename}\` (${(html.length / 1024).toFixed(1)} KB) via **${provider}**\n\n`;
