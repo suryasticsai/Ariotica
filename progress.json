@@ -1,83 +1,10 @@
 {
-  "runId": "1791161139422",
-  "started": "2026-10-05T00:45:39.423Z",
-  "updated": "2026-10-05T00:51:23.695Z",
-  "status": "error",
-  "steps": [
-    {
-      "name": "Parse issue",
-      "status": "done",
-      "at": "2026-10-05T00:45:41.908Z"
-    },
-    {
-      "name": "Build RAG context",
-      "status": "done",
-      "at": "2026-10-05T00:45:45.146Z"
-    },
-    {
-      "name": "Generate with AI",
-      "status": "error",
-      "at": "2026-10-05T00:51:23.695Z",
-      "promptChars": 1919,
-      "ragRefs": "helloapp",
-      "error": "All providers failed:\nPollinations-POST (streaming) #1: HTTP 524\nPollinations-POST (streaming) #2: HTTP 524\nPollinations-GET #1: HTTP 500\nPollinations-GET #2: HTTP 500\nRAGina #1: HTTP 500: {\"error\":\"HuggingFace failed: fetch failed\"}\nRAGina #2: HTTP 500: {\"error\":\"HuggingFace failed: fetch failed\"}\n"
-    },
-    {
-      "name": "Pollinations-POST (streaming) · attempt 1",
-      "status": "error",
-      "at": "2026-10-05T00:47:55.323Z",
-      "error": "HTTP 524"
-    },
-    {
-      "name": "Pollinations-POST (streaming) · attempt 2",
-      "status": "error",
-      "at": "2026-10-05T00:50:06.836Z",
-      "error": "HTTP 524"
-    },
-    {
-      "name": "Pollinations-GET · attempt 1",
-      "status": "error",
-      "at": "2026-10-05T00:50:33.683Z",
-      "error": "HTTP 500"
-    },
-    {
-      "name": "Pollinations-GET · attempt 2",
-      "status": "error",
-      "at": "2026-10-05T00:50:57.065Z",
-      "error": "HTTP 500"
-    },
-    {
-      "name": "RAGina · attempt 1",
-      "status": "error",
-      "at": "2026-10-05T00:51:04.279Z",
-      "error": "HTTP 500: {\"error\":\"HuggingFace failed: fetch failed\"}"
-    },
-    {
-      "name": "RAGina · attempt 2",
-      "status": "error",
-      "at": "2026-10-05T00:51:14.307Z",
-      "error": "HTTP 500: {\"error\":\"HuggingFace failed: fetch failed\"}"
-    },
-    {
-      "name": "DuckDuckGo · attempt 1",
-      "status": "error",
-      "at": "2026-10-05T00:51:16.927Z",
-      "error": "no vqd token"
-    },
-    {
-      "name": "DuckDuckGo · attempt 2",
-      "status": "error",
-      "at": "2026-10-05T00:51:22.296Z",
-      "error": "no vqd token"
-    },
-    {
-      "name": "Error",
-      "status": "error",
-      "error": "All providers failed:\nPollinations-POST (streaming) #1: HTTP 524\nPollinations-POST (streaming) #2: HTTP 524\nPollinations-GET #1: HTTP 500\nPollinations-GET #2: HTTP 500\nRAGina #1: HTTP 500: {\"error\":\"HuggingFace failed: fetch failed\"}\nRAGina #2: HTTP 500: {\"error\":\"HuggingFace failed: fetch failed\"}\nDuckDuckGo #1: no vqd token\nDuckDuckGo #2: no vqd token",
-      "at": "2026-10-05T00:51:23.695Z"
-    }
-  ],
+  "runId": "37254297959",
+  "started": "2026-10-05T02:10:12.913Z",
+  "updated": "2026-10-05T02:10:12.913Z",
+  "status": "running",
+  "steps": [],
   "draft": "",
   "draftSize": 0,
-  "error": "All providers failed:\nPollinations-POST (streaming) #1: HTTP 524\nPollinations-POST (streaming) #2: HTTP 524\nPollinations-GET #1: HTTP 500\nPollinations-GET #2: HTTP 500\nRAGina #1: HTTP 500: {\"error\":\"HuggingFace failed: fetch failed\"}\nRAGina #2: HTTP 500: {\"error\":\"HuggingFace failed: fetch failed\"}\nDuckDuckGo #1: no vqd token\nDuckDuckGo #2: no vqd token"
+  "error": null
 }
