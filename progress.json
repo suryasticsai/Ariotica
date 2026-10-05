@@ -1,7 +1,7 @@
 {
   "runId": "37254297959",
   "started": "2026-10-05T02:21:38.362Z",
-  "updated": "2026-10-05T02:22:09.559Z",
+  "updated": "2026-10-05T02:22:10.395Z",
   "status": "running",
   "steps": [
     {
@@ -59,8 +59,9 @@
     },
     {
       "name": "KeylessAI · attempt 1",
-      "status": "running",
-      "at": "2026-10-05T02:22:09.559Z"
+      "status": "error",
+      "at": "2026-10-05T02:22:10.395Z",
+      "error": "fetch failed"
     }
   ],
   "draft": "",
