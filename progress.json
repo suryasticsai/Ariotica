@@ -1,8 +1,8 @@
 {
   "runId": "37254297959",
   "started": "2026-10-05T02:10:12.913Z",
-  "updated": "2026-10-05T02:11:49.096Z",
-  "status": "running",
+  "updated": "2026-10-05T02:11:50.197Z",
+  "status": "error",
   "steps": [
     {
       "name": "Parse issue",
@@ -16,10 +16,11 @@
     },
     {
       "name": "Generate with AI",
-      "status": "running",
-      "at": "2026-10-05T02:10:19.388Z",
+      "status": "error",
+      "at": "2026-10-05T02:11:50.196Z",
       "promptChars": 759,
-      "ragRefs": "none"
+      "ragRefs": "none",
+      "error": "All providers failed:\nGitHub Models #1: Unexpected token 'O', \"OK\r\n\" is not valid JSON\nGitHub Models #2: Unexpected token 'O', \"OK\r\n\" is not valid JSON\nuncloseai #1: HTTP 404\nuncloseai #2: HTTP 404\nOVHcloud #1: fetch failed\nOVHcloud #2: fetch failed\nKeylessAI #1: fetch failed\nKeylessAI #2: fetch fai"
     },
     {
       "name": "GitHub Models · attempt 1",
@@ -80,9 +81,15 @@
       "status": "error",
       "at": "2026-10-05T02:11:49.096Z",
       "error": "HTTP 500"
+    },
+    {
+      "name": "Error",
+      "status": "error",
+      "error": "All providers failed:\nGitHub Models #1: Unexpected token 'O', \"OK\r\n\" is not valid JSON\nGitHub Models #2: Unexpected token 'O', \"OK\r\n\" is not valid JSON\nuncloseai #1: HTTP 404\nuncloseai #2: HTTP 404\nOVHcloud #1: fetch failed\nOVHcloud #2: fetch failed\nKeylessAI #1: fetch failed\nKeylessAI #2: fetch failed\nPollinations #1: HTTP 500\nPollinations #2: HTTP 500",
+      "at": "2026-10-05T02:11:50.197Z"
     }
   ],
   "draft": "",
   "draftSize": 0,
-  "error": null
+  "error": "All providers failed:\nGitHub Models #1: Unexpected token 'O', \"OK\r\n\" is not valid JSON\nGitHub Models #2: Unexpected token 'O', \"OK\r\n\" is not valid JSON\nuncloseai #1: HTTP 404\nuncloseai #2: HTTP 404\nOVHcloud #1: fetch failed\nOVHcloud #2: fetch failed\nKeylessAI #1: fetch failed\nKeylessAI #2: fetch failed\nPollinations #1: HTTP 500\nPollinations #2: HTTP 500"
 }
