@@ -1,7 +1,7 @@
 {
   "runId": "37255784462",
   "started": "2026-10-05T02:32:22.650Z",
-  "updated": "2026-10-05T02:32:30.047Z",
+  "updated": "2026-10-05T02:32:31.145Z",
   "status": "running",
   "steps": [
     {
@@ -23,8 +23,9 @@
     },
     {
       "name": "GitHub Models · attempt 1",
-      "status": "running",
-      "at": "2026-10-05T02:32:30.047Z"
+      "status": "error",
+      "at": "2026-10-05T02:32:31.145Z",
+      "error": "fetch failed"
     }
   ],
   "draft": "",
