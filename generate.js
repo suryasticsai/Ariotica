@@ -541,7 +541,6 @@ async function main() {
   const slug = slugify(project);
   if (!slug) throw new Error('Project name needs at least one letter or digit');
 
-  // >>> Files now live inside projects/ <<<
   const filename = `${PROJECTS_DIR}/${slug}.html`;
 
   let manifest = [];
@@ -553,7 +552,6 @@ async function main() {
 
   // ---- Delete mode ----
   if (mode === 'delete') {
-    // Try new location first, then legacy root location
     let existed = await deleteFile(filename, `chore: delete ${slug}`);
     if (!existed) {
       existed = await deleteFile(`${slug}.html`, `chore: delete legacy ${slug}`);
@@ -656,7 +654,7 @@ async function main() {
   await step(`Commit ${filename}`, () => writeFile(filename, html,
     `feat: ${slug} (${mode})${issue ? ` (issue #${issue})` : ''}`));
 
-  // ---- Migrate legacy root file if it exists (create the file's been moved) ----
+  // ---- Migrate legacy root file if it exists ----
   if (legacyPath && mode !== 'create') {
     try {
       await deleteFile(legacyPath, `chore: migrate ${slug} to ${PROJECTS_DIR}/`);
@@ -670,7 +668,7 @@ async function main() {
   const idx = manifest.findIndex(e => e.project === slug);
   const entry = {
     project: slug,
-    file: filename,                // -> projects/<slug>.html
+    file: filename,
     prompt: prompt.slice(0, 240),
     created: new Date().toISOString().slice(0, 19),
     mode,
