@@ -1,7 +1,7 @@
 {
   "runId": "37254297959",
   "started": "2026-10-05T02:10:12.913Z",
-  "updated": "2026-10-05T02:10:20.552Z",
+  "updated": "2026-10-05T02:10:21.915Z",
   "status": "running",
   "steps": [
     {
@@ -23,8 +23,9 @@
     },
     {
       "name": "GitHub Models · attempt 1",
-      "status": "running",
-      "at": "2026-10-05T02:10:20.552Z"
+      "status": "error",
+      "at": "2026-10-05T02:10:21.915Z",
+      "error": "Unexpected token 'O', \"OK\r\n\" is not valid JSON"
     }
   ],
   "draft": "",
