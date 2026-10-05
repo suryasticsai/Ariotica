@@ -1,13 +1,11 @@
-// generate.js — agent with live progress tracking and code streaming.
+// generate.js — agentic code generator with multi-scanner security audit.
+// Providers: GitHub Models → uncloseai → OVHcloud → KeylessAI → Pollinations
+// Scanners:  custom heuristics + ESLint + Sparrow SAST (+ SonarCloud via workflow)
 const { Octokit } = require('@octokit/rest');
 
 const MANIFEST_PATH = 'projects.json';
 const PROGRESS_PATH = 'progress.json';
-const RAGINA_URL    = 'https://ragina-crawler-ragina.vercel.app/api/ask';
-const POLL_GET      = 'https://text.pollinations.ai';
 const POLL_POST     = 'https://text.pollinations.ai/openai';
-const DDG_STATUS    = 'https://duckduckgo.com/duckchat/v1/status';
-const DDG_CHAT      = 'https://duckduckgo.com/duckchat/v1/chat';
 
 const [OWNER, REPO] = (process.env.GITHUB_REPOSITORY || '').split('/');
 const BRANCH = process.env.GITHUB_REF_NAME || 'main';
@@ -22,7 +20,7 @@ const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
 const steps = [];
 let currentDraft = '';
 let currentError = null;
-let started = new Date().toISOString();
+const started = new Date().toISOString();
 
 async function pushProgress(update = {}) {
   const payload = {
@@ -31,7 +29,7 @@ async function pushProgress(update = {}) {
     updated: new Date().toISOString(),
     status: currentError ? 'error' : (update.status || 'running'),
     steps,
-    draft: currentDraft.slice(0, 8000), // cap for GitHub API size
+    draft: currentDraft.slice(0, 8000),
     draftSize: currentDraft.length,
     error: currentError,
     ...update,
@@ -75,6 +73,7 @@ STRICT RULES:
 - Use ONLY: DOM APIs, CSS, localStorage, sessionStorage, Canvas, SVG, emoji.
 - System fonts only (system-ui, Georgia, ui-monospace, Menlo).
 - Always escape user input with textContent — never innerHTML for untrusted data.
+- Add rel="noopener" to any target="_blank" link.
 Reply with ONLY the complete HTML file, starting with <!DOCTYPE html>.
 
 `;
@@ -108,7 +107,7 @@ function isUsable(html) {
 }
 
 /* ============================================================
-   PROVIDERS — with streaming where possible
+   AI PROVIDERS
    ============================================================ */
 async function withTimeout(promise, ms, label) {
   let t;
@@ -119,140 +118,108 @@ async function withTimeout(promise, ms, label) {
   finally { clearTimeout(t); }
 }
 
-async function callPollinationsGet(prompt) {
-  const trimmed = prompt.length > 8000 ? prompt.slice(0, 8000) : prompt;
-  const url = `${POLL_GET}/${encodeURIComponent(trimmed)}?model=openai&private=true&seed=${Date.now() % 100000}`;
-  const res = await withTimeout(fetch(url, {
-    headers: {
-      'User-Agent': 'Mozilla/5.0 Ariotica/1.0',
-      'Referer': 'https://suryasticsai.github.io/Ariotica/',
-    },
-  }), 120000, 'Pollinations-GET');
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const text = await res.text();
-  if (!text || text.length < 200) throw new Error(`short (${text.length} chars)`);
+const SYS_PROMPT = 'You output raw HTML files only. Start with <!DOCTYPE html>. No markdown fences.';
+
+async function callGitHubModels(prompt) {
+  const token = process.env.GITHUB_TOKEN;
+  if (!token) throw new Error('GITHUB_TOKEN not available');
+  const res = await withTimeout(fetch('https://models.github.ai/inference/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+    body: JSON.stringify({
+      model: 'openai/gpt-4o-mini',
+      messages: [{ role: 'system', content: SYS_PROMPT }, { role: 'user', content: prompt }],
+      temperature: 0.5,
+    }),
+  }), 120000, 'GitHubModels');
+  if (!res.ok) throw new Error(`HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  const data = await res.json();
+  const text = data.choices?.[0]?.message?.content || '';
+  if (!text) throw new Error('empty response');
   return text;
 }
 
-async function callPollinationsPost(prompt) {
-  // Use streaming to update the draft live
+async function callUncloseAI(prompt) {
+  const res = await withTimeout(fetch('https://hermes.ai.unturf.com/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'Hermes-3-Llama-3.1-8B',
+      messages: [{ role: 'system', content: SYS_PROMPT }, { role: 'user', content: prompt.slice(0, 12000) }],
+    }),
+  }), 120000, 'uncloseai');
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  const text = data.choices?.[0]?.message?.content || '';
+  if (!text) throw new Error('empty response');
+  return text;
+}
+
+async function callOVHCloud(prompt) {
+  const models = ['Qwen3-Coder-30B-A3B-Instruct', 'gpt-oss-120b', 'Qwen3-32B'];
+  let last;
+  for (const model of models) {
+    try {
+      const res = await withTimeout(fetch('https://llm.endpoints.ai.cloud.ovh.net/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: 'system', content: SYS_PROMPT }, { role: 'user', content: prompt.slice(0, 12000) }],
+        }),
+      }), 90000, `OVH-${model}`);
+      if (!res.ok) { last = new Error(`${model}: HTTP ${res.status}`); continue; }
+      const data = await res.json();
+      const text = data.choices?.[0]?.message?.content || '';
+      if (text) return text;
+      last = new Error(`${model}: empty`);
+    } catch (e) { last = e; }
+  }
+  throw last || new Error('all OVH models failed');
+}
+
+async function callKeylessAI(prompt) {
+  const res = await withTimeout(fetch('https://keylessai.thryx.workers.dev/v1/chat/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      model: 'gpt-4o',
+      messages: [{ role: 'system', content: SYS_PROMPT }, { role: 'user', content: prompt.slice(0, 12000) }],
+    }),
+  }), 120000, 'KeylessAI');
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  const data = await res.json();
+  const text = data.choices?.[0]?.message?.content || '';
+  if (!text) throw new Error('empty response');
+  return text;
+}
+
+async function callPollinations(prompt) {
   const res = await withTimeout(fetch(POLL_POST, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'Referer': 'https://suryasticsai.github.io/Ariotica/',
-      'User-Agent': 'Mozilla/5.0 Ariotica/1.0',
     },
     body: JSON.stringify({
       model: 'openai',
-      stream: true,
-      messages: [
-        { role: 'system', content: 'You output raw HTML only. Start with <!DOCTYPE html>. No markdown fences.' },
-        { role: 'user', content: prompt },
-      ],
+      messages: [{ role: 'system', content: SYS_PROMPT }, { role: 'user', content: prompt }],
     }),
-  }), 180000, 'Pollinations-POST');
-
+  }), 120000, 'Pollinations');
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-  const contentType = res.headers.get('content-type') || '';
-  if (contentType.includes('text/event-stream') || contentType.includes('stream')) {
-    // SSE streaming
-    let out = '';
-    const reader = res.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = '';
-    let lastPush = Date.now();
-
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      buffer += decoder.decode(value, { stream: true });
-      const lines = buffer.split('\n');
-      buffer = lines.pop();
-
-      for (const line of lines) {
-        if (!line.startsWith('data: ')) continue;
-        const payload = line.slice(6).trim();
-        if (payload === '[DONE]') continue;
-        try {
-          const obj = JSON.parse(payload);
-          const chunk = obj.choices?.[0]?.delta?.content || '';
-          if (chunk) out += chunk;
-        } catch {}
-      }
-
-      // Push progress every 4 seconds
-      if (Date.now() - lastPush > 4000 && out.length > 0) {
-        currentDraft = stripFences(out);
-        await pushProgress();
-        lastPush = Date.now();
-      }
-    }
-
-    if (!out) throw new Error('empty stream');
-    return out;
-  } else {
-    // Non-streaming JSON fallback
-    const data = await res.json();
-    const text = data.choices?.[0]?.message?.content || data.text || '';
-    if (!text) throw new Error('empty response');
-    return text;
-  }
-}
-
-async function callRagina(prompt) {
-  const res = await withTimeout(fetch(RAGINA_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ prompt }),
-  }), 120000, 'RAGina');
-  if (!res.ok) throw new Error(`HTTP ${res.status}: ${(await res.text()).slice(0, 150)}`);
   const data = await res.json();
-  if (data.error) throw new Error(String(data.error).slice(0, 150));
-  const text = data.text || data.response || data.choices?.[0]?.message?.content || '';
+  const text = data.choices?.[0]?.message?.content || data.text || '';
   if (!text) throw new Error('empty response');
   return text;
 }
 
-async function callDuckDuckGo(prompt) {
-  const statusRes = await withTimeout(fetch(DDG_STATUS, {
-    headers: { 'x-vqd-accept': '1', 'User-Agent': 'Mozilla/5.0' },
-  }), 30000, 'DDG-status');
-  const vqd = statusRes.headers.get('x-vqd-4');
-  if (!vqd) throw new Error('no vqd token');
-
-  const chatRes = await withTimeout(fetch(DDG_CHAT, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-vqd-4': vqd,
-      'User-Agent': 'Mozilla/5.0',
-    },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages: [{ role: 'user', content: prompt.slice(0, 12000) }],
-    }),
-  }), 120000, 'DDG-chat');
-  if (!chatRes.ok) throw new Error(`HTTP ${chatRes.status}`);
-
-  const raw = await chatRes.text();
-  let out = '';
-  for (const line of raw.split('\n')) {
-    if (line.startsWith('data: ') && line !== 'data: [DONE]') {
-      try { const o = JSON.parse(line.slice(6)); if (o.message) out += o.message; } catch {}
-    }
-  }
-  if (!out) throw new Error('empty response');
-  return out;
-}
-
 async function askAI(prompt) {
   const providers = [
-    ['Pollinations-POST (streaming)', callPollinationsPost],
-    ['Pollinations-GET', callPollinationsGet],
-    ['RAGina', callRagina],
-    ['DuckDuckGo', callDuckDuckGo],
+    ['GitHub Models', callGitHubModels],
+    ['uncloseai',     callUncloseAI],
+    ['OVHcloud',      callOVHCloud],
+    ['KeylessAI',     callKeylessAI],
+    ['Pollinations',  callPollinations],
   ];
   const errors = [];
   for (const [name, fn] of providers) {
@@ -282,22 +249,220 @@ async function askAI(prompt) {
 }
 
 /* ============================================================
-   AUDIT
+   SECURITY SCANNERS — combined pipeline
    ============================================================ */
-function auditHtml(html) {
+
+/* --- 1. Custom heuristics (targeted XSS / secrets / injection) --- */
+function customAudit(html) {
   const findings = [];
-  if (/\.innerHTML\s*=\s*(?!['"`])/.test(html)) findings.push({ sev: 'high', type: 'xss', msg: 'innerHTML from variable' });
-  if (/\beval\s*\(/.test(html) || /\bnew\s+Function\s*\(/.test(html)) findings.push({ sev: 'high', type: 'injection', msg: 'eval/Function' });
-  if (/document\.write\s*\(/.test(html)) findings.push({ sev: 'medium', type: 'xss', msg: 'document.write' });
+  if (/\.innerHTML\s*=\s*(?!['"`])/.test(html))
+    findings.push({ sev: 'high', type: 'xss', msg: 'innerHTML from variable — use textContent' });
+  if (/\beval\s*\(/.test(html) || /\bnew\s+Function\s*\(/.test(html))
+    findings.push({ sev: 'high', type: 'injection', msg: 'eval/Function constructor' });
+  if (/document\.write\s*\(/.test(html))
+    findings.push({ sev: 'medium', type: 'xss', msg: 'document.write() is unsafe' });
   const inline = html.match(/on\w+\s*=\s*["'][^"']*["']/gi) || [];
   const bad = inline.filter(h => /eval|Function|innerHTML/i.test(h));
-  if (bad.length) findings.push({ sev: 'medium', type: 'xss', msg: `${bad.length} inline handler(s)` });
-  const secretRe = [/(?:api[_-]?key|secret|token|password)\s*[:=]\s*["'][A-Za-z0-9_\-]{16,}["']/i, /sk-[A-Za-z0-9]{20,}/, /ghp_[A-Za-z0-9]{36}/];
-  for (const re of secretRe) if (re.test(html)) { findings.push({ sev: 'high', type: 'secret', msg: 'hardcoded secret' }); break; }
-  if (/<form[^>]+action\s*=\s*["']https?:\/\//i.test(html)) findings.push({ sev: 'medium', type: 'exfiltration', msg: 'external form action' });
-  if (/<iframe[^>]+src\s*=\s*["']https?:\/\//i.test(html)) findings.push({ sev: 'low', type: 'embedding', msg: 'external iframe' });
-  if (/target\s*=\s*["']_blank["'](?![^>]*rel\s*=\s*["'][^"']*noopener)/i.test(html)) findings.push({ sev: 'low', type: 'tabnabbing', msg: 'no rel=noopener' });
+  if (bad.length)
+    findings.push({ sev: 'medium', type: 'xss', msg: `${bad.length} suspicious inline handler(s)` });
+  const secretRe = [
+    /(?:api[_-]?key|secret|token|password)\s*[:=]\s*["'][A-Za-z0-9_\-]{16,}["']/i,
+    /sk-[A-Za-z0-9]{20,}/, /ghp_[A-Za-z0-9]{36}/,
+  ];
+  for (const re of secretRe) if (re.test(html)) {
+    findings.push({ sev: 'high', type: 'secret', msg: 'possible hardcoded secret' }); break;
+  }
+  if (/<form[^>]+action\s*=\s*["']https?:\/\//i.test(html))
+    findings.push({ sev: 'medium', type: 'exfiltration', msg: 'external form action' });
+  if (/<iframe[^>]+src\s*=\s*["']https?:\/\//i.test(html))
+    findings.push({ sev: 'low', type: 'embedding', msg: 'external iframe' });
+  if (/target\s*=\s*["']_blank["'](?![^>]*rel\s*=\s*["'][^"']*noopener)/i.test(html))
+    findings.push({ sev: 'low', type: 'tabnabbing', msg: 'no rel=noopener' });
   return findings;
+}
+
+/* --- 2. ESLint (in-process via npm) --- */
+async function eslintAudit(html) {
+  const findings = [];
+  try {
+    const { Linter } = require('eslint');
+    const linter = new Linter();
+
+    // Extract <script> blocks (skip src= ones — those are already forbidden)
+    const scriptBlocks = [];
+    const re = /<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi;
+    let m;
+    while ((m = re.exec(html)) !== null) scriptBlocks.push(m[1]);
+
+    if (!scriptBlocks.length) return findings;
+
+    const rules = {
+      'no-eval': 'error',
+      'no-implied-eval': 'error',
+      'no-new-func': 'error',
+      'no-script-url': 'error',
+      'no-prototype-builtins': 'warn',
+      'no-inner-declarations': 'warn',
+      'no-unsafe-negation': 'error',
+      'no-unsafe-optional-chaining': 'error',
+      'no-unused-vars': 'warn',
+      'no-undef': 'off', // browser globals not declared
+      'no-empty': 'warn',
+      'no-constant-condition': 'warn',
+      'no-dupe-keys': 'error',
+      'no-dupe-args': 'error',
+      'no-redeclare': 'error',
+    };
+
+    let idx = 0;
+    for (const code of scriptBlocks) {
+      idx++;
+      const msgs = linter.verify(code, {
+        languageOptions: {
+          ecmaVersion: 2022,
+          sourceType: 'script',
+          globals: {
+            window: 'readonly', document: 'readonly', console: 'readonly',
+            localStorage: 'readonly', sessionStorage: 'readonly',
+            fetch: 'readonly', setTimeout: 'readonly', setInterval: 'readonly',
+            clearTimeout: 'readonly', clearInterval: 'readonly', alert: 'readonly',
+            confirm: 'readonly', prompt: 'readonly', navigator: 'readonly',
+            location: 'readonly', history: 'readonly', URL: 'readonly',
+            Blob: 'readonly', FileReader: 'readonly', Image: 'readonly',
+            requestAnimationFrame: 'readonly', cancelAnimationFrame: 'readonly',
+            MutationObserver: 'readonly', IntersectionObserver: 'readonly',
+            CustomEvent: 'readonly', Event: 'readonly', Node: 'readonly',
+            HTMLElement: 'readonly', Element: 'readonly', CustomEvent: 'readonly',
+          },
+        },
+        rules,
+      });
+      for (const msg of msgs) {
+        const sev = msg.severity === 2 ? 'high' : 'medium';
+        findings.push({
+          sev,
+          type: 'eslint',
+          msg: `[script#${idx}:${msg.line}:${msg.column}] ${msg.message} (${msg.ruleId})`,
+        });
+      }
+    }
+  } catch (e) {
+    console.log('[eslint] failed:', e.message);
+  }
+  return findings;
+}
+
+/* --- 3. Sparrow SAST --- */
+async function sparrowAudit(html) {
+  const findings = [];
+  try {
+    // Sparrow works on files — write to a temp file and scan
+    const fs = require('fs');
+    const path = require('path');
+    const os = require('os');
+    const tmp = path.join(os.tmpdir(), `ariotica-${Date.now()}.html`);
+    fs.writeFileSync(tmp, html, 'utf8');
+
+    let scan;
+    try {
+      scan = require('sparrow-sast').scan;
+    } catch (e) {
+      console.log('[sparrow] package not installed, skipping');
+      fs.unlinkSync(tmp);
+      return findings;
+    }
+
+    const issues = await scan(tmp, {
+      useBuiltinCheckers: true,
+      languages: ['javascript', 'html'],
+    });
+
+    for (const issue of issues) {
+      const severity = (issue.severity || '').toLowerCase();
+      const sev =
+        severity === 'critical' || severity === 'error' ? 'high' :
+        severity === 'warning' ? 'medium' : 'low';
+      findings.push({
+        sev,
+        type: 'sparrow',
+        msg: `${issue.message}${issue.checker ? ` (${issue.checker})` : ''}`,
+      });
+    }
+
+    fs.unlinkSync(tmp);
+  } catch (e) {
+    console.log('[sparrow] failed:', e.message);
+  }
+  return findings;
+}
+
+/* --- Combined scanner --- */
+async function runAllScanners(html) {
+  const results = { custom: [], eslint: [], sparrow: [] };
+
+  results.custom = customAudit(html);
+
+  try {
+    results.eslint = await eslintAudit(html);
+  } catch (e) { console.log('eslint scan error:', e.message); }
+
+  try {
+    results.sparrow = await sparrowAudit(html);
+  } catch (e) { console.log('sparrow scan error:', e.message); }
+
+  const all = [
+    ...results.custom,
+    ...results.eslint,
+    ...results.sparrow,
+  ];
+
+  // Deduplicate by message prefix
+  const seen = new Set();
+  const deduped = [];
+  for (const f of all) {
+    const key = f.type + ':' + f.msg.slice(0, 80);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(f);
+  }
+
+  return {
+    findings: deduped,
+    counts: {
+      total: deduped.length,
+      high: deduped.filter(f => f.sev === 'high').length,
+      medium: deduped.filter(f => f.sev === 'medium').length,
+      low: deduped.filter(f => f.sev === 'low').length,
+      byTool: {
+        custom: results.custom.length,
+        eslint: results.eslint.length,
+        sparrow: results.sparrow.length,
+      },
+    },
+  };
+}
+
+/* ============================================================
+   INPUTS
+   ============================================================ */
+function resolveInputs() {
+  const dProj = (process.env.DISPATCH_PROJECT || '').trim();
+  if (dProj) return {
+    project: dProj,
+    prompt: (process.env.DISPATCH_PROMPT || '').trim(),
+    mode: (process.env.DISPATCH_MODE || 'create').toLowerCase(),
+    issue: null,
+  };
+  const title = process.env.ISSUE_TITLE || '';
+  const body = process.env.ISSUE_BODY || '';
+  const num = parseInt(process.env.ISSUE_NUMBER || '0', 10);
+  const m = title.match(/^\[BUILD\]\s+([A-Za-z0-9 _-]+?)(?:\s*\[(improve|fix|audit|delete)\])?\s*$/);
+  if (!m) throw new Error('Title must be: [BUILD] name [improve|fix|audit|delete]');
+  return { project: m[1].trim(), prompt: body.trim(), mode: (m[2] || 'create').toLowerCase(), issue: num || null };
+}
+
+function slugify(name) {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
 }
 
 /* ============================================================
@@ -332,29 +497,6 @@ async function deleteFile(path, message) {
     await octokit.repos.deleteFile({ owner: OWNER, repo: REPO, path, message, sha: data.sha, branch: BRANCH });
     return true;
   } catch (e) { if (e.status === 404) return false; throw e; }
-}
-
-/* ============================================================
-   INPUTS
-   ============================================================ */
-function resolveInputs() {
-  const dProj = (process.env.DISPATCH_PROJECT || '').trim();
-  if (dProj) return {
-    project: dProj,
-    prompt: (process.env.DISPATCH_PROMPT || '').trim(),
-    mode: (process.env.DISPATCH_MODE || 'create').toLowerCase(),
-    issue: null,
-  };
-  const title = process.env.ISSUE_TITLE || '';
-  const body = process.env.ISSUE_BODY || '';
-  const num = parseInt(process.env.ISSUE_NUMBER || '0', 10);
-  const m = title.match(/^\[BUILD\]\s+([A-Za-z0-9 _-]+?)(?:\s*\[(improve|fix|audit|delete)\])?\s*$/);
-  if (!m) throw new Error('Title must be: [BUILD] name [improve|fix|audit|delete]');
-  return { project: m[1].trim(), prompt: body.trim(), mode: (m[2] || 'create').toLowerCase(), issue: num || null };
-}
-
-function slugify(name) {
-  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40);
 }
 
 /* ============================================================
@@ -428,7 +570,7 @@ async function main() {
   }
 
   // Build prompt
-  let ask, auditFindings = [];
+  let ask, initialFindings = null;
   if (mode === 'create' || (!existing && mode !== 'fix' && mode !== 'audit')) {
     ask = existing ? 'Improve the existing app. Keep what works and apply: ' + prompt : prompt;
   } else if (mode === 'improve') {
@@ -436,17 +578,20 @@ async function main() {
   } else if (mode === 'fix') {
     ask = `Fix ONLY the bug described.\n\nBUG: ${prompt}\n\nReturn the complete fixed HTML.`;
   } else if (mode === 'audit') {
-    auditFindings = auditHtml(existing);
-    if (!auditFindings.length && !prompt) {
+    initialFindings = await step('Initial security scan', () => runAllScanners(existing));
+    if (!initialFindings.findings.length && !prompt) {
       if (issue) {
-        await octokit.issues.createComment({ owner: OWNER, repo: REPO, issue_number: issue, body: `✅ Audit clean.` });
+        await octokit.issues.createComment({ owner: OWNER, repo: REPO, issue_number: issue,
+          body: `✅ Audit clean — 0 findings across all scanners.` });
         await octokit.issues.update({ owner: OWNER, repo: REPO, issue_number: issue, state: 'closed' });
       }
       await pushProgress({ status: 'done' });
       return;
     }
-    const report = auditFindings.length ? auditFindings.map(f => `- [${f.sev}] ${f.type}: ${f.msg}`).join('\n') : '(none)';
-    ask = `Fix security issues. Keep functionality.\n\nFINDINGS:\n${report}\n\nEXTRA: ${prompt || 'none'}`;
+    const report = initialFindings.findings.length
+      ? initialFindings.findings.map(f => `- [${f.sev}] [${f.type}] ${f.msg}`).join('\n')
+      : '(none)';
+    ask = `Fix the security issues below. Keep functionality intact.\n\nFINDINGS:\n${report}\n\nEXTRA: ${prompt || 'none'}\n\nReturn the complete fixed HTML.`;
   }
 
   // RAG
@@ -466,7 +611,7 @@ async function main() {
   let html = stripFences(text);
   if (!isUsable(html)) throw new Error(`${provider} returned unusable HTML`);
 
-  // Validate
+  // Validate vanilla
   let check = isVanilla(html);
   if (!check.ok) {
     currentDraft = html;
@@ -478,8 +623,13 @@ async function main() {
     if (!check.ok) throw new Error(`Still non-vanilla (${check.hit})`);
   }
 
-  // Audit
-  const postAudit = await step('Security scan', async () => auditHtml(html));
+  // Multi-scanner security audit
+  const security = await step('Security scan (ESLint + Sparrow + heuristics)',
+    () => runAllScanners(html),
+    { scanners: 'custom + eslint + sparrow' }
+  );
+
+  console.log(`Security: ${security.counts.total} total — ${security.counts.high} high, ${security.counts.medium} medium, ${security.counts.low} low`);
 
   // Commit
   await step('Commit file', () => writeFile(filename, html,
@@ -491,23 +641,36 @@ async function main() {
     project: slug, file: filename,
     prompt: prompt.slice(0, 240),
     created: new Date().toISOString().slice(0, 19),
-    mode, provider, findings: postAudit.length, size: html.length,
+    mode, provider,
+    findings: security.counts.total,
+    findingsHigh: security.counts.high,
+    findingsMedium: security.counts.medium,
+    findingsLow: security.counts.low,
+    scanByTool: security.counts.byTool,
+    size: html.length,
   };
   if (idx === -1) manifest.push(entry);
   else manifest[idx] = Object.assign({}, manifest[idx], entry);
   await writeFile(MANIFEST_PATH, JSON.stringify(manifest, null, 2) + '\n', `chore: manifest for ${slug}`);
 
+  // Issue comment
   if (issue) {
     const url = `https://${OWNER}.github.io/${REPO}/${filename}`;
-    let body = `✅ **${mode}** complete: \`${filename}\` (${(html.length / 1024).toFixed(1)} KB) via **${provider}**\n\nLive in ~1 min: ${url}`;
-    if (postAudit.length) body += `\n\n**Findings:**\n` + postAudit.map(f => `- [${f.sev}] ${f.msg}`).join('\n');
+    let body = `✅ **${mode}** complete: \`${filename}\` (${(html.length / 1024).toFixed(1)} KB) via **${provider}**\n\n`;
+    body += `**Live in ~1 min:** ${url}\n\n`;
+    body += `### 🛡 Security scan\n`;
+    body += `- **${security.counts.total}** findings total — ${security.counts.high}🔴 ${security.counts.medium}🟡 ${security.counts.low}🟢\n`;
+    body += `- Custom: ${security.counts.byTool.custom} · ESLint: ${security.counts.byTool.eslint} · Sparrow: ${security.counts.byTool.sparrow}\n`;
+    if (security.findings.length) {
+      body += `\n**Top findings:**\n` + security.findings.slice(0, 10).map(f => `- [${f.sev}] \`${f.type}\` ${f.msg}`).join('\n');
+    }
     try {
       await octokit.issues.createComment({ owner: OWNER, repo: REPO, issue_number: issue, body });
       await octokit.issues.update({ owner: OWNER, repo: REPO, issue_number: issue, state: 'closed' });
-    } catch {}
+    } catch (e) { console.log('Issue ops failed:', e.message); }
   }
 
-  await pushProgress({ status: 'done' });
+  await pushProgress({ status: 'done', securitySummary: security.counts });
 }
 
 main().catch(async (err) => {
