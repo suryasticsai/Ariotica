@@ -1,7 +1,7 @@
 {
   "runId": "37254297959",
   "started": "2026-10-05T02:10:12.913Z",
-  "updated": "2026-10-05T02:10:43.231Z",
+  "updated": "2026-10-05T02:10:54.812Z",
   "status": "running",
   "steps": [
     {
@@ -41,8 +41,9 @@
     },
     {
       "name": "uncloseai · attempt 2",
-      "status": "running",
-      "at": "2026-10-05T02:10:43.231Z"
+      "status": "error",
+      "at": "2026-10-05T02:10:54.812Z",
+      "error": "HTTP 404"
     }
   ],
   "draft": "",
