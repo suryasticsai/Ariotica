@@ -1,13 +1,18 @@
 {
   "runId": "37254297959",
   "started": "2026-10-05T02:10:12.913Z",
-  "updated": "2026-10-05T02:10:15.573Z",
+  "updated": "2026-10-05T02:10:17.056Z",
   "status": "running",
   "steps": [
     {
       "name": "Parse issue",
       "status": "done",
       "at": "2026-10-05T02:10:15.573Z"
+    },
+    {
+      "name": "Build RAG context",
+      "status": "running",
+      "at": "2026-10-05T02:10:17.056Z"
     }
   ],
   "draft": "",
