@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       project:
-        description: 'Project name (e.g. kanban)'
+        description: 'Project name'
         type: string
         required: true
       prompt:
