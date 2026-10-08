@@ -32,6 +32,24 @@
     color:var(--ai-accent);margin-top:.2rem;font-family:ui-monospace,Menlo,monospace}
   .ai-sub{color:var(--ai-muted);margin:.85rem 0 0;font-size:.82rem;
     font-family:ui-monospace,Menlo,monospace}
+
+  /* Mode switch */
+  .mode-switch{display:flex;justify-content:center;gap:.5rem;
+    padding:.85rem 1rem;border-bottom:1px solid var(--ai-line);
+    background:#0a1310}
+  .mode-switch button{padding:.45rem 1rem;border-radius:999px;
+    background:#0e1a14;border:1px solid var(--ai-line);
+    color:var(--ai-muted);font:700 .72rem ui-monospace,Menlo,monospace;
+    letter-spacing:.08em;text-transform:uppercase;cursor:pointer;
+    transition:all .15s}
+  .mode-switch button:hover{color:var(--ai-fg)}
+  .mode-switch button.active{background:var(--ai-accent);color:#07120b;
+    border-color:var(--ai-accent)}
+  .mode-switch .mode-hint{color:var(--ai-muted);
+    font:.7rem ui-monospace,Menlo,monospace;
+    align-self:center;margin-left:.6rem;display:none}
+  @media (min-width:700px){.mode-switch .mode-hint{display:inline}}
+
   .ai-card{background:var(--ai-card);border:1px solid var(--ai-line);
     border-radius:14px;padding:1.25rem}
   .ai-card h2{margin:0 0 .9rem;font:600 .95rem ui-monospace,Menlo,monospace;
@@ -144,12 +162,19 @@
          alt="" onerror="this.style.display='none'">
     <h1 class="ai-title text-start">Ariotica<small>Create · Improve · Fix · Audit</small></h1>
   </div>
-  <p class="ai-sub mb-0">Vanilla JS · live progress · no issues</p>
+  <p class="ai-sub mb-0">Vanilla JS · live progress · two ways to trigger</p>
 </header>
+
+<!-- Mode switch -->
+<div class="mode-switch">
+  <button id="modeDirect" class="active" type="button">⚡ Direct</button>
+  <button id="modeIssue"  type="button">📋 Issue</button>
+  <span class="mode-hint" id="modeHint">Direct: runs immediately via GitHub API</span>
+</div>
 
 <main class="container py-3 py-md-4" style="max-width:820px">
 
-  <!-- Token -->
+  <!-- Token (only shown in Direct mode) -->
   <section class="ai-card mb-3" id="tokenCard">
     <h2>GitHub Token <span class="token-ok" id="tokenOk">✓ saved</span></h2>
     <p style="color:var(--ai-muted);font:.75rem ui-monospace,Menlo,monospace;margin:0 0 .75rem">
@@ -190,7 +215,7 @@
       </select>
     </div>
     <div class="d-grid d-sm-block">
-      <button id="generate" class="btn-ai" type="button" disabled>⚡ Generate</button>
+      <button id="generate" class="btn-ai" type="button">⚡ Generate</button>
     </div>
     <div id="genStatus" class="ai-status"></div>
   </section>
@@ -274,13 +299,44 @@
     }
   }
 
+  /* ---------- mode switch ---------- */
+  function getMode() { return localStorage.getItem('trigger_mode') || 'direct'; }
+  function setMode(m) {
+    localStorage.setItem('trigger_mode', m);
+    applyMode();
+  }
+
+  function applyMode() {
+    const m = getMode();
+    const isDirect = m === 'direct';
+
+    $('modeDirect').classList.toggle('active', isDirect);
+    $('modeIssue').classList.toggle('active', !isDirect);
+    $('modeHint').textContent = isDirect
+      ? 'Direct: runs immediately via GitHub API'
+      : 'Issue: opens a pre-filled GitHub issue';
+    $('tokenCard').style.display = isDirect ? '' : 'none';
+
+    refreshGenerateBtn();
+  }
+
+  $('modeDirect').addEventListener('click', () => setMode('direct'));
+  $('modeIssue').addEventListener('click', () => setMode('issue'));
+
   /* ---------- token ---------- */
   function getToken() { return localStorage.getItem('gh_pat') || ''; }
 
-  function refreshTokenUI() {
-    const ok = !!getToken();
-    $('tokenOk').classList.toggle('show', ok);
-    $('generate').disabled = !ok;
+  function refreshGenerateBtn() {
+    const m = getMode();
+    const hasTok = !!getToken();
+    $('tokenOk').classList.toggle('show', hasTok);
+    if (m === 'direct') {
+      $('generate').disabled = !hasTok;
+      $('generate').title = hasTok ? '' : 'Save a token first';
+    } else {
+      $('generate').disabled = false;
+      $('generate').title = '';
+    }
   }
 
   $('saveToken').addEventListener('click', () => {
@@ -288,19 +344,19 @@
     if (!t) { toast($('tokenStatus'), 'Paste a token first.', 'err'); return; }
     localStorage.setItem('gh_pat', t);
     $('tokenInput').value = '';
-    refreshTokenUI();
+    refreshGenerateBtn();
     toast($('tokenStatus'), '✓ Token saved.', 'ok');
   });
 
   $('clearToken').addEventListener('click', () => {
     localStorage.removeItem('gh_pat');
-    refreshTokenUI();
+    refreshGenerateBtn();
     toast($('tokenStatus'), 'Token cleared.', 'info');
   });
 
-  /* ---------- dispatch ---------- */
+  /* ---------- dispatch (direct mode) ---------- */
   async function dispatch(project, prompt, mode) {
-    const res = await fetch(
+    return fetch(
       `${API}/repos/${OWNER}/${REPO}/actions/workflows/${WORKFLOW}/dispatches`,
       {
         method: 'POST',
@@ -316,19 +372,40 @@
         }),
       }
     );
-    return res;
   }
 
+  /* ---------- open issue (issue mode) ---------- */
+  function openIssue(project, prompt, mode) {
+    const title = '[BUILD] ' + project + (mode !== 'create' ? ' [' + mode + ']' : '');
+    const body  = prompt;
+    const url = 'https://github.com/' + OWNER + '/' + REPO + '/issues/new'
+              + '?title=' + encodeURIComponent(title)
+              + '&body='  + encodeURIComponent(body);
+    window.open(url, '_blank', 'noopener');
+  }
+
+  /* ---------- generate ---------- */
   $('generate').addEventListener('click', async () => {
     const project = $('name').value.trim();
     const prompt  = $('prompt').value.trim();
     const mode    = $('mode').value;
     const st      = $('genStatus');
+    const trigger = getMode();
 
     if (!project) { toast(st, 'Name required.', 'err'); $('name').focus(); return; }
     if (!prompt && mode !== 'delete' && mode !== 'audit') {
       toast(st, 'Prompt required.', 'err'); $('prompt').focus(); return;
     }
+
+    if (trigger === 'issue') {
+      openIssue(project, prompt, mode);
+      toast(st, '✓ GitHub opened. Tap "Submit new issue" to run.', 'ok');
+      startWatching();
+      return;
+    }
+
+    // Direct mode
+    if (!getToken()) { toast(st, 'Save a token first.', 'err'); return; }
 
     $('generate').disabled = true;
     $('generate').textContent = '⚡ Dispatching…';
@@ -337,7 +414,7 @@
     try {
       const res = await dispatch(project, prompt, mode);
       $('generate').textContent = '⚡ Generate';
-      $('generate').disabled = false;
+      refreshGenerateBtn();
 
       if (res.status === 204) {
         toast(st, '✓ Workflow dispatched. Watching progress…', 'ok');
@@ -354,7 +431,7 @@
       }
     } catch (e) {
       $('generate').textContent = '⚡ Generate';
-      $('generate').disabled = false;
+      refreshGenerateBtn();
       toast(st, 'Network error: ' + e.message, 'err');
     }
   });
@@ -525,18 +602,16 @@
   $('refreshList').addEventListener('click', loadProjects);
 
   /* ---------- boot ---------- */
-  refreshTokenUI();
+  applyMode();
   loadProjects();
 
-  // Auto-open progress if a run is in flight
   (async () => {
     try {
       const r = await fetch('progress.json?t=' + Date.now(), { cache: 'no-store' });
       if (!r.ok) return;
       const p = await r.json();
       if (p.status === 'running') {
-        const age = Date.now() - new Date(p.updated || p.started).getTime();
-        if (age < 10 * 60 * 1000) startWatching();
+        const age = Date.now() - new Date(p.updated || p.started).toISOString ? 0 : 0;
       }
     } catch {}
   })();
