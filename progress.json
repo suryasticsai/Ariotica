@@ -1,7 +1,7 @@
 {
   "runId": "37819967667",
   "started": "2026-10-08T17:53:08.354Z",
-  "updated": "2026-10-08T17:53:12.412Z",
+  "updated": "2026-10-08T17:53:13.925Z",
   "status": "running",
   "steps": [
     {
@@ -11,8 +11,8 @@
     },
     {
       "name": "Build RAG context",
-      "status": "running",
-      "at": "2026-10-08T17:53:12.412Z"
+      "status": "done",
+      "at": "2026-10-08T17:53:13.925Z"
     }
   ],
   "draft": "",
