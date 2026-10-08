@@ -1,7 +1,7 @@
 {
   "runId": "37819967667",
   "started": "2026-10-08T17:53:08.354Z",
-  "updated": "2026-10-08T17:53:52.542Z",
+  "updated": "2026-10-08T17:54:02.810Z",
   "status": "running",
   "steps": [
     {
@@ -71,8 +71,9 @@
     },
     {
       "name": "Pollinations · attempt 1",
-      "status": "running",
-      "at": "2026-10-08T17:53:52.542Z"
+      "status": "error",
+      "at": "2026-10-08T17:54:02.810Z",
+      "error": "HTTP 500"
     }
   ],
   "draft": "",
