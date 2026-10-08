@@ -1,7 +1,7 @@
 {
   "runId": "37819967667",
   "started": "2026-10-08T17:53:08.354Z",
-  "updated": "2026-10-08T17:53:33.631Z",
+  "updated": "2026-10-08T17:53:36.134Z",
   "status": "running",
   "steps": [
     {
@@ -47,8 +47,9 @@
     },
     {
       "name": "OVHcloud · attempt 1",
-      "status": "running",
-      "at": "2026-10-08T17:53:33.631Z"
+      "status": "error",
+      "at": "2026-10-08T17:53:36.134Z",
+      "error": "fetch failed"
     }
   ],
   "draft": "",
