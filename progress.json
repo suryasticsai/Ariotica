@@ -1,8 +1,8 @@
 {
   "runId": "37819967667",
   "started": "2026-10-08T17:53:08.354Z",
-  "updated": "2026-10-08T17:54:11.508Z",
-  "status": "running",
+  "updated": "2026-10-08T17:54:12.680Z",
+  "status": "error",
   "steps": [
     {
       "name": "Parse issue",
@@ -16,10 +16,11 @@
     },
     {
       "name": "Generate with AI",
-      "status": "running",
-      "at": "2026-10-08T17:53:15.176Z",
+      "status": "error",
+      "at": "2026-10-08T17:54:12.680Z",
       "promptChars": 781,
-      "ragRefs": "none"
+      "ragRefs": "none",
+      "error": "All providers failed:\nGitHub Models #1: fetch failed\nGitHub Models #2: fetch failed\napi.airforce #1: HTTP 402\napi.airforce #2: HTTP 402\nOVHcloud #1: fetch failed\nOVHcloud #2: fetch failed\nKeylessAI #1: fetch failed\nKeylessAI #2: fetch failed\nPollinations #1: HTTP 500\nPollinations #2: HTTP 402"
     },
     {
       "name": "GitHub Models · attempt 1",
@@ -80,9 +81,15 @@
       "status": "error",
       "at": "2026-10-08T17:54:11.508Z",
       "error": "HTTP 402"
+    },
+    {
+      "name": "Error",
+      "status": "error",
+      "error": "All providers failed:\nGitHub Models #1: fetch failed\nGitHub Models #2: fetch failed\napi.airforce #1: HTTP 402\napi.airforce #2: HTTP 402\nOVHcloud #1: fetch failed\nOVHcloud #2: fetch failed\nKeylessAI #1: fetch failed\nKeylessAI #2: fetch failed\nPollinations #1: HTTP 500\nPollinations #2: HTTP 402",
+      "at": "2026-10-08T17:54:12.680Z"
     }
   ],
   "draft": "",
   "draftSize": 0,
-  "error": null
+  "error": "All providers failed:\nGitHub Models #1: fetch failed\nGitHub Models #2: fetch failed\napi.airforce #1: HTTP 402\napi.airforce #2: HTTP 402\nOVHcloud #1: fetch failed\nOVHcloud #2: fetch failed\nKeylessAI #1: fetch failed\nKeylessAI #2: fetch failed\nPollinations #1: HTTP 500\nPollinations #2: HTTP 402"
 }
