@@ -20,10 +20,15 @@ on:
   issues:
     types: [opened]
 
+  # Reply on a [BUILD] issue with  [improve] ...  [fix] ...  [audit]  or  [delete]
+  issue_comment:
+    types: [created]
+
 permissions:
   contents: write
   issues: write
 
+# Runs queue one at a time. GitHub keeps only the newest waiting run.
 concurrency:
   group: generate-project
   cancel-in-progress: false
@@ -35,7 +40,16 @@ jobs:
 
     if: |
       github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'issues' && startsWith(github.event.issue.title, '[BUILD]'))
+      (github.event_name == 'issues' && startsWith(github.event.issue.title, '[BUILD]')) ||
+      (github.event_name == 'issue_comment' &&
+        !github.event.issue.pull_request &&
+        startsWith(github.event.issue.title, '[BUILD]') &&
+        github.event.comment.user.type != 'Bot' &&
+        contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association) &&
+        (contains(github.event.comment.body, '[improve]') ||
+         contains(github.event.comment.body, '[fix]') ||
+         contains(github.event.comment.body, '[audit]') ||
+         contains(github.event.comment.body, '[delete]')))
 
     steps:
       - name: Checkout
@@ -56,9 +70,16 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          # Optional: set these under Settings > Secrets and variables > Actions > Variables
+          PROVIDER_ORDER: ${{ vars.PROVIDER_ORDER }}
+          OPENROUTER_MODEL: ${{ vars.OPENROUTER_MODEL }}
+          HF_MODEL: ${{ vars.HF_MODEL }}
+          EVENT_NAME: ${{ github.event_name }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
           ISSUE_BODY: ${{ github.event.issue.body }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          COMMENT_ID: ${{ github.event.comment.id }}
           DISPATCH_PROJECT: ${{ inputs.project }}
           DISPATCH_PROMPT: ${{ inputs.prompt }}
           DISPATCH_MODE: ${{ inputs.mode }}
