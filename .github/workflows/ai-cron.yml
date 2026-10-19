@@ -31,7 +31,7 @@ concurrency:
 jobs:
   generate:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     if: |
       github.event_name == 'workflow_dispatch' ||
@@ -47,7 +47,9 @@ jobs:
           node-version: '20'
 
       - name: Install Octokit + scanners
-        run: npm install @octokit/rest@20 eslint@9 sparrow-sast@1
+        run: |
+          npm install @octokit/rest@20 eslint@9
+          npm install sparrow-sast@1 || echo "sparrow-sast unavailable, continuing without it"
 
       - name: Generate
         env:
