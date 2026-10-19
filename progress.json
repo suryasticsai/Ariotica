@@ -1,7 +1,7 @@
 {
   "runId": "39190324282",
   "started": "2026-10-19T02:31:09.361Z",
-  "updated": "2026-10-19T02:31:15.861Z",
+  "updated": "2026-10-19T02:31:16.932Z",
   "status": "running",
   "steps": [
     {
@@ -23,8 +23,9 @@
     },
     {
       "name": "HuggingFace · attempt 1",
-      "status": "running",
-      "at": "2026-10-19T02:31:15.861Z"
+      "status": "error",
+      "at": "2026-10-19T02:31:16.932Z",
+      "error": "fetch failed"
     }
   ],
   "draft": "",
