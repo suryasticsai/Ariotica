@@ -1,7 +1,7 @@
 {
   "runId": "39232441339",
   "started": "2026-10-19T15:21:56.572Z",
-  "updated": "2026-10-19T15:25:56.875Z",
+  "updated": "2026-10-19T15:26:01.276Z",
   "status": "running",
   "issue": 23,
   "statusCommentId": 6270774041,
@@ -20,10 +20,12 @@
     },
     {
       "name": "Generate with AI",
-      "status": "running",
-      "at": "2026-10-19T15:22:00.253Z",
+      "status": "error",
+      "at": "2026-10-19T15:26:00.300Z",
       "promptChars": 1249,
-      "ragRefs": "none"
+      "ragRefs": "none",
+      "sec": 240,
+      "error": "All providers failed:\nGroq #1: HTTP 404: {\"error\":{\"message\":\"The model `llama-3.1-8b-instant` does not exist or you do not have access to it.\",\"type\":\"invalid_request_error\",\"code\":\"model_not_found\"}}\n\nGemini #1: HTTP 404: [{\n  \"error\": {\n    \"code\": 404,\n    \"message\": \"models/gemini-1.5-flash is "
     },
     {
       "name": "Groq · attempt 1",
@@ -51,6 +53,20 @@
       "status": "error",
       "at": "2026-10-19T15:25:56.249Z",
       "sec": 111,
+      "error": "empty or very short response"
+    },
+    {
+      "name": "Pollinations · attempt 1",
+      "status": "error",
+      "at": "2026-10-19T15:25:58.098Z",
+      "sec": 0,
+      "error": "empty or very short response"
+    },
+    {
+      "name": "Pollinations · attempt 2",
+      "status": "error",
+      "at": "2026-10-19T15:26:00.300Z",
+      "sec": 0,
       "error": "empty or very short response"
     }
   ],
