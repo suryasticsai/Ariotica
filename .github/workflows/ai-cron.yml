@@ -53,11 +53,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm' # Caches dependencies to make runs much faster
 
       - name: Install dependencies
-        run: |
-          npm install @octokit/rest@20 eslint@9 jsdom
-          npm install sparrow-sast@1 || echo "sparrow-sast unavailable, continuing without it"
+        run: npm install
 
       - name: Build Knowledge Index
         run: node build-index.js
