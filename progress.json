@@ -1,52 +1,10 @@
 {
-  "runId": "39190324282",
-  "started": "2026-10-19T02:31:09.361Z",
-  "updated": "2026-10-19T02:31:27.918Z",
-  "status": "error",
-  "steps": [
-    {
-      "name": "Parse issue",
-      "status": "done",
-      "at": "2026-10-19T02:31:11.624Z"
-    },
-    {
-      "name": "Build RAG context",
-      "status": "done",
-      "at": "2026-10-19T02:31:13.815Z"
-    },
-    {
-      "name": "Generate with AI",
-      "status": "done",
-      "at": "2026-10-19T02:31:26.899Z",
-      "promptChars": 749,
-      "ragRefs": "none"
-    },
-    {
-      "name": "HuggingFace · attempt 1",
-      "status": "error",
-      "at": "2026-10-19T02:31:16.932Z",
-      "error": "fetch failed"
-    },
-    {
-      "name": "HuggingFace · attempt 2",
-      "status": "error",
-      "at": "2026-10-19T02:31:21.962Z",
-      "error": "fetch failed"
-    },
-    {
-      "name": "OpenRouter · attempt 1",
-      "status": "done",
-      "at": "2026-10-19T02:31:25.971Z",
-      "chars": 17
-    },
-    {
-      "name": "Error",
-      "status": "error",
-      "error": "OpenRouter returned unusable HTML",
-      "at": "2026-10-19T02:31:27.918Z"
-    }
-  ],
+  "runId": "39190759118",
+  "started": "2026-10-19T02:36:35.825Z",
+  "updated": "2026-10-19T02:36:35.825Z",
+  "status": "running",
+  "steps": [],
   "draft": "",
   "draftSize": 0,
-  "error": "OpenRouter returned unusable HTML"
+  "error": null
 }
