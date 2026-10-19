@@ -45,11 +45,7 @@
   .mode-switch button:hover{color:var(--ai-fg)}
   .mode-switch button.active{background:var(--ai-accent);color:#07120b;
     border-color:var(--ai-accent)}
-  .mode-switch .mode-hint{color:var(--ai-muted);
-    font:.7rem ui-monospace,Menlo,monospace;
-    align-self:center;margin-left:.6rem;display:none}
-  @media (min-width:700px){.mode-switch .mode-hint{display:inline}}
-
+  
   .ai-card{background:var(--ai-card);border:1px solid var(--ai-line);
     border-radius:14px;padding:1.25rem}
   .ai-card h2{margin:0 0 .9rem;font:600 .95rem ui-monospace,Menlo,monospace;
@@ -65,6 +61,7 @@
     border-color:var(--ai-accent);color:var(--ai-fg);
     box-shadow:0 0 0 .2rem rgba(90,181,82,.25)}
   textarea.form-control{min-height:110px;resize:vertical}
+  
   .btn-ai{background:var(--ai-accent);color:#07120b;border:0;
     font:700 .82rem ui-monospace,Menlo,monospace;letter-spacing:.06em;
     text-transform:uppercase;padding:.75rem 1.2rem;border-radius:8px}
@@ -75,6 +72,7 @@
     letter-spacing:.06em;text-transform:uppercase;padding:.5rem .85rem;border-radius:8px}
   .btn-ai-ghost:hover:not(:disabled){background:#16261d;color:var(--ai-fg);
     border-color:var(--ai-accent)}
+  
   .ai-status{display:none;margin-top:.9rem;padding:.7rem .9rem;
     border-radius:8px;font:.78rem ui-monospace,Menlo,monospace;
     border:1px solid var(--ai-line)}
@@ -82,9 +80,11 @@
   .ai-status.ok{color:#9ef0c0;background:#10261a;border-color:#23553a}
   .ai-status.err{color:var(--ai-danger);background:#1e1010;border-color:#3a1f1f}
   .ai-status.info{color:var(--ai-accent2);background:#0e1c14;border-color:#1f4a2a}
+  
   .token-ok{color:var(--ai-accent);font:700 .72rem ui-monospace,Menlo,monospace;
     text-transform:uppercase;letter-spacing:.06em;display:none}
   .token-ok.show{display:inline}
+  
   .project-row{padding:.75rem 0;border-bottom:1px solid var(--ai-line);
     display:flex;justify-content:space-between;align-items:center;
     flex-wrap:wrap;gap:.5rem}
@@ -94,14 +94,11 @@
   .project-row a:hover{color:var(--ai-fg)}
   .project-row .pmeta{color:var(--ai-muted);
     font:.7rem ui-monospace,Menlo,monospace}
-  .badge-v{display:inline-block;margin-left:.4rem;
-    font:700 .6rem ui-monospace,Menlo,monospace;letter-spacing:.08em;
-    text-transform:uppercase;color:var(--ai-accent2);
-    border:1px solid #1f4a2a;background:#17301f;
-    padding:.1rem .5rem;border-radius:999px;vertical-align:middle}
+  
   .ai-footer{text-align:center;color:var(--ai-muted);
     font:.7rem ui-monospace,Menlo,monospace;padding:1.5rem 1rem 2.5rem}
   .ai-footer a{color:var(--ai-accent2);text-decoration:none}
+  
   .modal-ai{position:fixed;inset:0;background:rgba(0,0,0,.88);
     z-index:9999;display:none;padding:1rem;overflow-y:auto}
   .modal-ai.show{display:flex;flex-direction:column;align-items:center}
@@ -117,8 +114,10 @@
     border-right-color:transparent;border-radius:50%;animation:spin 1s linear infinite}
   @keyframes spin{to{transform:rotate(360deg)}}
   .modal-ai .body{padding:1rem 1.15rem;max-height:70vh;overflow-y:auto}
+  
+  /* Progress Steps */
   .step-list{list-style:none;margin:0;padding:0}
-  .step-list li{padding:.55rem 0;display:flex;gap:.65rem;align-items:flex-start;
+  .step-list li{padding:.65rem 0;display:flex;gap:.75rem;align-items:flex-start;
     border-bottom:1px dashed var(--ai-line);
     font:.8rem ui-monospace,Menlo,monospace}
   .step-list li:last-child{border-bottom:0}
@@ -134,6 +133,7 @@
   .step-list .meta{color:var(--ai-muted);font-size:.72rem;
     display:block;margin-top:.15rem;word-break:break-word}
   .step-list .chars{color:var(--ai-muted);font-size:.7rem;margin-left:.5rem}
+  
   .draft-pane{background:#0e1a14;border:1px solid var(--ai-line);
     border-radius:10px;margin-top:1rem;padding:.85rem;max-height:320px;
     overflow:auto;font:.7rem ui-monospace,Menlo,monospace;
@@ -145,6 +145,7 @@
     display:flex;gap:.5rem;justify-content:flex-end;flex-wrap:wrap}
   #codeContent{margin:0;padding:1rem;font:.72rem ui-monospace,Menlo,monospace;
     color:var(--ai-fg);white-space:pre-wrap;word-break:break-word;background:#0e1a14}
+    
   @media (max-width:576px){
     .ai-header{padding:1.5rem .75rem 1rem}
     .ai-logo{width:64px;height:64px}
@@ -162,14 +163,13 @@
          alt="" onerror="this.style.display='none'">
     <h1 class="ai-title text-start">Ariotica<small>Create · Improve · Fix · Audit</small></h1>
   </div>
-  <p class="ai-sub mb-0">Vanilla JS · live progress · two ways to trigger</p>
+  <p class="ai-sub mb-0">Vanilla JS · live progress · AI Agent</p>
 </header>
 
 <!-- Mode switch -->
 <div class="mode-switch">
   <button id="modeDirect" class="active" type="button">⚡ Direct</button>
   <button id="modeIssue"  type="button">📋 Issue</button>
-  <span class="mode-hint" id="modeHint">Direct: runs immediately via GitHub API</span>
 </div>
 
 <main class="container py-3 py-md-4" style="max-width:820px">
@@ -191,29 +191,43 @@
     <div id="tokenStatus" class="ai-status"></div>
   </section>
 
-  <!-- New project -->
+  <!-- New project form -->
   <section class="ai-card mb-3">
-    <h2>New Project</h2>
+    <h2>Agent Controls</h2>
+    
+    <!-- Action / Mode -->
     <div class="mb-3">
-      <label class="form-label" for="name">Project name</label>
-      <input id="name" type="text" class="form-control"
-             placeholder="kanban" autocomplete="off">
-    </div>
-    <div class="mb-3">
-      <label class="form-label" for="prompt">Description</label>
-      <textarea id="prompt" class="form-control"
-                placeholder="a kanban board with three columns, drag and drop, localStorage, dark theme"></textarea>
-    </div>
-    <div class="mb-3">
-      <label class="form-label" for="mode">Mode</label>
-      <select id="mode" class="form-select">
-        <option value="create">Create new</option>
-        <option value="improve">Improve existing</option>
-        <option value="fix">Fix bug</option>
-        <option value="audit">Audit &amp; fix</option>
-        <option value="delete">Delete</option>
+      <label class="form-label" for="actionSelect">What do you want to do?</label>
+      <select id="actionSelect" class="form-select">
+        <option value="create">✨ Create a new app</option>
+        <option value="improve">🔄 Improve an existing app</option>
+        <option value="fix">🔧 Fix a bug in an app</option>
+        <option value="audit">🛡️ Audit & fix security issues</option>
+        <option value="delete">🗑️ Delete an app</option>
       </select>
     </div>
+
+    <!-- Project Name (Input for create, Select for others) -->
+    <div class="mb-3" id="newProjectWrapper">
+      <label class="form-label" for="projectName">New Project Name</label>
+      <input id="projectName" type="text" class="form-control"
+             placeholder="e.g. kanban, todo-list, calculator" autocomplete="off">
+    </div>
+    
+    <div class="mb-3" id="existingProjectWrapper" style="display:none;">
+      <label class="form-label" for="projectSelect">Select App</label>
+      <select id="projectSelect" class="form-select">
+        <option value="">Loading apps...</option>
+      </select>
+    </div>
+
+    <!-- Prompt -->
+    <div class="mb-3">
+      <label class="form-label" for="promptText" id="promptLabel">Describe the app</label>
+      <textarea id="promptText" class="form-control"
+                placeholder="a kanban board with three columns, drag and drop, localStorage, dark theme"></textarea>
+    </div>
+
     <div class="d-grid d-sm-block">
       <button id="generate" class="btn-ai" type="button">⚡ Generate</button>
     </div>
@@ -222,7 +236,7 @@
 
   <!-- Projects -->
   <section class="ai-card mb-3">
-    <h2>Projects</h2>
+    <h2>Your Projects</h2>
     <div id="projectList">
       <p style="color:var(--ai-muted);font:.8rem ui-monospace,Menlo,monospace">Loading…</p>
     </div>
@@ -248,7 +262,7 @@
     <div class="body">
       <ul class="step-list" id="stepList"></ul>
       <div class="draft-pane" id="draftPane">
-        <span class="label">📝 Code (<span id="draftSize">0</span> chars)</span>
+        <span class="label">📝 Code being written (<span id="draftSize">0</span> chars)</span>
         <span id="draftContent"></span>
       </div>
     </div>
@@ -270,7 +284,6 @@
     </div>
     <div class="footer">
       <button class="btn-ai-ghost" id="copyCode" type="button">Copy</button>
-      <button class="btn-ai-ghost" id="downloadCode" type="button">Download</button>
       <a class="btn-ai" id="openCode" target="_blank" rel="noopener">Open ↗</a>
     </div>
   </div>
@@ -299,7 +312,7 @@
     }
   }
 
-  /* ---------- mode switch ---------- */
+  /* ---------- mode switch (Direct vs Issue) ---------- */
   function getMode() { return localStorage.getItem('trigger_mode') || 'direct'; }
   function setMode(m) {
     localStorage.setItem('trigger_mode', m);
@@ -309,19 +322,53 @@
   function applyMode() {
     const m = getMode();
     const isDirect = m === 'direct';
-
     $('modeDirect').classList.toggle('active', isDirect);
     $('modeIssue').classList.toggle('active', !isDirect);
-    $('modeHint').textContent = isDirect
-      ? 'Direct: runs immediately via GitHub API'
-      : 'Issue: opens a pre-filled GitHub issue';
     $('tokenCard').style.display = isDirect ? '' : 'none';
-
     refreshGenerateBtn();
   }
 
   $('modeDirect').addEventListener('click', () => setMode('direct'));
   $('modeIssue').addEventListener('click', () => setMode('issue'));
+
+  /* ---------- dynamic form logic ---------- */
+  function handleActionChange() {
+    const action = $('actionSelect').value;
+    const isCreate = action === 'create';
+    
+    // Toggle inputs
+    $('newProjectWrapper').style.display = isCreate ? '' : 'none';
+    $('existingProjectWrapper').style.display = isCreate ? 'none' : '';
+    
+    // Update prompt label and button text
+    if (isCreate) {
+      $('promptLabel').textContent = 'Describe the new app';
+      $('promptText').placeholder = 'a kanban board with three columns, drag and drop, localStorage, dark theme';
+      $('generate').textContent = '⚡ Generate App';
+    } else if (action === 'improve') {
+      $('promptLabel').textContent = 'What should we improve or add?';
+      $('promptText').placeholder = 'add a filter bar and make the buttons larger';
+      $('generate').textContent = '🔄 Improve App';
+    } else if (action === 'fix') {
+      $('promptLabel').textContent = 'Describe the bug';
+      $('promptText').placeholder = 'the reset button throws a reference error';
+      $('generate').textContent = '🔧 Fix Bug';
+    } else if (action === 'audit') {
+      $('promptLabel').textContent = 'Audit Instructions (optional)';
+      $('promptText').placeholder = 'focus on XSS and inline handlers';
+      $('generate').textContent = '🛡️ Audit & Fix';
+    } else if (action === 'delete') {
+      $('promptLabel').textContent = 'Confirm deletion';
+      $('promptText').value = 'Delete this app.';
+      $('promptText').disabled = true;
+      $('generate').textContent = '🗑️ Delete App';
+    }
+    
+    if (action !== 'delete') $('promptText').disabled = false;
+    refreshGenerateBtn();
+  }
+
+  $('actionSelect').addEventListener('change', handleActionChange);
 
   /* ---------- token ---------- */
   function getToken() { return localStorage.getItem('gh_pat') || ''; }
@@ -329,7 +376,10 @@
   function refreshGenerateBtn() {
     const m = getMode();
     const hasTok = !!getToken();
+    const action = $('actionSelect').value;
+    
     $('tokenOk').classList.toggle('show', hasTok);
+    
     if (m === 'direct') {
       $('generate').disabled = !hasTok;
       $('generate').title = hasTok ? '' : 'Save a token first';
@@ -354,51 +404,31 @@
     toast($('tokenStatus'), 'Token cleared.', 'info');
   });
 
-  /* ---------- dispatch (direct mode) ---------- */
-  async function dispatch(project, prompt, mode) {
-    return fetch(
-      `${API}/repos/${OWNER}/${REPO}/actions/workflows/${WORKFLOW}/dispatches`,
-      {
-        method: 'POST',
-        headers: {
-          'Accept': 'application/vnd.github+json',
-          'X-GitHub-Api-Version': '2022-11-28',
-          'Authorization': 'Bearer ' + getToken(),
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          ref: 'main',
-          inputs: { project, prompt, mode },
-        }),
-      }
-    );
-  }
-
-  /* ---------- open issue (issue mode) ---------- */
-  function openIssue(project, prompt, mode) {
-    const title = '[BUILD] ' + project + (mode !== 'create' ? ' [' + mode + ']' : '');
-    const body  = prompt;
-    const url = 'https://github.com/' + OWNER + '/' + REPO + '/issues/new'
-              + '?title=' + encodeURIComponent(title)
-              + '&body='  + encodeURIComponent(body);
-    window.open(url, '_blank', 'noopener');
-  }
-
-  /* ---------- generate ---------- */
+  /* ---------- generate action ---------- */
   $('generate').addEventListener('click', async () => {
-    const project = $('name').value.trim();
-    const prompt  = $('prompt').value.trim();
-    const mode    = $('mode').value;
+    const action = $('actionSelect').value;
+    const project = action === 'create' ? $('projectName').value.trim() : $('projectSelect').value;
+    const prompt  = $('promptText').value.trim();
     const st      = $('genStatus');
     const trigger = getMode();
 
-    if (!project) { toast(st, 'Name required.', 'err'); $('name').focus(); return; }
-    if (!prompt && mode !== 'delete' && mode !== 'audit') {
-      toast(st, 'Prompt required.', 'err'); $('prompt').focus(); return;
+    if (!project) { 
+      toast(st, action === 'create' ? 'Name required.' : 'Select an app.', 'err'); 
+      (action === 'create' ? $('projectName') : $('projectSelect')).focus(); 
+      return; 
+    }
+    if (!prompt && action !== 'delete' && action !== 'audit') {
+      toast(st, 'Prompt required.', 'err'); $('promptText').focus(); return;
     }
 
     if (trigger === 'issue') {
-      openIssue(project, prompt, mode);
+      // Build the exact title the GitHub Action expects
+      const suffix = action !== 'create' ? ` [${action}]` : '';
+      const title = `[BUILD] ${project}${suffix}`;
+      const body  = prompt || (action === 'audit' ? 'Fix security issues.' : 'Delete');
+      
+      const url = `https://github.com/${OWNER}/${REPO}/issues/new?title=${encodeURIComponent(title)}&body=${encodeURIComponent(body)}`;
+      window.open(url, '_blank', 'noopener');
       toast(st, '✓ GitHub opened. Tap "Submit new issue" to run.', 'ok');
       startWatching();
       return;
@@ -408,12 +438,26 @@
     if (!getToken()) { toast(st, 'Save a token first.', 'err'); return; }
 
     $('generate').disabled = true;
+    const oldTxt = $('generate').textContent;
     $('generate').textContent = '⚡ Dispatching…';
     toast(st, 'Starting workflow…', 'info');
 
     try {
-      const res = await dispatch(project, prompt, mode);
-      $('generate').textContent = '⚡ Generate';
+      const res = await fetch(`${API}/repos/${OWNER}/${REPO}/actions/workflows/${WORKFLOW}/dispatches`, {
+        method: 'POST',
+        headers: {
+          'Accept': 'application/vnd.github+json',
+          'X-GitHub-Api-Version': '2022-11-28',
+          'Authorization': 'Bearer ' + getToken(),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          ref: 'main',
+          inputs: { project: project, prompt: prompt || 'none', mode: action },
+        }),
+      });
+      
+      $('generate').textContent = oldTxt;
       refreshGenerateBtn();
 
       if (res.status === 204) {
@@ -421,22 +465,18 @@
         startWatching();
       } else if (res.status === 401 || res.status === 403) {
         toast(st, 'Token rejected. Check Actions + Contents are Read & write.', 'err');
-      } else if (res.status === 404) {
-        toast(st, 'Workflow file not found. Check ai-cron.yml exists on main.', 'err');
-      } else if (res.status === 422) {
-        toast(st, 'Invalid inputs. Check the workflow accepts project/prompt/mode.', 'err');
       } else {
         const txt = await res.text();
         toast(st, 'Failed (' + res.status + '): ' + txt.slice(0, 200), 'err');
       }
     } catch (e) {
-      $('generate').textContent = '⚡ Generate';
+      $('generate').textContent = oldTxt;
       refreshGenerateBtn();
       toast(st, 'Network error: ' + e.message, 'err');
     }
   });
 
-  /* ---------- progress ---------- */
+  /* ---------- progress watcher ---------- */
   function startWatching() {
     if (pollTimer) clearInterval(pollTimer);
     $('progressModal').classList.add('show');
@@ -454,6 +494,7 @@
         if (!r.ok) return;
         const p = await r.json();
         renderProgress(p);
+        
         if (p.status === 'done' || p.status === 'error') {
           clearInterval(pollTimer); pollTimer = null;
           $('spinIcon').style.display = 'none';
@@ -476,6 +517,7 @@
       const name = document.createElement('span'); name.className = 'name';
       name.textContent = s.name;
       info.appendChild(name);
+      
       if (s.chars) {
         const c = document.createElement('span'); c.className = 'chars';
         c.textContent = `${(s.chars / 1024).toFixed(1)} KB`;
@@ -499,6 +541,7 @@
       li.appendChild(marker); li.appendChild(info);
       list.appendChild(li);
     });
+    
     if (p.draft && p.draft.length > 0) {
       $('draftPane').classList.add('show');
       $('draftContent').textContent = p.draft;
@@ -529,19 +572,13 @@
       setTimeout(() => $('copyCode').textContent = 'Copy', 1500);
     } catch {}
   });
-  $('downloadCode').addEventListener('click', () => {
-    const blob = new Blob([$('codeContent').textContent], { type: 'text/html' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = ($('codeTitle').textContent || 'app').split('/').pop();
-    a.click();
-    URL.revokeObjectURL(a.href);
-  });
 
   /* ---------- project list ---------- */
   async function loadProjects() {
     const list = $('projectList');
+    const select = $('projectSelect');
     list.innerHTML = '<p style="color:var(--ai-muted);font:.8rem ui-monospace,Menlo,monospace">Loading…</p>';
+    
     try {
       const r = await fetch('projects.json?t=' + Date.now(), { cache: 'no-store' });
       if (!r.ok) throw new Error('HTTP ' + r.status);
@@ -549,6 +586,19 @@
       if (!Array.isArray(items)) throw new Error('bad data');
 
       apps = items.slice().sort((a, b) => (b.created || '').localeCompare(a.created || ''));
+
+      // Populate dropdown
+      select.innerHTML = '<option value="">-- Choose an app --</option>';
+      if (items.length === 0) {
+        select.innerHTML = '<option value="">No apps found. Create one first!</option>';
+      } else {
+        apps.forEach(it => {
+          const opt = document.createElement('option');
+          opt.value = it.project;
+          opt.textContent = it.project;
+          select.appendChild(opt);
+        });
+      }
 
       if (!items.length) {
         list.innerHTML = '<p style="color:var(--ai-muted);font:.8rem ui-monospace,Menlo,monospace">No projects yet.</p>';
@@ -567,11 +617,6 @@
         a.rel = 'noopener';
         a.textContent = it.project;
         left.appendChild(a);
-
-        const badge = document.createElement('span');
-        badge.className = 'badge-v';
-        badge.textContent = 'vanilla JS';
-        left.appendChild(badge);
 
         const right = document.createElement('div');
         const view = document.createElement('button');
@@ -603,7 +648,19 @@
 
   /* ---------- boot ---------- */
   applyMode();
+  handleActionChange();
   loadProjects();
+  
+  // Check if there is an active run on load
+  (async () => {
+    try {
+      const r = await fetch('progress.json?t=' + Date.now(), { cache: 'no-store' });
+      if (r.ok) {
+        const p = await r.json();
+        if (p.status === 'running') startWatching();
+      }
+    } catch {}
+  })();
 })();
 </script>
 </body>
