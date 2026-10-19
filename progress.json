@@ -1,11 +1,52 @@
 {
   "runId": "39232441339",
   "started": "2026-10-19T09:45:38.662Z",
-  "updated": "2026-10-19T09:45:38.662Z",
+  "updated": "2026-10-19T09:47:43.494Z",
   "status": "running",
   "issue": 23,
-  "statusCommentId": null,
-  "steps": [],
+  "statusCommentId": 6264353534,
+  "steps": [
+    {
+      "name": "Parse request",
+      "status": "done",
+      "at": "2026-10-19T09:45:39.940Z",
+      "sec": 0
+    },
+    {
+      "name": "Build RAG context",
+      "status": "done",
+      "at": "2026-10-19T09:45:41.458Z",
+      "sec": 1
+    },
+    {
+      "name": "Generate with AI",
+      "status": "running",
+      "at": "2026-10-19T09:45:41.458Z",
+      "promptChars": 1249,
+      "ragRefs": "none"
+    },
+    {
+      "name": "Groq · attempt 1",
+      "status": "error",
+      "at": "2026-10-19T09:45:41.594Z",
+      "sec": 0,
+      "error": "HTTP 404: {\"error\":{\"message\":\"The model `llama-3.1-8b-instant` does not exist or you do not have access to it.\",\"type\":\"invalid_request_error\",\"code\":\"model_not_found\"}}\n"
+    },
+    {
+      "name": "Gemini · attempt 1",
+      "status": "error",
+      "at": "2026-10-19T09:45:41.775Z",
+      "sec": 0,
+      "error": "HTTP 404: [{\n  \"error\": {\n    \"code\": 404,\n    \"message\": \"models/gemini-1.5-flash is not found for API version v1main, or is not supported for generateContent. Call ModelService.ListModels to see the list of a"
+    },
+    {
+      "name": "OpenRouter · attempt 1",
+      "status": "error",
+      "at": "2026-10-19T09:47:42.798Z",
+      "sec": 121,
+      "error": "OpenRouter/xingchen-agi/xing4.0-29b-a4b:free timed out after 120s"
+    }
+  ],
   "draft": "",
   "draftSize": 0,
   "error": null
