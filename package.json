@@ -1,0 +1,20 @@
+{
+  "name": "ariotica",
+  "version": "1.0.0",
+  "description": "Agentic vanilla JS app generator",
+  "main": "generate.js",
+  "scripts": {
+    "start": "node generate.js",
+    "index": "node build-index.js",
+    "test": "node lib/smoke.js"
+  },
+  "dependencies": {
+    "@octokit/rest": "^20.1.0",
+    "eslint": "^9.0.0",
+    "jsdom": "^24.0.0",
+    "sparrow-sast": "^1.0.0"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
