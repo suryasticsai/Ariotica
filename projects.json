@@ -34,5 +34,16 @@
     "provider": "OpenRouter",
     "findings": 2,
     "size": 9238
+  },
+  {
+    "project": "casio-calculator",
+    "file": "projects/casio-calculator.html",
+    "prompt": "Create a simple Calculator with realistic buttons like UI with Casio Brand",
+    "created": "2026-10-19T20:15:53",
+    "mode": "create",
+    "provider": "Groq",
+    "findings": 0,
+    "smoke": "pass",
+    "size": 2784
   }
 ]
