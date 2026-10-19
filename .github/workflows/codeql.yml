@@ -1,0 +1,38 @@
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+    paths: ['projects/**', '.github/workflows/codeql.yml']
+  pull_request:
+    branches: [main]
+    paths: ['projects/**']
+
+jobs:
+  analyze:
+    name: Analyze (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+      packages: read
+    strategy:
+      fail-fast: false
+      matrix:
+        language: [javascript-typescript]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          # queries: security-and-quality   # uncomment for stricter rules
+
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: '/language:${{ matrix.language }}'
+
+      # Optional: Semgrep OSS as a second, fast opinion (free, no account)
+      - name: Semgrep scan
+        run: pipx run semgrep scan --config p/javascript --error --metrics=off projects/
