@@ -1,4 +1,4 @@
-// generate.js — agentic code generator (patched)
+// generate.js — agentic code generator (v3: comment-driven rebuilds, live status comment, JSON output)
 const { Octokit } = require('@octokit/rest');
 
 const PROJECTS_DIR  = 'projects';
@@ -6,9 +6,10 @@ const MANIFEST_PATH = 'projects.json';
 const PROGRESS_PATH = 'progress.json';
 const POLL_POST     = 'https://text.pollinations.ai/openai';
 
-const MAX_TOKENS     = 12000;   // was 4000 -> truncated apps
+const MAX_TOKENS     = 12000;   // output budget so full apps are not cut off
 const EXISTING_LIMIT = 30000;   // chars of current HTML sent for improve/fix/audit
 const PROGRESS_EVERY = 20000;   // ms, throttle for progress.json commits
+const STATUS_EVERY   = 5000;    // ms, throttle for editing the live status comment
 
 const [OWNER, REPO] = (process.env.GITHUB_REPOSITORY || '').split('/');
 const BRANCH = process.env.GITHUB_REF_NAME || 'main';
@@ -18,21 +19,69 @@ if (!OWNER || !REPO) { console.error('GITHUB_REPOSITORY not set'); process.exit(
 const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
 
 /* ============================================================
-   PROGRESS TRACKER (throttled to avoid commit spam)
+   PROGRESS TRACKER
+   - progress.json: committed (throttled), for the web page
+   - status comment: ONE issue comment edited in place (no commits, always fresh)
    ============================================================ */
+const T0 = Date.now();
 const steps = [];
 let currentDraft = '';
 let currentError = null;
+let currentIssue = null;
+let statusCommentId = null;
+let statusHeader = '';
+let statusDone = false;
 let lastPush = 0;
+let lastStatus = 0;
 const started = new Date().toISOString();
 
+function icon(s) { return s.status === 'done' ? '✅' : s.status === 'error' ? '❌' : '⏳'; }
+function stepLine(s) {
+  return `${icon(s)} ${s.name}${s.sec != null ? ` — ${s.sec}s` : ''}${s.error ? ` — ${String(s.error).slice(0, 100)}` : ''}`;
+}
+function elapsed() { return Math.round((Date.now() - T0) / 1000); }
+
+async function updateStatusComment(force) {
+  if (!statusCommentId || statusDone) return;
+  if (!force && Date.now() - lastStatus < STATUS_EVERY) return;
+  lastStatus = Date.now();
+  const lines = steps.filter(s => s.name !== 'Error').slice(-10).map(stepLine);
+  const body = `${statusHeader}\n\n${lines.join('\n')}\n\n_elapsed ${elapsed()}s · run ${RUN_ID}_`;
+  try { await octokit.issues.updateComment({ owner: OWNER, repo: REPO, comment_id: statusCommentId, body }); }
+  catch (e) { console.log('[status] update failed:', e.message); }
+}
+
+async function startStatusComment(issue, header) {
+  if (!issue) return;
+  statusHeader = header;
+  try {
+    const { data } = await octokit.issues.createComment({ owner: OWNER, repo: REPO, issue_number: issue, body: `${header}\n\n_starting…_` });
+    statusCommentId = data.id;
+  } catch (e) { console.log('[status] create failed:', e.message); }
+}
+
+// Replace the live status comment with the final message (or post one if none exists).
+async function finishStatus(issue, body, close) {
+  if (!issue) return;
+  statusDone = true;
+  const details = `<details><summary>Steps · ${elapsed()}s total</summary>\n\n${steps.filter(s => s.name !== 'Error').map(s => '- ' + stepLine(s)).join('\n')}\n\n</details>`;
+  const full = `${body}\n\n${details}`;
+  try {
+    if (statusCommentId) await octokit.issues.updateComment({ owner: OWNER, repo: REPO, comment_id: statusCommentId, body: full });
+    else await octokit.issues.createComment({ owner: OWNER, repo: REPO, issue_number: issue, body: full });
+    if (close) await octokit.issues.update({ owner: OWNER, repo: REPO, issue_number: issue, state: 'closed' });
+  } catch (e) { console.log('[status] finish failed:', e.message); }
+}
+
 async function pushProgress(update = {}, force = false) {
+  await updateStatusComment(force || !!update.status);
   const mustPush = force || update.status || currentError;
   if (!mustPush && Date.now() - lastPush < PROGRESS_EVERY) return;
   lastPush = Date.now();
   const payload = {
     runId: RUN_ID, started, updated: new Date().toISOString(),
     status: currentError ? 'error' : (update.status || 'running'),
+    issue: currentIssue, statusCommentId,
     steps, draft: currentDraft.slice(0, 8000), draftSize: currentDraft.length,
     error: currentError, ...update,
   };
@@ -43,13 +92,16 @@ async function pushProgress(update = {}, force = false) {
 }
 
 async function step(name, fn, meta = {}) {
+  const t0 = Date.now();
   const s = { name, status: 'running', at: new Date().toISOString(), ...meta };
   steps.push(s); await pushProgress();
   try {
     const result = await fn();
-    s.status = 'done'; s.at = new Date().toISOString(); await pushProgress(); return result;
+    s.status = 'done'; s.sec = Math.round((Date.now() - t0) / 1000); s.at = new Date().toISOString();
+    await pushProgress(); return result;
   } catch (e) {
-    s.status = 'error'; s.error = String(e.message || e).slice(0, 300);
+    s.status = 'error'; s.sec = Math.round((Date.now() - t0) / 1000);
+    s.error = String(e.message || e).slice(0, 300);
     s.at = new Date().toISOString(); await pushProgress({}, true); throw e;
   }
 }
@@ -67,8 +119,10 @@ STRICT RULES:
 - System fonts only (system-ui, Georgia, ui-monospace, Menlo).
 - Always escape user input with textContent — never innerHTML for untrusted data.
 - Add rel="noopener" to any target="_blank" link.
+- Never declare unused variables or parameters. If a caught error is not used, write catch { ... } with no binding.
 - Keep the app compact enough to finish in one response; the file MUST end with </html>.
-Reply with ONLY the complete HTML file, starting with <!DOCTYPE html> and ending with </html>. No other text.
+OUTPUT FORMAT: reply with ONLY one JSON object and nothing else: {"html": "<the complete HTML file as a single JSON string>"}
+The HTML inside must start with <!DOCTYPE html> and end with </html>. Escape double quotes as \\" and newlines as \\n so the JSON is valid. No markdown fences, no commentary.
 
 `;
 
@@ -98,7 +152,22 @@ function isVanilla(html) {
 
 function stripFences(t) {
   t = String(t || '').trim();
-  t = t.replace(/^```(?:html|HTML)?\s*\n?/, '').replace(/\n?```\s*$/, '');
+  t = t.replace(/^```(?:json|JSON|html|HTML)?\s*\n?/, '').replace(/\n?```\s*$/, '').trim();
+  // JSON envelope: {"html": "..."}  (falls back to raw HTML if the model ignored the format)
+  const k = t.indexOf('{');
+  if (k !== -1 && k < 20 && /"html"\s*:/.test(t.slice(0, 80))) {
+    const body = t.slice(k);
+    let extracted = null;
+    try {
+      const j = JSON.parse(body);
+      if (j && typeof j.html === 'string') extracted = j.html;
+    } catch {
+      // Salvage JSON with raw newlines inside the string value.
+      const m = body.match(/"html"\s*:\s*"([\s\S]*)"\s*\}?\s*$/);
+      if (m) { try { extracted = JSON.parse('"' + m[1].replace(/\r?\n/g, '\\n') + '"'); } catch {} }
+    }
+    t = extracted === null ? '' : extracted; // never pass escaped JSON text on as HTML
+  }
   const i = t.search(/<!DOCTYPE|<html/i);
   if (i > 0) t = t.slice(i);
   const j = t.lastIndexOf('</html>');
@@ -120,34 +189,40 @@ async function withTimeout(promise, ms, label) {
   const timeout = new Promise((_, rej) => { t = setTimeout(() => rej(new Error(`${label} timed out`)), ms); });
   try { return await Promise.race([promise, timeout]); } finally { clearTimeout(t); }
 }
-const SYS_PROMPT = 'You output raw HTML files only. Start with <!DOCTYPE html> and end with </html>. No markdown fences.';
+const SYS_PROMPT = 'You reply with a single valid JSON object only, in the form {"html": "<complete HTML file as a JSON string>"}. The HTML starts with <!DOCTYPE html> and ends with </html>. No markdown fences, no other text.';
+
+// 400/401/402/403/404 will not fix themselves on retry, so mark them fatal (skip the retry).
+function httpErr(status, text) {
+  const e = new Error(`HTTP ${status}: ${String(text || '').slice(0, 200)}`);
+  e.fatal = [400, 401, 402, 403, 404].includes(status);
+  return e;
+}
 
 /* 1. Hugging Face */
 async function callHuggingFace(prompt) {
   const token = process.env.HF_TOKEN;
-  if (!token) throw new Error('HF_TOKEN secret is missing');
+  if (!token) { const e = new Error('HF_TOKEN secret is missing'); e.fatal = true; throw e; }
   const res = await withTimeout(fetch('https://router.huggingface.co/v1/chat/completions', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
     body: JSON.stringify({
-      model: 'Qwen/Qwen2.5-Coder-32B-Instruct',
+      model: process.env.HF_MODEL || 'Qwen/Qwen2.5-Coder-32B-Instruct',
       messages: [{ role: 'system', content: SYS_PROMPT }, { role: 'user', content: prompt }],
       max_tokens: MAX_TOKENS
     }),
   }), 180000, 'HuggingFace');
-  if (!res.ok) throw new Error(`HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
+  if (!res.ok) throw httpErr(res.status, await res.text());
   const data = await res.json();
   const text = data.choices?.[0]?.message?.content || '';
   if (!text || text.length < 100) throw new Error('Empty or very short response');
   return text;
 }
 
-/* 2. OpenRouter (Qwen Coder, then Llama 3.3) */
+/* 2. OpenRouter (free models looked up live; optional OPENROUTER_MODEL goes first) */
 async function callOpenRouter(prompt) {
   const token = process.env.OPENROUTER_API_KEY;
-  if (!token) throw new Error('OPENROUTER_API_KEY secret is missing');
+  if (!token) { const e = new Error('OPENROUTER_API_KEY secret is missing'); e.fatal = true; throw e; }
 
-  // Free slugs change often, so ask OpenRouter which free models exist right now.
   let models = [];
   try {
     const r = await withTimeout(fetch('https://openrouter.ai/api/v1/models'), 20000, 'OpenRouter-models');
@@ -161,8 +236,8 @@ async function callOpenRouter(prompt) {
   if (process.env.OPENROUTER_MODEL) models.unshift(process.env.OPENROUTER_MODEL);
   if (!models.length) models = ['qwen/qwen-2.5-coder-32b-instruct']; // paid slug, needs credits
   console.log('[OpenRouter] trying models:', models.join(', '));
-  let lastErr;
 
+  let lastErr; let allFatal = true;
   for (const model of models) {
     try {
       const res = await withTimeout(fetch('https://openrouter.ai/api/v1/chat/completions', {
@@ -180,20 +255,23 @@ async function callOpenRouter(prompt) {
         }),
       }), 180000, 'OpenRouter');
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
+      if (!res.ok) throw httpErr(res.status, await res.text());
       const data = await res.json();
       const text = data.choices?.[0]?.message?.content || '';
       if (!text || text.length < 100) throw new Error('Empty or very short response');
+      console.log(`[OpenRouter] ok with ${model}`);
       return text;
     } catch (e) {
       lastErr = e;
+      if (!e.fatal) allFatal = false;
       console.log(`[OpenRouter] Model ${model} failed: ${e.message}`);
     }
   }
+  lastErr.fatal = allFatal; // if every model gave a 4xx, a second pass is pointless
   throw lastErr;
 }
 
-/* 3. Pollinations POST (GET fallback removed: URL too long for big prompts) */
+/* 3. Pollinations POST */
 async function callPollinationsPost(prompt) {
   const res = await withTimeout(fetch(POLL_POST, {
     method: 'POST',
@@ -201,9 +279,10 @@ async function callPollinationsPost(prompt) {
     body: JSON.stringify({
       model: 'openai',
       messages: [{ role: 'system', content: SYS_PROMPT }, { role: 'user', content: prompt }],
+      response_format: { type: 'json_object' },
     }),
   }), 180000, 'Pollinations-POST');
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  if (!res.ok) throw httpErr(res.status, '');
   const data = await res.json();
   const text = data.choices?.[0]?.message?.content || data.text || '';
   if (!text || text.length < 100) throw new Error('Empty response');
@@ -211,14 +290,19 @@ async function callPollinationsPost(prompt) {
 }
 
 async function askAI(prompt) {
-  const providers = [
-    ['HuggingFace', callHuggingFace],
-    ['OpenRouter', callOpenRouter],
-    ['Pollinations-POST', callPollinationsPost],
-  ];
+  const all = {
+    huggingface: ['HuggingFace', callHuggingFace],
+    openrouter: ['OpenRouter', callOpenRouter],
+    pollinations: ['Pollinations-POST', callPollinationsPost],
+  };
+  // PROVIDER_ORDER (repo variable) lets you pin what works first, e.g. "openrouter,pollinations"
+  const order = (process.env.PROVIDER_ORDER || 'huggingface,openrouter,pollinations')
+    .split(',').map(x => x.trim().toLowerCase()).filter(x => all[x]);
+  const providers = order.map(k => all[k]);
   const errors = [];
   for (const [name, fn] of providers) {
     for (let i = 1; i <= 2; i++) {
+      const t0 = Date.now();
       const s = { name: `${name} · attempt ${i}`, status: 'running', at: new Date().toISOString() };
       steps.push(s);
       await pushProgress();
@@ -226,14 +310,17 @@ async function askAI(prompt) {
         console.log(`[${name}] attempt ${i}/2 ...`);
         const text = await fn(prompt);
         s.status = 'done'; s.at = new Date().toISOString(); s.chars = text.length;
+        s.sec = Math.round((Date.now() - t0) / 1000);
         await pushProgress();
         return { text, provider: name };
       } catch (e) {
         const msg = String(e.message || e).slice(0, 220);
         errors.push(`${name} #${i}: ${msg}`);
-        console.log(`[${name}] attempt ${i} failed: ${msg}`);
+        console.log(`[${name}] attempt ${i} failed after ${Math.round((Date.now() - t0) / 1000)}s: ${msg}`);
         s.status = 'error'; s.error = msg; s.at = new Date().toISOString();
+        s.sec = Math.round((Date.now() - t0) / 1000);
         await pushProgress();
+        if (e.fatal) break;                       // retrying a 4xx is pointless
         if (i < 2) await new Promise(r => setTimeout(r, 3000));
       }
     }
@@ -303,13 +390,33 @@ async function runAllScanners(html) {
 /* ============================================================
    HELPERS & MAIN
    ============================================================ */
+const TAGS = 'improve|fix|audit|delete';
+
+// Reads the build request. Returns null when a comment carries no [tag] (it is ignored).
+//  - Issue opened:   title "[BUILD] name [improve|fix|audit|delete]", body = prompt
+//  - Issue comment:  "[fix] fix those scanner issues"  or  "make cards bigger [improve]"
+//  - Manual dispatch: project / prompt / mode inputs
 function resolveInputs() {
   const dProj = (process.env.DISPATCH_PROJECT || '').trim();
-  if (dProj) return { project: dProj, prompt: (process.env.DISPATCH_PROMPT || '').trim(), mode: (process.env.DISPATCH_MODE || 'create').toLowerCase(), issue: null };
-  const title = process.env.ISSUE_TITLE || '', body = process.env.ISSUE_BODY || '', num = parseInt(process.env.ISSUE_NUMBER || '0', 10);
-  const m = title.match(/^\[BUILD\]\s+([A-Za-z0-9 _-]+?)(?:\s*\[(improve|fix|audit|delete)\])?\s*$/);
-  if (!m) throw new Error('Title must be: [BUILD] name [improve|fix|audit|delete]');
-  return { project: m[1].trim(), prompt: body.trim(), mode: (m[2] || 'create').toLowerCase(), issue: num || null };
+  if (dProj) return { project: dProj, prompt: (process.env.DISPATCH_PROMPT || '').trim(), mode: (process.env.DISPATCH_MODE || 'create').toLowerCase(), issue: null, commentId: null };
+
+  const title = process.env.ISSUE_TITLE || '', num = parseInt(process.env.ISSUE_NUMBER || '0', 10);
+  const tm = title.match(new RegExp(`^\\[BUILD\\]\\s+([A-Za-z0-9 _-]+?)(?:\\s*\\[(${TAGS})\\])?\\s*$`));
+  if (!tm) throw new Error('Title must be: [BUILD] name [improve|fix|audit|delete]');
+
+  if ((process.env.EVENT_NAME || '') === 'issue_comment') {
+    // drop quoted lines ("> ...") so Quote-reply on the bot comment still works
+    const body = (process.env.COMMENT_BODY || '').split('\n').filter(l => !/^\s*>/.test(l)).join('\n').trim();
+    let mode = null, prompt = '';
+    const first = body.match(new RegExp(`^\\[(${TAGS})\\]\\s*([\\s\\S]*)$`, 'i'));
+    const last = body.match(new RegExp(`^([\\s\\S]*?)\\s*\\[(${TAGS})\\]\\s*$`, 'i'));
+    if (first) { mode = first[1]; prompt = first[2]; }
+    else if (last) { mode = last[2]; prompt = last[1]; }
+    if (!mode) return null;
+    return { project: tm[1].trim(), prompt: prompt.trim(), mode: mode.toLowerCase(), issue: num || null, commentId: parseInt(process.env.COMMENT_ID || '0', 10) || null };
+  }
+
+  return { project: tm[1].trim(), prompt: (process.env.ISSUE_BODY || '').trim(), mode: (tm[2] || 'create').toLowerCase(), issue: num || null, commentId: null };
 }
 function slugify(name) { return name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40); }
 
@@ -335,20 +442,27 @@ async function buildRagContext(prompt, manifest, currentSlug) {
   return { ctx, refs };
 }
 
-async function commentAndClose(issue, body) {
-  if (!issue) return;
-  try {
-    await octokit.issues.createComment({ owner: OWNER, repo: REPO, issue_number: issue, body });
-    await octokit.issues.update({ owner: OWNER, repo: REPO, issue_number: issue, state: 'closed' });
-  } catch {}
-}
+const HINT = '\n\n💬 Reply to this issue with `[improve] …`, `[fix] …`, `[audit]` or `[delete]` to change it.';
+const MENTIONS_SCAN = /\b(sonar|scan|scanner|lint|security|findings?|warnings?|issues?)\b/i;
 
 async function main() {
+  const inputs = resolveInputs();
+  if (!inputs) { console.log('Comment has no [improve|fix|audit|delete] tag - ignoring.'); return; }
+  const { project, prompt, mode, issue, commentId } = inputs;
+  currentIssue = issue;
+
   await pushProgress({ status: 'running' });
-  const { project, prompt, mode, issue } = await step('Parse issue', async () => resolveInputs());
+  await step('Parse request', async () => inputs);
   const slug = slugify(project);
   if (!slug) throw new Error('Project name needs at least one letter or digit');
   const filename = `${PROJECTS_DIR}/${slug}.html`;
+
+  if (commentId) {
+    try { await octokit.reactions.createForIssueComment({ owner: OWNER, repo: REPO, comment_id: commentId, content: 'eyes' }); } catch (e) { console.log('[reaction] failed:', e.message); }
+    try { await octokit.issues.update({ owner: OWNER, repo: REPO, issue_number: issue, state: 'open' }); } catch {}
+  }
+  const quoted = prompt ? `\n> ${prompt.slice(0, 200).replace(/\n/g, ' ')}` : '';
+  await startStatusComment(issue, `⏳ **Working on it** — \`${mode}\` on \`${slug}\`${quoted}`);
 
   let manifest = [];
   try { const raw = await readFile(MANIFEST_PATH); if (raw) manifest = JSON.parse(raw); if (!Array.isArray(manifest)) manifest = []; } catch { manifest = []; }
@@ -357,7 +471,7 @@ async function main() {
     const existed = (await deleteFile(filename, `chore: delete ${slug}`)) || (await deleteFile(`${slug}.html`, `chore: delete legacy ${slug}`));
     manifest = manifest.filter(e => e.project !== slug);
     await writeFile(MANIFEST_PATH, JSON.stringify(manifest, null, 2) + '\n', 'chore: manifest');
-    await commentAndClose(issue, existed ? `🗑 Deleted \`${slug}\`.` : 'Did not exist.');
+    await finishStatus(issue, existed ? `🗑 Deleted \`${slug}\`.` : `\`${slug}\` did not exist.`, true);
     await pushProgress({ status: 'done' }); return;
   }
 
@@ -368,16 +482,23 @@ async function main() {
   let ask;
   if (mode === 'create' || (!existing && mode !== 'fix' && mode !== 'audit')) ask = existing ? 'Improve the existing app. Keep what works and apply: ' + prompt : prompt;
   else if (mode === 'improve') ask = 'Improve the existing app. Keep what works and apply: ' + prompt;
-  else if (mode === 'fix') ask = `Fix ONLY the bug described.\n\nBUG: ${prompt}\n\nReturn the complete fixed HTML.`;
+  else if (mode === 'fix') ask = `Fix ONLY the bug or issues described.\n\nBUG: ${prompt || 'see scanner findings below'}`;
   else if (mode === 'audit') {
     const initialFindings = await step('Initial security scan', () => runAllScanners(existing));
     if (!initialFindings.findings.length && !prompt) {
-      await commentAndClose(issue, '✅ Audit clean.');
+      await finishStatus(issue, '✅ Audit clean — nothing to fix.', true);
       await pushProgress({ status: 'done' }); return;
     }
     const report = initialFindings.findings.length ? initialFindings.findings.map(f => `- [${f.sev}] ${f.msg}`).join('\n') : '(none)';
-    ask = `Fix the security issues.\n\nFINDINGS:\n${report}\n\nEXTRA: ${prompt || 'none'}\n\nReturn the complete fixed HTML.`;
+    ask = `Fix the security issues.\n\nFINDINGS:\n${report}\n\nEXTRA: ${prompt || 'none'}`;
   }
+
+  // "[fix] fix those sonar/scan issues": re-scan the current file and hand the findings to the model.
+  if (existing && (mode === 'fix' || mode === 'improve') && (MENTIONS_SCAN.test(prompt) || (mode === 'fix' && !prompt))) {
+    const sc = await step('Scan current code', () => runAllScanners(existing));
+    if (sc.findings.length) ask += '\n\nSCANNER FINDINGS TO FIX (from the latest scan of the current code):\n' + sc.findings.map(f => `- [${f.sev}] ${f.msg}`).join('\n');
+  }
+  if (mode === 'fix' || mode === 'audit') ask += '\n\nReturn the complete fixed HTML.';
 
   const { ctx: ragCtx, refs } = await step('Build RAG context', () => (mode === 'create' || mode === 'improve') ? buildRagContext(prompt, manifest, slug) : Promise.resolve({ ctx: '', refs: [] }));
   let fullPrompt = RULES + ask + ragCtx;
@@ -392,7 +513,7 @@ async function main() {
 
   if (!isUsable(html)) {
     currentDraft = html; await pushProgress({}, true);
-    const strict = 'Previous attempt did not return a valid, COMPLETE HTML file (it was cut off or malformed). Output ONLY raw HTML starting with <!DOCTYPE html> and ending with </html>. Make the app more compact so it fits.\n\n' + fullPrompt;
+    const strict = 'Previous attempt did not return a valid, COMPLETE HTML file (it was cut off or malformed). Reply with ONLY the JSON object {"html": "..."} whose HTML starts with <!DOCTYPE html> and ends with </html>. Make the app more compact so it fits.\n\n' + fullPrompt;
     const r = await step('Retry (unusable HTML)', () => askAI(strict));
     html = stripFences(r.text);
     if (!isUsable(html)) {
@@ -427,8 +548,9 @@ async function main() {
 
   const url = `https://${OWNER}.github.io/${REPO}/${filename}`;
   let body = `✅ **${mode}** complete: \`${filename}\` via **${provider}**\n\nLive in ~1 min: ${url}`;
-  if (security.findings.length) body += `\n\n**Security findings:**\n` + security.findings.slice(0, 10).map(f => `- [${f.sev}] ${f.msg}`).join('\n');
-  await commentAndClose(issue, body);
+  if (security.findings.length) body += `\n\n**Scanner findings (${security.findings.length}):**\n` + security.findings.slice(0, 10).map(f => `- [${f.sev}] ${f.msg}`).join('\n');
+  body += HINT;
+  await finishStatus(issue, body, true);
   await pushProgress({ status: 'done', securitySummary: security.counts });
 }
 
@@ -437,7 +559,7 @@ main().catch(async (err) => {
   currentError = String(err.message).slice(0, 1000);
   steps.push({ name: 'Error', status: 'error', error: currentError, at: new Date().toISOString() });
   await pushProgress({ status: 'error' }, true);
-  const num = parseInt(process.env.ISSUE_NUMBER || '0', 10);
-  if (num && OWNER && REPO) { try { await octokit.issues.createComment({ owner: OWNER, repo: REPO, issue_number: num, body: `❌ Failed:\n\n\`\`\`\n${currentError.slice(0, 1500)}\n\`\`\`` }); } catch {} }
+  const num = currentIssue || parseInt(process.env.ISSUE_NUMBER || '0', 10);
+  if (num && OWNER && REPO) await finishStatus(num, `❌ **Failed**\n\n\`\`\`\n${currentError.slice(0, 1500)}\n\`\`\`${HINT}`, false);
   process.exit(1);
 });
