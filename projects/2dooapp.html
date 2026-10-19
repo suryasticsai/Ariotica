@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta device-width=device-width initial-scale=1>
+<title>Kanban Todo Board</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: system-ui, Georgia, ui-monospace, Menlo;
+    margin: 0;
+    background: #f0f2f5;
+    color: #222;
+    min-height: 100vh;
+  }
+  header {
+    background: #3b82f6;
+    color: #fff;
+    padding: 1rem 1rem 0.6rem;
+  }
+  header h1 { margin: 0; font-size: 1.3rem; }
+  header p { margin: 0.2rem 0 0; font-size: 0.85rem; opacity: 0.9; }
+
+  #add-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.75rem 1rem;
+    background: #fff;
+    border-bottom: 1px solid #e0e0e0;
+  }
+  #add-form input[type="text"], #add-form select {
+    padding: 0.45rem 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-family: inherit;
+  }
+  #add-form button {
+    padding: 0.45rem 0.9rem;
+    background: #3b82f6;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+  }
+  #add-form button:hover { background: #2563eb; }
+
+  main { padding: 1rem; }
+
+  .board {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1rem;
+    align-items: start;
+  }
+  .column {
+    background: #fff;
+    border-radius: 8px;
+    padding: 0.75rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    min-height: 140px;
+    transition: background 0.15s, outline 0.15s;
+  }
+  .column.drag-over {
+    background: #eff6ff;
+    outline: 2px dashed #3b82f6;
+    outline-offset: -2px;
+  }
+  .column h2 {
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+    color: #555;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .column h2::before {
+    content: "";
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.7;
+  }
+  .card-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    min-height: 40px;
+  }
+  .card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-left: 3px solid #3b82f6;
+    border-radius: 6px;
+    padding: 0.6rem 0.7rem;
+    cursor: grab;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+  }
+  .card:hover { border-left-color: #2563eb; }
+  .card.dragging { opacity: 0.4; }
+  .card.drag-over { background: #f0f7ff; border-color: #2563eb; }
+  .card-title { font-weight: 600; display: block; }
+  .card-desc { font-size: 0.85rem; color: #555; margin: 0.3rem 0 0; }
+  .card-actions { margin-top: 0.4rem; display: flex; gap: 0.3rem; flex-wrap: wrap; }
+  .card-actions button {
+    background: none;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 0.15rem 0.45rem;
+    font-size: 0.72rem;
+    cursor: pointer;
+    color: #333;
+    font-family: inherit;
+  }
+  .card-actions button:hover { background: #eef2f7; }
+  .edit-input {
+    width: 100%;
+    padding: 0.35rem 0.4rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    margin-bottom: 0.35rem;
+  }
+  footer {
+    text-align: center;
+    padding: 1rem;
+    font-size: 0.78rem;
+    color: #888;
+  }
+</style>
+</head>
+<body>
+<header>
+  <h1>Kanban Todo Board</h1>
+  <p>Add tasks, drag cards between columns · data saved locally</p>
+</header>
+
+<form id="add-form">
+  <input type="text" id="title" placeholder="New task title..." required>
+  <input type="text" id="desc" placeholder="Description (optional)">
+  <select id="col">
+    <option value="todo">To Do</option>
+    <option value="doing">In Progress</option>
+    <option value="done">Done</option>
+  </select>
+  <button type="submit">Add Task</button>
+</form>
+
+<main>
+  <div class="board" id="board"></div>
+</main>
+
+<footer>Vanilla JS · localStorage · Drag &amp; Drop</footer>
+
+<script>
+(() => {
+  const STORAGE_KEY = 'kanban_todos_v1';
+  const COLUMNS = [
+    { id: 'todo',   title: 'To Do' },
+    { id: 'doing',   title: 'In Progress' },
+    { id: 'done',   title: 'Done' }
+  ];
+
+  let todos = [];
+  let draggingId = null;
+
+  const board = document.getElementById('board');
+  const form = document.getElementById('add-form');
+  const titleInput = document.getElementById('title');
+  const descInput = document.getElementById('desc');
+  const colSelect = document.getElementById('col');
+
+  function load() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      todos = raw ? JSON.parse(raw) : [];
+    } catch (err) {
+      todos = [];
+    }
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+    } catch (err) {}
+  }
+
+  function genId() {
+    return Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+  }
+
+  function findTodo(id) {
+    return todos.find(t => t.id === id);
+  }
+
+  function render() {
+    while (board.firstChild) {
+      board.removeChild(board.firstChild);
+    }
+    COLUMNS.forEach(col => {
+      const colEl = document.createElement('section');
+      colEl.className = 'column';
+      colEl.dataset.column = col.id;
+
+      const h2 = document.createElement('h2');
+      h2.textContent = col.title;
+      colEl.appendChild(h2);
+
+      const list = document.createElement('ul');
+      list.className = 'card-list';
+
+      todos.filter(t => t.column === col.id).forEach(todo => {
+        list.appendChild(createCard(todo));
+      });
+
+      list.addEventListener('dragover', e => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        list.classList.add('drag-over');
+      });
+      list.addEventListener('dragleave', () => list.classList.remove('drag-over'));
+      list.addEventListener('drop', e => {
+        e.preventDefault();
+        list.classList.remove('drag-over');
+        const id = e.dataTransfer.getData('text/plain') || draggingId;
+        if (id) moveTodo(id, col.id);
+      });
+
+      colEl.appendChild(list);
+      board.appendChild(colEl);
+    });
+  }
+
+  function createCard(todo) {
+    const card = document.createElement('li');
+    card.className = 'card';
+    card.draggable = true;
+    card.dataset.id = todo.id;
+
+    const head = document.createElement('div');
+    head.className = 'card-head';
+
+    const title = document.createElement('span');
+    title.className = 'card-title';
+    title.textContent = todo.title;
+    head.appendChild(title);
+
+    const actions = document.createElement('div');
+    actions.className = 'card-actions';
+
+    const editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.textContent = '✏️ Edit';
+    editBtn.addEventListener('click', () => startEdit(card, todo));
+    actions.appendChild(editBtn);
+
+    const delBtn = document.createElement('button');
+    delBtn.type = 'button';
+    delBtn.textContent = '🗑 Delete';
+    delBtn.addEventListener('click', () => deleteTodo(todo.id));
+    actions.appendChild(delBtn);
+
+    head.appendChild(actions);
+    card.appendChild(head);
+
+    if (todo.desc) {
+      const desc = document.createElement('p');
+      desc.className = 'card-desc';
+      desc.textContent = todo.desc;
+      card.appendChild(desc);
+    }
+
+    card.addEventListener('dragstart', e => {
+      draggingId = todo.id;
+      card.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', todo.id);
+    });
+
+    card.addEventListener('dragend', () => {
+      card.classList.remove('dragging');
+      draggingId = null;
+    });
+
+    return card;
+  }
+
+  function startEdit(card, todo) {
+    const titleInput = document.createElement('input');
+    titleInput.className = 'edit-input';
+    titleInput.value = todo.title;
+
+    const descInput = document.createElement('input');
+    descInput.className = 'edit-input';
+    descInput.value = todo.desc || '';
+    descInput.placeholder = 'Description...';
+
+    const row = document.createElement('div');
+    row.className = 'card-actions';
+
+    const saveBtn = document.createElement('button');
+    saveBtn.type = 'button';
+    saveBtn.textContent = 'Save';
+    saveBtn.addEventListener('click', () => {
+      const t = findTodo(todo.id);
+      if (t) {
+        const nt = t.title.trim() ? t.title.trim() : t.title;
+        t.title = nt;
+        t.desc = descInput.value.trim();
+        save();
+        render();
+      }
+    });
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.addEventListener('click', () => render());
+
+    row.append(saveBtn, cancelBtn);
+    card.replaceChildren(titleInput, descInput, row);
+  }
+
+  function deleteTodo(id) {
+    todos = todos.filter(t => t.id !== id);
+    save();
+    render();
+  }
+
+  function moveTodo(id, newColumn) {
+    const t = findTodo(id);
+    if (!t || t.column === newColumn) return;
+    t.column = newColumn;
+    save();
+    render();
+  }
+
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const title = titleInput.value.trim();
+    const desc = descInput.value.trim();
+    if (!title) return;
+    todos.push({
+      id: genId(),
+      column: colSelect.value,
+      title,
+      desc
+    });
+    save();
+    form.reset();
+    render();
+  });
+
+  load();
+  render();
+})();
+</script>
+</body>
+</html>
