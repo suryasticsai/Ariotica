@@ -1,8 +1,8 @@
 {
   "runId": "39194060184",
   "started": "2026-10-19T03:18:38.209Z",
-  "updated": "2026-10-19T03:27:10.132Z",
-  "status": "running",
+  "updated": "2026-10-19T03:27:15.077Z",
+  "status": "done",
   "steps": [
     {
       "name": "Parse issue",
@@ -16,8 +16,8 @@
     },
     {
       "name": "Generate with AI",
-      "status": "running",
-      "at": "2026-10-19T03:18:40.239Z",
+      "status": "done",
+      "at": "2026-10-19T03:27:11.465Z",
       "promptChars": 3403,
       "ragRefs": "areo"
     },
@@ -38,9 +38,30 @@
       "status": "done",
       "at": "2026-10-19T03:27:10.132Z",
       "chars": 9250
+    },
+    {
+      "name": "Security scan",
+      "status": "done",
+      "at": "2026-10-19T03:27:11.746Z"
+    },
+    {
+      "name": "Commit projects/2dooapp.html",
+      "status": "done",
+      "at": "2026-10-19T03:27:12.880Z"
     }
   ],
   "draft": "",
   "draftSize": 0,
-  "error": null
+  "error": null,
+  "securitySummary": {
+    "total": 2,
+    "high": 0,
+    "medium": 2,
+    "low": 0,
+    "byTool": {
+      "custom": 0,
+      "eslint": 2,
+      "sparrow": 0
+    }
+  }
 }
