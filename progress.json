@@ -1,7 +1,7 @@
 {
   "runId": "39193133974",
   "started": "2026-10-19T03:07:20.000Z",
-  "updated": "2026-10-19T03:07:52.377Z",
+  "updated": "2026-10-19T03:08:25.044Z",
   "status": "running",
   "steps": [
     {
@@ -50,6 +50,41 @@
       "status": "done",
       "at": "2026-10-19T03:07:51.123Z",
       "chars": 392
+    },
+    {
+      "name": "Retry (unusable HTML)",
+      "status": "running",
+      "at": "2026-10-19T03:07:53.579Z"
+    },
+    {
+      "name": "HuggingFace · attempt 1",
+      "status": "error",
+      "at": "2026-10-19T03:07:53.688Z",
+      "error": "HTTP 402: {\"error\":\"You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.\"}"
+    },
+    {
+      "name": "HuggingFace · attempt 2",
+      "status": "error",
+      "at": "2026-10-19T03:07:56.767Z",
+      "error": "HTTP 402: {\"error\":\"You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.\"}"
+    },
+    {
+      "name": "OpenRouter · attempt 1",
+      "status": "error",
+      "at": "2026-10-19T03:07:56.906Z",
+      "error": "HTTP 404: {\"error\":{\"message\":\"This model is unavailable for free. The paid version is available now - use this slug instead: meta-llama/llama-3.3-70b-instruct\",\"code\":404},\"user_id\":\"user_3GAybNoGcHmtnb9vUOmHJ"
+    },
+    {
+      "name": "OpenRouter · attempt 2",
+      "status": "error",
+      "at": "2026-10-19T03:07:59.984Z",
+      "error": "HTTP 404: {\"error\":{\"message\":\"This model is unavailable for free. The paid version is available now - use this slug instead: meta-llama/llama-3.3-70b-instruct\",\"code\":404},\"user_id\":\"user_3GAybNoGcHmtnb9vUOmHJ"
+    },
+    {
+      "name": "Pollinations-POST · attempt 1",
+      "status": "done",
+      "at": "2026-10-19T03:08:25.044Z",
+      "chars": 4847
     }
   ],
   "draft": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<title>Todo Board</title>\n<style>\nbody{\nfont-family:system-ui,Georgia,ui-monospace,Menlo;\nmargin:0;padding:0;background:#f0f0f0;\n}\nheader{background:#3b82f6;color:white;padding:1rem;text-align:center;}\nmain{padding:1rem;}\nform#add-form{display:flex;gap:0.5rem;margin-bottom:1rem;}\nform#add-form input{flex:1;padding:0.5rem;border",
