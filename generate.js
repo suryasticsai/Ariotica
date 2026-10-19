@@ -60,7 +60,7 @@ STRICT RULES:
 - System fonts only (system-ui, Georgia, ui-monospace, Menlo).
 - Always escape user input with textContent — never innerHTML for untrusted data.
 - Add rel="noopener" to any target="_blank" link.
-Reply with ONLY the complete HTML file, starting with <!DOCTYPE html>.
+Reply with ONLY the complete HTML file, starting with <!DOCTYPE html> and ending with </html>. No other text.
 
 `;
 
@@ -75,10 +75,20 @@ function isVanilla(html) {
   for (const re of FORBIDDEN) if (re.test(html)) return { ok: false, hit: String(re) };
   return { ok: true, hit: null };
 }
+
 function stripFences(t) {
-  t = String(t || '').trim().replace(/^```(?:html|HTML)?\s*\n?/, '').replace(/\n?```\s*$/, '');
-  const i = t.search(/<!DOCTYPE|<html/i); if (i > 0) t = t.slice(i); return t.trim();
+  t = String(t || '').trim();
+  // Remove markdown blocks
+  t = t.replace(/^```(?:html|HTML)?\s*\n?/, '').replace(/\n?```\s*$/, '');
+  // Find the first <!DOCTYPE or <html
+  const i = t.search(/<!DOCTYPE|<html/i);
+  if (i > 0) t = t.slice(i);
+  // Find the last </html>
+  const j = t.lastIndexOf('</html>');
+  if (j > 0) t = t.slice(0, j + 7);
+  return t.trim();
 }
+
 function isUsable(html) {
   return /<html[\s>]/i.test(html) && /<body[\s>]/i.test(html) && html.length > 500;
 }
@@ -91,9 +101,9 @@ async function withTimeout(promise, ms, label) {
   const timeout = new Promise((_, rej) => { t = setTimeout(() => rej(new Error(`${label} timed out`)), ms); });
   try { return await Promise.race([promise, timeout]); } finally { clearTimeout(t); }
 }
-const SYS_PROMPT = 'You output raw HTML files only. Start with <!DOCTYPE html>. No markdown fences.';
+const SYS_PROMPT = 'You output raw HTML files only. Start with <!DOCTYPE html> and end with </html>. No markdown fences.';
 
-/* 1. Hugging Face (FREE token required) */
+/* 1. Hugging Face */
 async function callHuggingFace(prompt) {
   const token = process.env.HF_TOKEN;
   if (!token) throw new Error('HF_TOKEN secret is missing');
@@ -111,7 +121,7 @@ async function callHuggingFace(prompt) {
   return data.choices[0].message.content;
 }
 
-/* 2. OpenRouter (FREE token required) */
+/* 2. OpenRouter (specific coding model) */
 async function callOpenRouter(prompt) {
   const token = process.env.OPENROUTER_API_KEY;
   if (!token) throw new Error('OPENROUTER_API_KEY secret is missing');
@@ -124,16 +134,16 @@ async function callOpenRouter(prompt) {
       'X-Title': 'Ariotica'
     },
     body: JSON.stringify({
-      model: 'openrouter/free',
+      model: 'meta-llama/llama-3.3-70b-instruct:free',
       messages: [{ role: 'system', content: SYS_PROMPT }, { role: 'user', content: prompt }],
     }),
   }), 120000, 'OpenRouter');
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  if (!res.ok) throw new Error(`HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
   const data = await res.json();
   return data.choices[0].message.content;
 }
 
-/* 3. Pollinations GET (No token) */
+/* 3. Pollinations GET */
 async function callPollinationsGet(prompt) {
   const trimmed = prompt.length > 8000 ? prompt.slice(0, 8000) : prompt;
   const url = `${POLL_GET}/${encodeURIComponent(trimmed)}?model=openai&private=true&seed=${Date.now() % 100000}`;
@@ -146,7 +156,7 @@ async function callPollinationsGet(prompt) {
   return text;
 }
 
-/* 4. Pollinations POST (No token) */
+/* 4. Pollinations POST */
 async function callPollinationsPost(prompt) {
   const res = await withTimeout(fetch(POLL_POST, {
     method: 'POST',
@@ -235,9 +245,7 @@ async function sparrowAudit(html) {
     fs.writeFileSync(tmp, html, 'utf8');
     let scan; try { scan = require('sparrow-sast').scan; } catch { fs.unlinkSync(tmp); return findings; }
     const issues = await scan(tmp, { useBuiltinCheckers: true, languages: ['javascript', 'html'] });
-    for (const issue of issues) {
-      findings.push({ sev: issue.severity === 'error' ? 'high' : 'medium', type: 'sparrow', msg: issue.message });
-    }
+    for (const issue of issues) findings.push({ sev: issue.severity === 'error' ? 'high' : 'medium', type: 'sparrow', msg: issue.message });
     fs.unlinkSync(tmp);
   } catch (e) { console.log('sparrow failed:', e.message); }
   return findings;
@@ -329,15 +337,26 @@ async function main() {
   const { ctx: ragCtx, refs } = await step('Build RAG context', () => (mode === 'create' || mode === 'improve') ? buildRagContext(prompt, manifest, slug) : Promise.resolve({ ctx: '', refs: [] }));
   let fullPrompt = RULES + ask + ragCtx; if (existing) fullPrompt += '\n\nCURRENT HTML:\n' + existing.slice(0, 14000);
 
+  // First generation attempt
   const { text, provider } = await step('Generate with AI', () => askAI(fullPrompt), { promptChars: fullPrompt.length, ragRefs: refs.join(', ') || 'none' });
+  
   let html = stripFences(text);
-  if (!isUsable(html)) throw new Error(`${provider} returned unusable HTML`);
+  
+  // Retry if unusable (missing HTML tags or too short)
+  if (!isUsable(html)) {
+    currentDraft = html; await pushProgress();
+    const strict = `Previous attempt did not return a valid complete HTML file. Ensure you output ONLY raw HTML starting with <!DOCTYPE html> and ending with </html>.\n\n` + fullPrompt;
+    const r = await step('Retry (unusable HTML)', () => askAI(strict));
+    html = stripFences(r.text); 
+    if (!isUsable(html)) throw new Error(`Still unusable HTML`);
+  }
 
+  // Retry if non-vanilla (used external scripts)
   let check = isVanilla(html);
   if (!check.ok) {
     currentDraft = html; await pushProgress();
-    const strict = `Previous attempt used a forbidden library (${check.hit}). Regenerate with ONLY vanilla JavaScript.\n\n` + fullPrompt;
-    const r = await step('Retry (vanilla)', () => askAI(strict));
+    const strict = `Previous attempt used a forbidden library (${check.hit}). Regenerate with ONLY vanilla JavaScript. No frameworks, no CDNs.\n\n` + fullPrompt;
+    const r = await step('Retry (vanilla enforcement)', () => askAI(strict));
     html = stripFences(r.text); check = isVanilla(html); if (!check.ok) throw new Error(`Still non-vanilla`);
   }
 
