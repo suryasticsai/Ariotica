@@ -604,17 +604,6 @@
   /* ---------- boot ---------- */
   applyMode();
   loadProjects();
-
-  (async () => {
-    try {
-      const r = await fetch('progress.json?t=' + Date.now(), { cache: 'no-store' });
-      if (!r.ok) return;
-      const p = await r.json();
-      if (p.status === 'running') {
-        const age = Date.now() - new Date(p.updated || p.started).toISOString ? 0 : 0;
-      }
-    } catch {}
-  })();
 })();
 </script>
 </body>
