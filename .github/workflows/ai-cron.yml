@@ -23,7 +23,6 @@ on:
 permissions:
   contents: write
   issues: write
-  models: read
 
 concurrency:
   group: generate-project
@@ -53,6 +52,8 @@ jobs:
       - name: Generate
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
           ISSUE_BODY: ${{ github.event.issue.body }}
           ISSUE_NUMBER: ${{ github.event.issue.number }}
