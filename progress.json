@@ -1,9 +1,57 @@
 {
   "runId": "39193133974",
   "started": "2026-10-19T03:07:20.000Z",
-  "updated": "2026-10-19T03:07:20.001Z",
+  "updated": "2026-10-19T03:07:51.123Z",
   "status": "running",
-  "steps": [],
+  "steps": [
+    {
+      "name": "Parse issue",
+      "status": "done",
+      "at": "2026-10-19T03:07:21.563Z"
+    },
+    {
+      "name": "Build RAG context",
+      "status": "done",
+      "at": "2026-10-19T03:07:22.157Z"
+    },
+    {
+      "name": "Generate with AI",
+      "status": "running",
+      "at": "2026-10-19T03:07:22.157Z",
+      "promptChars": 3405,
+      "ragRefs": "areo"
+    },
+    {
+      "name": "HuggingFace · attempt 1",
+      "status": "error",
+      "at": "2026-10-19T03:07:22.299Z",
+      "error": "HTTP 402: {\"error\":\"You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.\"}"
+    },
+    {
+      "name": "HuggingFace · attempt 2",
+      "status": "error",
+      "at": "2026-10-19T03:07:25.382Z",
+      "error": "HTTP 402: {\"error\":\"You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.\"}"
+    },
+    {
+      "name": "OpenRouter · attempt 1",
+      "status": "error",
+      "at": "2026-10-19T03:07:25.765Z",
+      "error": "HTTP 404: {\"error\":{\"message\":\"This model is unavailable for free. The paid version is available now - use this slug instead: meta-llama/llama-3.3-70b-instruct\",\"code\":404},\"user_id\":\"user_3GAybNoGcHmtnb9vUOmHJ"
+    },
+    {
+      "name": "OpenRouter · attempt 2",
+      "status": "error",
+      "at": "2026-10-19T03:07:28.872Z",
+      "error": "HTTP 404: {\"error\":{\"message\":\"This model is unavailable for free. The paid version is available now - use this slug instead: meta-llama/llama-3.3-70b-instruct\",\"code\":404},\"user_id\":\"user_3GAybNoGcHmtnb9vUOmHJ"
+    },
+    {
+      "name": "Pollinations-POST · attempt 1",
+      "status": "done",
+      "at": "2026-10-19T03:07:51.123Z",
+      "chars": 392
+    }
+  ],
   "draft": "",
   "draftSize": 0,
   "error": null
