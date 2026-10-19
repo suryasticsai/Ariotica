@@ -4,23 +4,17 @@ on:
   workflow_dispatch:
     inputs:
       project:
-        description: 'Project name'
         type: string
         required: true
       prompt:
-        description: 'What should it build / change / fix?'
         type: string
         required: true
       mode:
-        description: 'Mode'
         type: choice
         options: [create, improve, fix, audit, delete]
         default: create
-
   issues:
     types: [opened]
-
-  # Reply on a [BUILD] issue with  [improve] ...  [fix] ...  [audit]  or  [delete]
   issue_comment:
     types: [created]
 
@@ -28,7 +22,6 @@ permissions:
   contents: write
   issues: write
 
-# Runs queue one at a time. GitHub keeps only the newest waiting run.
 concurrency:
   group: generate-project
   cancel-in-progress: false
@@ -49,7 +42,8 @@ jobs:
         (contains(github.event.comment.body, '[improve]') ||
          contains(github.event.comment.body, '[fix]') ||
          contains(github.event.comment.body, '[audit]') ||
-         contains(github.event.comment.body, '[delete]')))
+         contains(github.event.comment.body, '[delete]') ||
+         contains(github.event.comment.body, '[ask]')))
 
     steps:
       - name: Checkout
@@ -60,20 +54,22 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Install Octokit + scanners
+      - name: Install dependencies
         run: |
-          npm install @octokit/rest@20 eslint@9
+          npm install @octokit/rest@20 eslint@9 jsdom
           npm install sparrow-sast@1 || echo "sparrow-sast unavailable, continuing without it"
+
+      - name: Build Knowledge Index
+        run: node build-index.js
 
       - name: Generate
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          # Optional: set these under Settings > Secrets and variables > Actions > Variables
           PROVIDER_ORDER: ${{ vars.PROVIDER_ORDER }}
           OPENROUTER_MODEL: ${{ vars.OPENROUTER_MODEL }}
-          HF_MODEL: ${{ vars.HF_MODEL }}
           EVENT_NAME: ${{ github.event_name }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
           ISSUE_BODY: ${{ github.event.issue.body }}
