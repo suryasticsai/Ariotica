@@ -1,7 +1,7 @@
 {
   "runId": "39193133974",
   "started": "2026-10-19T03:07:20.000Z",
-  "updated": "2026-10-19T03:07:51.123Z",
+  "updated": "2026-10-19T03:07:52.377Z",
   "status": "running",
   "steps": [
     {
@@ -16,8 +16,8 @@
     },
     {
       "name": "Generate with AI",
-      "status": "running",
-      "at": "2026-10-19T03:07:22.157Z",
+      "status": "done",
+      "at": "2026-10-19T03:07:52.377Z",
       "promptChars": 3405,
       "ragRefs": "areo"
     },
@@ -52,7 +52,7 @@
       "chars": 392
     }
   ],
-  "draft": "",
-  "draftSize": 0,
+  "draft": "<!DOCTYPE html>\n<html lang=\"en\">\n<head>\n<meta charset=\"UTF-8\">\n<title>Todo Board</title>\n<style>\nbody{\nfont-family:system-ui,Georgia,ui-monospace,Menlo;\nmargin:0;padding:0;background:#f0f0f0;\n}\nheader{background:#3b82f6;color:white;padding:1rem;text-align:center;}\nmain{padding:1rem;}\nform#add-form{display:flex;gap:0.5rem;margin-bottom:1rem;}\nform#add-form input{flex:1;padding:0.5rem;border",
+  "draftSize": 392,
   "error": null
 }
