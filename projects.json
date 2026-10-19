@@ -24,5 +24,15 @@
     "provider": "Pollinations-GET",
     "findings": 1,
     "size": 4688
+  },
+  {
+    "project": "2dooapp",
+    "file": "projects/2dooapp.html",
+    "prompt": "Create simple Todo App with crud and draggable cards on kanban columns",
+    "created": "2026-10-19T03:27:12",
+    "mode": "create",
+    "provider": "OpenRouter",
+    "findings": 2,
+    "size": 9238
   }
 ]
