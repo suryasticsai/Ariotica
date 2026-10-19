@@ -147,10 +147,20 @@ async function callOpenRouter(prompt) {
   const token = process.env.OPENROUTER_API_KEY;
   if (!token) throw new Error('OPENROUTER_API_KEY secret is missing');
 
-  const models = [
-    'qwen/qwen-2.5-coder-32b-instruct:free',
-    'meta-llama/llama-3.3-70b-instruct:free'
-  ];
+  // Free slugs change often, so ask OpenRouter which free models exist right now.
+  let models = [];
+  try {
+    const r = await withTimeout(fetch('https://openrouter.ai/api/v1/models'), 20000, 'OpenRouter-models');
+    const list = (await r.json()).data || [];
+    const free = list.filter(m => /:free$/.test(m.id) && Number(m.context_length || 0) >= 16000);
+    const pref = [/qwen.*coder/i, /deepseek/i, /llama-3\.3/i, /qwen/i, /gemma/i, /mistral/i];
+    const rank = id => { const i = pref.findIndex(p => p.test(id)); return i === -1 ? 99 : i; };
+    free.sort((a, b) => rank(a.id) - rank(b.id));
+    models = free.slice(0, 4).map(m => m.id);
+  } catch (e) { console.log('[OpenRouter] model list failed:', e.message); }
+  if (process.env.OPENROUTER_MODEL) models.unshift(process.env.OPENROUTER_MODEL);
+  if (!models.length) models = ['qwen/qwen-2.5-coder-32b-instruct']; // paid slug, needs credits
+  console.log('[OpenRouter] trying models:', models.join(', '));
   let lastErr;
 
   for (const model of models) {
@@ -221,6 +231,7 @@ async function askAI(prompt) {
       } catch (e) {
         const msg = String(e.message || e).slice(0, 220);
         errors.push(`${name} #${i}: ${msg}`);
+        console.log(`[${name}] attempt ${i} failed: ${msg}`);
         s.status = 'error'; s.error = msg; s.at = new Date().toISOString();
         await pushProgress();
         if (i < 2) await new Promise(r => setTimeout(r, 3000));
@@ -384,7 +395,14 @@ async function main() {
     const strict = 'Previous attempt did not return a valid, COMPLETE HTML file (it was cut off or malformed). Output ONLY raw HTML starting with <!DOCTYPE html> and ending with </html>. Make the app more compact so it fits.\n\n' + fullPrompt;
     const r = await step('Retry (unusable HTML)', () => askAI(strict));
     html = stripFences(r.text);
-    if (!isUsable(html)) throw new Error('Still unusable HTML (incomplete or malformed)');
+    if (!isUsable(html)) {
+      console.log(`[debug] provider=${r.provider} length=${html.length}`);
+      console.log('[debug] has <html>:', /<html[\s>]/i.test(html), '| has <body>:', /<body[\s>]/i.test(html), '| ends with </html>:', /<\/html>\s*$/i.test(html));
+      console.log('[debug] HEAD:', html.slice(0, 300).replace(/\n/g, '\\n'));
+      console.log('[debug] TAIL:', html.slice(-300).replace(/\n/g, '\\n'));
+      currentDraft = html;
+      throw new Error(`Still unusable HTML from ${r.provider} (length ${html.length}, ends with </html>: ${/<\/html>\s*$/i.test(html)})`);
+    }
   }
 
   let check = isVanilla(html);
