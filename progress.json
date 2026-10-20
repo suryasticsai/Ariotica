@@ -1,77 +1,12 @@
 {
-  "runId": "39317782066",
-  "started": "2026-10-19T20:15:41.259Z",
-  "updated": "2026-10-19T20:15:59.429Z",
-  "status": "done",
-  "issue": 26,
-  "statusCommentId": 6276369840,
-  "steps": [
-    {
-      "name": "Parse request",
-      "status": "done",
-      "at": "2026-10-19T20:15:42.944Z",
-      "sec": 0
-    },
-    {
-      "name": "Build RAG context",
-      "status": "done",
-      "at": "2026-10-19T20:15:44.880Z",
-      "sec": 1
-    },
-    {
-      "name": "Generate with AI",
-      "status": "done",
-      "at": "2026-10-19T20:15:50.671Z",
-      "promptChars": 1249,
-      "ragRefs": "none",
-      "sec": 6
-    },
-    {
-      "name": "Groq · attempt 1",
-      "status": "done",
-      "at": "2026-10-19T20:15:49.925Z",
-      "sec": 5,
-      "chars": 2879,
-      "model": "openai/gpt-oss-120b"
-    },
-    {
-      "name": "Smoke test",
-      "status": "done",
-      "at": "2026-10-19T20:15:51.586Z",
-      "sec": 1
-    },
-    {
-      "name": "Security scan",
-      "status": "done",
-      "at": "2026-10-19T20:15:51.807Z",
-      "sec": 0
-    },
-    {
-      "name": "Commit projects/casio-calculator.html",
-      "status": "done",
-      "at": "2026-10-19T20:15:53.367Z",
-      "sec": 2
-    },
-    {
-      "name": "Update knowledge index",
-      "status": "done",
-      "at": "2026-10-19T20:15:57.270Z",
-      "sec": 3
-    }
-  ],
+  "runId": "39366115856",
+  "started": "2026-10-20T03:47:33.143Z",
+  "updated": "2026-10-20T03:47:33.144Z",
+  "status": "running",
+  "issue": 27,
+  "statusCommentId": null,
+  "steps": [],
   "draft": "",
   "draftSize": 0,
-  "error": null,
-  "securitySummary": {
-    "total": 0,
-    "high": 0,
-    "medium": 0,
-    "low": 0,
-    "byTool": {
-      "custom": 0,
-      "eslint": 0,
-      "sparrow": 0
-    }
-  },
-  "smoke": "pass"
+  "error": null
 }
