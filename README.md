@@ -1,7 +1,8 @@
 <div align="center">
-
   <img src="https://raw.githubusercontent.com/suryasticsai/Ariotica/main/Ariotica-logo.png" alt="Ariotica Logo" width="150" style="border-radius: 20px; margin-bottom: 20px;" />
+
   # ⚡ Ariotica
+  
   **The 100% Free, Self-Healing AI Engineering Pipeline.**
 
   An autonomous agent that turns GitHub Issues into fully functional, single-file vanilla JS apps. It writes code, tests it in a headless browser, scans it for vulnerabilities, and fixes its own bugs.
