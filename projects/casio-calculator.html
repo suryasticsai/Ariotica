@@ -3,19 +3,26 @@
 <head>
 <meta charset="UTF-8">
 <title>Casio Calculator</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <style>
 body{font-family:system-ui,Georgia,ui-monospace,Menlo;background:#222;color:#eee;display:flex;justify-content:center;align-items:center;height:100vh;margin:0;}
-.calculator{background:#111;border-radius:10px;padding:20px;box-shadow:0 0 20px rgba(0,0,0,.5);width:260px;}
-.display{background:#000;color:#0f0;font-size:2rem;text-align:right;padding:10px;border-radius:5px;overflow:hidden;white-space:nowrap;}
-.buttons{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px;}
-button{font-size:1.2rem;padding:15px;border:none;border-radius:5px;background:#333;color:#fff;cursor:pointer;}
+.calculator{background:#111;border-radius:10px;padding:1rem;box-shadow:0 0 20px rgba(0,0,0,.5);width:100%;max-width:320px;}
+.brand{font-size:1.5rem;text-align:center;margin-bottom:0.5rem;color:#ff9500;}
+.display{background:#000;color:#0f0;font-size:2.5rem;text-align:right;padding:0.5rem;border-radius:5px;overflow:hidden;white-space:nowrap;}
+.buttons{display:grid;grid-template-columns:repeat(4,1fr);gap:0.5rem;margin-top:0.5rem;}
+button{font-size:1.5rem;padding:0.8rem;border:none;border-radius:5px;background:#333;color:#fff;cursor:pointer;}
 button:active{background:#555;}
 button.operator{background:#ff9500;color:#fff;}
 button.clear{background:#ff3b30;}
+@media (max-width:400px){
+button{font-size:1.2rem;padding:0.6rem;}
+.display{font-size:2rem;}
+}
 </style>
 </head>
 <body>
 <div class="calculator">
+<div class="brand">Casio</div>
 <div class="display" id="display">0</div>
 <div class="buttons">
 <button class="clear">C</button>
@@ -36,23 +43,23 @@ button.clear{background:#ff3b30;}
 <button class="operator">+</button>
 <button>0</button>
 <button>.</button>
-<button>=</button>
+<button class="operator">=</button>
 </div>
 </div>
 <script>
 (function(){
-const display=document.getElementById('display');
-let current='0',prev=null,op=null,reset=false;
-function update(){display.textContent=current;}
-function inputDigit(d){if(reset||current==='0'){current=d;reset=false;}else{current+=d;}}
-function inputDot(){if(reset){current='0.';reset=false;return;}if(!current.includes('.'))current+='.';}
-function clearAll(){current='0';prev=null;op=null;reset=false;}
-function toggleSign(){if(current.charAt(0)==='-')current=current.slice(1);else if(current!=='0')current='-'+current;}
-function percent(){current=(parseFloat(current)/100).toString();}
-function setOperator(o){if(prev!==null&&op){compute();}else{prev=parseFloat(current);}op=o;reset=true;}
-function compute(){if(op===null||prev===null)return;const a=prev;const b=parseFloat(current);let res;if(op==='÷')res=a/b;else if(op==='×')res=a*b;else if(op==='−')res=a-b;else if(op==='+')res=a+b;else return;current=res.toString();prev=null;op=null;}
-document.querySelectorAll('.buttons button').forEach(b=>{b.addEventListener('click',()=>{const txt=b.textContent;if(txt>='0'&&txt<='9'){inputDigit(txt);}else if(txt==='.'){inputDot();}else if(txt==='C'){clearAll();}else if(txt==='±'){toggleSign();}else if(txt==='%'){percent();}else if(txt==='='){compute();reset=true;}else{setOperator(txt);}update();});});
-update();
+const d=document.getElementById('display');
+let cur='0',prev=null,op=null,reset=false;
+function upd(){d.textContent=cur;}
+function digit(x){if(reset||cur==='0'){cur=x;reset=false;}else{cur+=x;}}
+function dot(){if(reset){cur='0.';reset=false;return;}if(!cur.includes('.'))cur+='.';}
+function clr(){cur='0';prev=null;op=null;reset=false;}
+function sign(){if(cur.charAt(0)==='-')cur=cur.slice(1);else if(cur!=='0')cur='-'+cur;}
+function pct(){cur=(parseFloat(cur)/100).toString();}
+function setOp(o){if(prev!==null&&op){calc();}else{prev=parseFloat(cur);}op=o;reset=true;}
+function calc(){if(op===null||prev===null)return;const a=prev;const b=parseFloat(cur);let r;if(op==='÷')r=a/b;else if(op==='×')r=a*b;else if(op==='−')r=a-b;else if(op==='+')r=a+b;else return;cur=r.toString();prev=null;op=null;}
+document.querySelectorAll('.buttons button').forEach(b=>{b.addEventListener('click',()=>{const t=b.textContent;if(t>='0'&&t<='9'){digit(t);}else if(t==='.'){dot();}else if(t==='C'){clr();}else if(t==='±'){sign();}else if(t==='%'){pct();}else if(t==='='){calc();reset=true;}else{setOp(t);}upd();});});
+upd();
 })();
 </script>
 </body>
