@@ -14,7 +14,7 @@ const MANIFEST_PATH = 'projects.json';
 const PROGRESS_PATH = 'progress.json';
 const INDEX_PATH    = 'knowledge/index.json';
 
-const EXISTING_LIMIT = 40000; // Increased to handle multi-file context
+const EXISTING_LIMIT = 40000; 
 const PROGRESS_EVERY = 20000;
 const STATUS_EVERY   = 5000;
 
@@ -165,7 +165,6 @@ const genMessages = (userText) => [{ role: 'system', content: GEN_SYSTEM }, { ro
 const HINT = '\n\n💬 Reply with `[improve] …`, `[fix] …`, `[audit]`, `[delete]` — or `[ask] …` to ask me anything about this repo.';
 const MENTIONS_SCAN = /\b(sonar|scan|scanner|lint|security|findings?|warnings?|issues?)\b/i;
 
-// Custom parser for multi-file JSON
 function parseMultiFileResponse(text) {
   let clean = String(text || '').trim();
   clean = clean.replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '');
@@ -176,10 +175,7 @@ function parseMultiFileResponse(text) {
   try {
     const data = JSON.parse(clean.slice(start, end + 1));
     let files = data.files || {};
-    // Fallback if AI ignored multi-file and just returned html
-    if (data.html && !files['index.html']) {
-      files = { 'index.html': data.html };
-    }
+    if (data.html && !files['index.html']) files = { 'index.html': data.html };
     return {
       files: files,
       version: data.version || '1.0.0',
@@ -243,7 +239,6 @@ async function buildRagContext(prompt, manifest, currentSlug) {
   for (const e of scored) { 
     refs.push(e.project); 
     ctx += `\n--- ${e.project} ---\n`; 
-    // Fetch index.html, style.css, script.js if they exist
     for (const f of ['index.html', 'style.css', 'script.js']) {
       const fp = e.file.replace('index.html', f);
       const content = await readFile(fp);
@@ -314,7 +309,6 @@ async function main() {
   const slug = T.slugify(project);
   if (!slug) throw new Error('Project name needs at least one letter or digit');
   
-  // Files now live in projects/<slug>/
   const baseDir = `${PROJECTS_DIR}/${slug}`;
   const mainFile = `${baseDir}/index.html`;
 
@@ -332,7 +326,6 @@ async function main() {
 
   if (mode === 'delete') {
     let existed = false;
-    // Delete all files in the folder
     for (const f of ['index.html', 'style.css', 'script.js']) {
       const p = `${baseDir}/${f}`;
       const content = await readFile(p);
@@ -348,7 +341,6 @@ async function main() {
     await pushProgress({ status: 'done' }); return;
   }
 
-  // Load existing for RAG context
   let existingHtml = await readFile(mainFile);
   let existingCss = await readFile(`${baseDir}/style.css`) || '';
   let existingJs = await readFile(`${baseDir}/script.js`) || '';
@@ -360,7 +352,6 @@ async function main() {
   else if (mode === 'improve') ask = 'Improve the existing app. Keep what works and apply: ' + prompt;
   else if (mode === 'fix') ask = `Fix ONLY the bug or issues described.\n\nBUG: ${prompt || 'see scanner findings'}`;
   else if (mode === 'audit') {
-    // Audit needs the combined string
     let combined = existingHtml.replace('</head>', `<style>${existingCss}</style></head>`).replace('</body>', `<script>${existingJs}</script></body>`);
     const initial = await step('Initial security scan', () => runAllScanners(combined));
     if (!initial.findings.length && !prompt) {
@@ -383,14 +374,11 @@ async function main() {
   let meta = parseMultiFileResponse(text);
   if (!meta) throw new Error(`Failed to parse AI response into JSON files.`);
 
-  // --- WATERMARK INJECTION ---
   if (meta.files['index.html']) {
     const watermark = `\n<!-- Built by Ariotica AI -->\n<div style="position:fixed;bottom:12px;right:12px;opacity:0.35;font-size:11px;font-family:monospace;color:white;pointer-events:none;z-index:9999;">⚡ Ariotica</div>`;
     meta.files['index.html'] = meta.files['index.html'].replace(/<\/body>/i, `${watermark}\n</body>`);
   }
 
-  // --- SMOKE TEST & SCANNER COMPATIBILITY ---
-  // We combine files into one string just for testing, so JSDOM and scanners work perfectly
   let testHtml = meta.files['index.html'] || '';
   if (meta.files['style.css']) testHtml = testHtml.replace(/<link[^>]*href=["']style\.css["'][^>]*>/i, `<style>\n${meta.files['style.css']}\n</style>`);
   if (meta.files['script.js']) testHtml = testHtml.replace(/<script[^>]*src=["']script\.js["'][^>]*><\/script>/i, `<script>\n${meta.files['script.js']}\n</script>`);
@@ -399,10 +387,8 @@ async function main() {
   if (!check.ok) throw new Error(`AI used forbidden libraries (${check.hit})`);
 
   let smoke = await step('Smoke test', () => smokeTest(testHtml));
-  
   const security = await step('Security scan', () => runAllScanners(testHtml));
 
-  // --- COMMIT ALL FILES ---
   await step(`Commit files to ${baseDir}/`, async () => {
     for (const [filename, content] of Object.entries(meta.files)) {
       await writeFile(`${baseDir}/${filename}`, content, `feat: ${slug} v${meta.version} (${mode})`);
@@ -424,7 +410,6 @@ async function main() {
   await writeFile(MANIFEST_PATH, manifestJson, 'chore: manifest');
   await softStep('Update knowledge index', () => updateKnowledgeIndex({ [mainFile]: meta.files['index.html'] || '' }, []));
 
-  // --- FORMAT GITHUB COMMENT ---
   const url = `https://${OWNER}.github.io/${REPO}/${baseDir}/`;
   let body = `✅ **${mode}** complete: \`${baseDir}/\` via **${provider}**\n\nLive in ~1 min: ${url}\n\n`;
   
