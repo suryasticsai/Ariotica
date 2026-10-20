@@ -44,21 +44,64 @@ button{font-size:1.2rem;padding:0.6rem;}
 <button>0</button>
 <button>.</button>
 <button class="operator">=</button>
+<button class="operator">√</button>
+<button class="operator">1/x</button>
 </div>
 </div>
 <script>
 (function(){
 const d=document.getElementById('display');
-let cur='0',prev=null,op=null,reset=false;
-function upd(){d.textContent=cur;}
-function digit(x){if(reset||cur==='0'){cur=x;reset=false;}else{cur+=x;}}
-function dot(){if(reset){cur='0.';reset=false;return;}if(!cur.includes('.'))cur+='.';}
-function clr(){cur='0';prev=null;op=null;reset=false;}
+let cur='0',prev=null,op=null,reset=false,expr='';
+function upd(){d.textContent=expr||cur;}
+function digit(x){
+if(reset){cur=x;reset=false;expr='';}
+else if(cur==='0'){cur=x;}else{cur+=x;}
+}
+function dot(){
+if(reset){cur='0.';reset=false;expr='';return;}
+if(!cur.includes('.'))cur+='.';
+}
+function clr(){cur='0';prev=null;op=null;reset=false;expr='';}
 function sign(){if(cur.charAt(0)==='-')cur=cur.slice(1);else if(cur!=='0')cur='-'+cur;}
 function pct(){cur=(parseFloat(cur)/100).toString();}
-function setOp(o){if(prev!==null&&op){calc();}else{prev=parseFloat(cur);}op=o;reset=true;}
-function calc(){if(op===null||prev===null)return;const a=prev;const b=parseFloat(cur);let r;if(op==='÷')r=a/b;else if(op==='×')r=a*b;else if(op==='−')r=a-b;else if(op==='+')r=a+b;else return;cur=r.toString();prev=null;op=null;}
-document.querySelectorAll('.buttons button').forEach(b=>{b.addEventListener('click',()=>{const t=b.textContent;if(t>='0'&&t<='9'){digit(t);}else if(t==='.'){dot();}else if(t==='C'){clr();}else if(t==='±'){sign();}else if(t==='%'){pct();}else if(t==='='){calc();reset=true;}else{setOp(t);}upd();});});
+function sqrt(){cur=Math.sqrt(parseFloat(cur)).toString();}
+function recip(){cur=(1/parseFloat(cur)).toString();}
+function setOp(o){
+if(prev!==null&&op){calc();}
+else{prev=parseFloat(cur);}
+if(expr===''){expr=cur+o;}else{expr+=cur+o;}
+op=o;reset=true;
+}
+function calc(){
+if(op===null||prev===null)return;
+const a=prev;
+const bStr=cur;
+const b=parseFloat(cur);
+let r;
+if(op==='÷')r=a/b;
+else if(op==='×')r=a*b;
+else if(op==='−')r=a-b;
+else if(op==='+')r=a+b;
+else return;
+expr+=bStr+'='+r;
+cur=r.toString();
+prev=null;op=null;reset=true;
+}
+document.querySelectorAll('.buttons button').forEach(b=>{
+ b.addEventListener('click',()=>{
+ const t=b.textContent;
+ if(t>='0'&&t<='9'){digit(t);} 
+ else if(t==='.'){dot();}
+ else if(t==='C'){clr();}
+ else if(t==='±'){sign();}
+ else if(t==='%'){pct();}
+ else if(t==='√'){sqrt();}
+ else if(t==='1/x'){recip();}
+ else if(t==='='){calc();}
+ else{setOp(t);}
+ upd();
+ });
+});
 upd();
 })();
 </script>
