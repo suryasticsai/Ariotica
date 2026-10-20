@@ -22,28 +22,16 @@ permissions:
   contents: write
   issues: write
 
-concurrency:
-  group: generate-project
-  cancel-in-progress: false
-
 jobs:
   generate:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
+    # Simplified condition: Just checks if it's a [BUILD] issue or manual run
     if: |
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'issues' && startsWith(github.event.issue.title, '[BUILD]')) ||
-      (github.event_name == 'issue_comment' &&
-        !github.event.issue.pull_request &&
-        startsWith(github.event.issue.title, '[BUILD]') &&
-        github.event.comment.user.type != 'Bot' &&
-        contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association) &&
-        (contains(toLower(github.event.comment.body), '[improve]') ||
-         contains(toLower(github.event.comment.body), '[fix]') ||
-         contains(toLower(github.event.comment.body), '[audit]') ||
-         contains(toLower(github.event.comment.body), '[delete]') ||
-         contains(toLower(github.event.comment.body), '[ask]')))
+      (github.event_name == 'issue_comment' && startsWith(github.event.issue.title, '[BUILD]'))
 
     steps:
       - name: Checkout
@@ -66,8 +54,6 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          PROVIDER_ORDER: ${{ vars.PROVIDER_ORDER }}
-          OPENROUTER_MODEL: ${{ vars.OPENROUTER_MODEL }}
           EVENT_NAME: ${{ github.event_name }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
           ISSUE_BODY: ${{ github.event.issue.body }}
