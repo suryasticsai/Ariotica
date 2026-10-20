@@ -1,11 +1,38 @@
 {
   "runId": "39366498633",
   "started": "2026-10-20T03:52:00.737Z",
-  "updated": "2026-10-20T03:52:00.739Z",
-  "status": "running",
+  "updated": "2026-10-20T03:52:05.476Z",
+  "status": "done",
   "issue": 27,
-  "statusCommentId": null,
-  "steps": [],
+  "statusCommentId": 6282956981,
+  "steps": [
+    {
+      "name": "Parse request",
+      "status": "done",
+      "at": "2026-10-20T03:52:01.805Z",
+      "sec": 0
+    },
+    {
+      "name": "Index repo",
+      "status": "done",
+      "at": "2026-10-20T03:52:03.639Z",
+      "sec": 1
+    },
+    {
+      "name": "Answer",
+      "status": "done",
+      "at": "2026-10-20T03:52:04.884Z",
+      "sec": 1
+    },
+    {
+      "name": "Groq · attempt 1",
+      "status": "done",
+      "at": "2026-10-20T03:52:04.884Z",
+      "sec": 1,
+      "chars": 224,
+      "model": "openai/gpt-oss-120b"
+    }
+  ],
   "draft": "",
   "draftSize": 0,
   "error": null
