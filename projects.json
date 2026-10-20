@@ -38,12 +38,12 @@
   {
     "project": "casio-calculator",
     "file": "projects/casio-calculator.html",
-    "prompt": "Create a simple Calculator with realistic buttons like UI with Casio Brand",
-    "created": "2026-10-19T20:15:53",
-    "mode": "create",
+    "prompt": "Make it best for mobile the Interface is too small in middle and no casio branding, do add it",
+    "created": "2026-10-20T03:47:44",
+    "mode": "improve",
     "provider": "Groq",
     "findings": 0,
     "smoke": "pass",
-    "size": 2784
+    "size": 2897
   }
 ]
