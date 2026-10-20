@@ -39,11 +39,11 @@ jobs:
         startsWith(github.event.issue.title, '[BUILD]') &&
         github.event.comment.user.type != 'Bot' &&
         contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association) &&
-        (contains(github.event.comment.body, '[improve]') ||
-         contains(github.event.comment.body, '[fix]') ||
-         contains(github.event.comment.body, '[audit]') ||
-         contains(github.event.comment.body, '[delete]') ||
-         contains(github.event.comment.body, '[ask]')))
+        (contains(toLower(github.event.comment.body), '[improve]') ||
+         contains(toLower(github.event.comment.body), '[fix]') ||
+         contains(toLower(github.event.comment.body), '[audit]') ||
+         contains(toLower(github.event.comment.body), '[delete]') ||
+         contains(toLower(github.event.comment.body), '[ask]')))
 
     steps:
       - name: Checkout
