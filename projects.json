@@ -38,12 +38,12 @@
   {
     "project": "casio-calculator",
     "file": "projects/casio-calculator.html",
-    "prompt": "Make it best for mobile the Interface is too small in middle and no casio branding, do add it",
-    "created": "2026-10-20T03:47:44",
+    "prompt": "Add more buttons and display like 2+3 = 5 in display",
+    "created": "2026-10-20T03:58:41",
     "mode": "improve",
     "provider": "Groq",
     "findings": 0,
     "smoke": "pass",
-    "size": 2897
+    "size": 3320
   }
 ]
