@@ -1,11 +1,24 @@
 {
   "runId": "39636301790",
   "started": "2026-10-21T16:36:53.746Z",
-  "updated": "2026-10-21T16:36:53.747Z",
-  "status": "running",
+  "updated": "2026-10-21T16:37:07.406Z",
+  "status": "done",
   "issue": 39,
-  "statusCommentId": null,
-  "steps": [],
+  "statusCommentId": 6321210767,
+  "steps": [
+    {
+      "name": "Parse request",
+      "status": "done",
+      "at": "2026-10-21T16:36:55.315Z",
+      "sec": 0
+    },
+    {
+      "name": "Update knowledge index",
+      "status": "done",
+      "at": "2026-10-21T16:37:05.300Z",
+      "sec": 3
+    }
+  ],
   "draft": "",
   "draftSize": 0,
   "error": null
