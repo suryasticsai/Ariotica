@@ -1,18 +1,1 @@
-* {box-sizing: border-box;}
-body {font-family: system-ui, Georgia, ui-monospace, Menlo; margin: 0; background: #f0f2f5; color: #222; min-height: 100vh;}
-header {background: #3b82f6; color: #fff; padding: 1rem; text-align: center;}
-h1 {margin: 0; font-size: 1.5rem;}
-main {padding: 1rem;}
-#add-form {display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem;}
-#add-form input, #add-form select {padding: 0.4rem; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem; font-family: inherit;}
-#add-form button {padding: 0.4rem 0.8rem; background: #3b82f6; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem;}
-#add-form button:hover {background: #2563eb;}
-.board {display: flex; gap: 1rem; justify-content: space-between;}
-.column {background: #fff; border-radius: 8px; padding: 0.75rem; flex: 1; min-width: 200px; box-shadow: 0 1px 3px rgba(0,0,0,0.1);}
-.column.drag-over {background: #eff6ff; outline: 2px dashed #3b82f6;}
-.column h2 {margin: 0 0 0.5rem; font-size: 1.1rem; display: flex; align-items: center; gap: 0.4rem;}
-.card-list {list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem;}
-.card {background: #fafafa; border: 1px solid #ddd; border-radius: 4px; padding: 0.5rem; cursor: grab;}
-.card.dragging {opacity: 0.5;}
-.card-title {font-weight: bold;}
-.card-desc {font-size: 0.9rem; margin-top: 0.3rem;}
+* {box-sizing: border-box;}\nbody {font-family: system-ui, Georgia, ui-monospace, Menlo; margin: 0; background: var(--bg); color: var(--text); min-height: 100vh; transition: background 0.3s, color 0.3s;}\n:root {\n  --bg: #f0f2f5;\n  --text: #222;\n  --header-bg: #3b82f6;\n  --header-color: #fff;\n  --card-bg: #fafafa;\n  --card-border: #ddd;\n  --col-bg: #fff;\n  --col-drop-bg: #eff6ff;\n}\nbody.dark {\n  --bg: #1e1e1e;\n  --text: #e0e0e0;\n  --header-bg: #2c3e50;\n  --header-color: #fff;\n  --card-bg: #2c2c2c;\n  --card-border: #555;\n  --col-bg: #2a2a2a;\n  --col-drop-bg: #3a3a3a;\n}\nheader {background: var(--header-bg); color: var(--header-color); padding: 1rem; text-align: center; display: flex; justify-content: center; align-items: center; gap: 1rem;}\n#theme-toggle {background: transparent; border: none; font-size: 1.2rem; cursor: pointer; color: inherit;}\nh1 {margin: 0; font-size: 1.5rem;}\nmain {padding: 1rem;}\n#add-form {display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 1rem;}\n#add-form input, #add-form select {padding: 0.4rem; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem; font-family: inherit;}\n#add-form button {padding: 0.4rem 0.8rem; background: #3b82f6; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 0.9rem;}\n#add-form button:hover {background: #2563eb;}\n.board {display: flex; gap: 1rem; justify-content: space-between;}\n.column {background: var(--col-bg); border-radius: 8px; padding: 0.75rem; flex: 1; min-width: 200px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); transition: background 0.3s;}\n.column.drag-over {background: var(--col-drop-bg); outline: 2px dashed #3b82f6;}\n.column h2 {margin: 0 0 0.5rem; font-size: 1.1rem; display: flex; align-items: center; gap: 0.4rem; justify-content: space-between;}\n.rename-col {background: transparent; border: none; cursor: pointer; font-size: 0.9rem; color: inherit;}\n.card-list {list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 0.5rem;}\n.card {background: var(--card-bg); border: 1px solid var(--card-border); border-radius: 4px; padding: 0.5rem; cursor: grab; display: flex; flex-direction: column; position: relative;}\n.card.dragging {opacity: 0.5;}\n.card-title {font-weight: bold;}\n.card-desc {font-size: 0.9rem; margin-top: 0.3rem;}\n.card button {position: absolute; top: 4px; right: 4px; background: transparent; border: none; cursor: pointer; font-size: 0.9rem;}\n.card .edit-btn {right: 24px;}
