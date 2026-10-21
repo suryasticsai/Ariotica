@@ -1,77 +1,12 @@
 {
-  "runId": "39627083449",
-  "started": "2026-10-21T15:35:55.242Z",
-  "updated": "2026-10-21T15:36:27.040Z",
-  "status": "done",
-  "issue": 38,
-  "statusCommentId": 6319888570,
-  "steps": [
-    {
-      "name": "Parse request",
-      "status": "done",
-      "at": "2026-10-21T15:35:56.568Z",
-      "sec": 0
-    },
-    {
-      "name": "Build RAG context",
-      "status": "done",
-      "at": "2026-10-21T15:35:59.334Z",
-      "sec": 1
-    },
-    {
-      "name": "Generate with AI",
-      "status": "done",
-      "at": "2026-10-21T15:36:06.602Z",
-      "promptChars": 6359,
-      "ragRefs": "none",
-      "sec": 7
-    },
-    {
-      "name": "Groq · attempt 1",
-      "status": "done",
-      "at": "2026-10-21T15:36:05.801Z",
-      "sec": 6,
-      "chars": 4321,
-      "model": "openai/gpt-oss-120b"
-    },
-    {
-      "name": "Smoke test",
-      "status": "done",
-      "at": "2026-10-21T15:36:07.635Z",
-      "sec": 1
-    },
-    {
-      "name": "Security scan",
-      "status": "done",
-      "at": "2026-10-21T15:36:07.897Z",
-      "sec": 0
-    },
-    {
-      "name": "Commit files to projects/random-forest/",
-      "status": "done",
-      "at": "2026-10-21T15:36:16.426Z",
-      "sec": 9
-    },
-    {
-      "name": "Update knowledge index",
-      "status": "done",
-      "at": "2026-10-21T15:36:24.049Z",
-      "sec": 4
-    }
-  ],
+  "runId": "39635807675",
+  "started": "2026-10-21T16:33:35.364Z",
+  "updated": "2026-10-21T16:33:35.365Z",
+  "status": "running",
+  "issue": 39,
+  "statusCommentId": null,
+  "steps": [],
   "draft": "",
   "draftSize": 0,
-  "error": null,
-  "securitySummary": {
-    "total": 0,
-    "high": 0,
-    "medium": 0,
-    "low": 0,
-    "byTool": {
-      "custom": 0,
-      "eslint": 0,
-      "sparrow": 0
-    }
-  },
-  "smoke": "pass"
+  "error": null
 }
