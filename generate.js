@@ -130,7 +130,7 @@ function aiEvents() {
 
 const RULES = `Build a PURE VANILLA JAVASCRIPT web app using multiple files.
 STRICT RULES:
-- Create separate files: index.html, style.css, script.js.
+- Create separate files: index.html, style.css, script.js (or app.css/app.js).
 - Link them properly using <link rel="stylesheet" href="style.css"> and <script src="script.js"></script>.
 - NO frameworks or UI libraries of any kind.
 - NO external URLs: no CDN scripts, no external fonts, no external images.
@@ -202,6 +202,20 @@ async function writeFile(p, content, message) {
   catch (e) { if (e.status !== 404) throw e; }
   await octokit.repos.createOrUpdateFileContents({ owner: OWNER, repo: REPO, path: p, message, content: Buffer.from(content, 'utf8').toString('base64'), branch: BRANCH, ...(sha ? { sha } : {}) });
 }
+async function deleteProjectFolder(slug) {
+  const path = `${PROJECTS_DIR}/${slug}`;
+  let existed = false;
+  try {
+    const { data } = await octokit.repos.getContent({ owner: OWNER, repo: REPO, path, ref: BRANCH });
+    if (Array.isArray(data)) {
+      for (const file of data) {
+        await octokit.repos.deleteFile({ owner: OWNER, repo: REPO, path: file.path, message: `chore: delete ${slug}`, sha: file.sha, branch: BRANCH });
+        existed = true;
+      }
+    }
+  } catch (e) { console.log('Delete folder err:', e.message); }
+  return existed;
+}
 
 function resolveInputs() {
   const dProj = (process.env.DISPATCH_PROJECT || '').trim();
@@ -239,11 +253,19 @@ async function buildRagContext(prompt, manifest, currentSlug) {
   for (const e of scored) { 
     refs.push(e.project); 
     ctx += `\n--- ${e.project} ---\n`; 
-    for (const f of ['index.html', 'style.css', 'script.js']) {
-      const fp = e.file.replace('index.html', f);
-      const content = await readFile(fp);
-      if (content) ctx += `[${f}]:\n${content.slice(0, 2000)}\n`;
-    }
+    // Dynamically fetch all files from the reference project
+    const dir = `${PROJECTS_DIR}/${e.project}`;
+    try {
+      const { data } = await octokit.repos.getContent({ owner: OWNER, repo: REPO, path: dir, ref: BRANCH });
+      if (Array.isArray(data)) {
+        for (const file of data) {
+          if (file.type === 'file' && (file.name.endsWith('.html') || file.name.endsWith('.css') || file.name.endsWith('.js'))) {
+            const content = await readFile(file.path);
+            if (content) ctx += `[${file.name}]:\n${content.slice(0, 1500)}\n`;
+          }
+        }
+      }
+    } catch (err) { /* skip if folder doesn't exist */ }
   }
   return { ctx, refs };
 }
@@ -325,14 +347,7 @@ async function main() {
   try { const raw = await readFile(MANIFEST_PATH); if (raw) manifest = JSON.parse(raw); if (!Array.isArray(manifest)) manifest = []; } catch { manifest = []; }
 
   if (mode === 'delete') {
-    let existed = false;
-    for (const f of ['index.html', 'style.css', 'script.js']) {
-      const p = `${baseDir}/${f}`;
-      const content = await readFile(p);
-      if (content !== null) {
-        try { await octokit.repos.deleteFile({ owner: OWNER, repo: REPO, path: p, message: `chore: delete ${slug}`, sha: (await octokit.repos.getContent({owner: OWNER, repo: REPO, path: p})).data.sha, branch: BRANCH }); existed = true; } catch {}
-      }
-    }
+    const existed = await deleteProjectFolder(slug);
     manifest = manifest.filter((e) => e.project !== slug);
     const manifestJson = JSON.stringify(manifest, null, 2) + '\n';
     await writeFile(MANIFEST_PATH, manifestJson, 'chore: manifest');
@@ -341,18 +356,21 @@ async function main() {
     await pushProgress({ status: 'done' }); return;
   }
 
+  // Load all existing files for RAG context
   let existingHtml = await readFile(mainFile);
-  let existingCss = await readFile(`${baseDir}/style.css`) || '';
-  let existingJs = await readFile(`${baseDir}/script.js`) || '';
+  let existingCss = await readFile(`${baseDir}/style.css`) || await readFile(`${baseDir}/app.css`) || '';
+  let existingJs = await readFile(`${baseDir}/script.js`) || await readFile(`${baseDir}/app.js`) || '';
   
-  if ((mode === 'improve' || mode === 'fix' || mode === 'audit') && !existingHtml) throw new Error(`Cannot ${mode} "${slug}": no existing file.`);
+  if ((mode === 'improve' || mode === 'fix' || mode === 'audit') && !existingHtml) throw new Error(`Cannot ${mode} "${slug}": no existing index.html.`);
 
   let ask;
   if (mode === 'create' || (!existingHtml && mode !== 'fix' && mode !== 'audit')) ask = prompt;
   else if (mode === 'improve') ask = 'Improve the existing app. Keep what works and apply: ' + prompt;
   else if (mode === 'fix') ask = `Fix ONLY the bug or issues described.\n\nBUG: ${prompt || 'see scanner findings'}`;
   else if (mode === 'audit') {
-    let combined = existingHtml.replace('</head>', `<style>${existingCss}</style></head>`).replace('</body>', `<script>${existingJs}</script></body>`);
+    let combined = existingHtml;
+    if (existingCss) combined = combined.replace('</head>', `<style>${existingCss}</style></head>`);
+    if (existingJs) combined = combined.replace('</body>', `<script>${existingJs}</script></body>`);
     const initial = await step('Initial security scan', () => runAllScanners(combined));
     if (!initial.findings.length && !prompt) {
       await finishStatus(issue, '✅ Audit clean — nothing to fix.', true);
@@ -373,15 +391,40 @@ async function main() {
   
   let meta = parseMultiFileResponse(text);
   if (!meta) throw new Error(`Failed to parse AI response into JSON files.`);
+  if (!meta.files['index.html']) throw new Error(`AI did not return an index.html file.`);
 
-  if (meta.files['index.html']) {
-    const watermark = `\n<!-- Built by Ariotica AI -->\n<div style="position:fixed;bottom:12px;right:12px;opacity:0.35;font-size:11px;font-family:monospace;color:white;pointer-events:none;z-index:9999;">⚡ Ariotica</div>`;
-    meta.files['index.html'] = meta.files['index.html'].replace(/<\/body>/i, `${watermark}\n</body>`);
+  // 1. Inject Watermark into HTML
+  const watermark = `\n<!-- Built by Ariotica AI -->\n<div style="position:fixed;bottom:12px;right:12px;opacity:0.35;font-size:11px;font-family:monospace;color:white;pointer-events:none;z-index:9999;">⚡ Ariotica</div>`;
+  meta.files['index.html'] = meta.files['index.html'].replace(/<\/body>/i, `${watermark}\n</body>`);
+
+  // 2. Create separate meta.json (with watermark) to keep source files pristine
+  const metaJson = {
+    version: meta.version,
+    features: meta.features,
+    fixes: meta.fixes,
+    suggestions: meta.suggestions,
+    grade: meta.grade,
+    percentile: meta.percentile,
+    humanInvolvement: meta.humanInvolvement,
+    libraries: meta.libraries,
+    _watermark: "⚡ Built by Ariotica AI"
+  };
+  meta.files['meta.json'] = JSON.stringify(metaJson, null, 2);
+
+  // 3. Dynamically build testHtml for Smoke Test & Scanner
+  let testHtml = meta.files['index.html'];
+  for (const [name, content] of Object.entries(meta.files)) {
+    if (name.endsWith('.css')) {
+      const regex = new RegExp(`<link[^>]*href=["'](?:\\.\\/)?${name}["'][^>]*>`, 'i');
+      if (regex.test(testHtml)) testHtml = testHtml.replace(regex, `<style>\n${content}\n</style>`);
+      else testHtml = testHtml.replace('</head>', `<style>\n${content}\n</style>\n</head>`);
+    }
+    if (name.endsWith('.js')) {
+      const regex = new RegExp(`<script[^>]*src=["'](?:\\.\\/)?${name}["'][^>]*><\\/script>`, 'i');
+      if (regex.test(testHtml)) testHtml = testHtml.replace(regex, `<script>\n${content}\n</script>`);
+      else testHtml = testHtml.replace('</body>', `<script>\n${content}\n</script>\n</body>`);
+    }
   }
-
-  let testHtml = meta.files['index.html'] || '';
-  if (meta.files['style.css']) testHtml = testHtml.replace(/<link[^>]*href=["']style\.css["'][^>]*>/i, `<style>\n${meta.files['style.css']}\n</style>`);
-  if (meta.files['script.js']) testHtml = testHtml.replace(/<script[^>]*src=["']script\.js["'][^>]*><\/script>/i, `<script>\n${meta.files['script.js']}\n</script>`);
 
   let check = T.isVanilla(testHtml);
   if (!check.ok) throw new Error(`AI used forbidden libraries (${check.hit})`);
