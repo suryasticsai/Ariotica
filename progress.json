@@ -1,47 +1,12 @@
 {
-  "runId": "39559830108",
-  "started": "2026-10-21T07:07:52.721Z",
-  "updated": "2026-10-21T07:08:06.865Z",
-  "status": "error",
-  "issue": 35,
-  "statusCommentId": 6310208439,
-  "steps": [
-    {
-      "name": "Parse request",
-      "status": "done",
-      "at": "2026-10-21T07:07:54.287Z",
-      "sec": 0
-    },
-    {
-      "name": "Build RAG context",
-      "status": "done",
-      "at": "2026-10-21T07:07:56.229Z",
-      "sec": 1
-    },
-    {
-      "name": "Generate with AI",
-      "status": "done",
-      "at": "2026-10-21T07:08:06.112Z",
-      "promptChars": 11898,
-      "ragRefs": "none",
-      "sec": 10
-    },
-    {
-      "name": "Groq · attempt 1",
-      "status": "done",
-      "at": "2026-10-21T07:08:05.270Z",
-      "sec": 9,
-      "chars": 11090,
-      "model": "openai/gpt-oss-120b"
-    },
-    {
-      "name": "Error",
-      "status": "error",
-      "error": "Failed to parse AI response into JSON files.",
-      "at": "2026-10-21T07:08:06.112Z"
-    }
-  ],
+  "runId": "39560079751",
+  "started": "2026-10-21T07:10:08.923Z",
+  "updated": "2026-10-21T07:10:08.924Z",
+  "status": "running",
+  "issue": 36,
+  "statusCommentId": null,
+  "steps": [],
   "draft": "",
   "draftSize": 0,
-  "error": "Failed to parse AI response into JSON files."
+  "error": null
 }
