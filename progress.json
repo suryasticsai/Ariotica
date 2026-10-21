@@ -1,12 +1,25 @@
 {
   "runId": "39578372408",
   "started": "2026-10-21T09:37:29.137Z",
-  "updated": "2026-10-21T09:37:29.137Z",
-  "status": "running",
+  "updated": "2026-10-21T09:37:32.338Z",
+  "status": "error",
   "issue": 37,
-  "statusCommentId": null,
-  "steps": [],
+  "statusCommentId": 6312821374,
+  "steps": [
+    {
+      "name": "Parse request",
+      "status": "done",
+      "at": "2026-10-21T09:37:30.491Z",
+      "sec": 0
+    },
+    {
+      "name": "Error",
+      "status": "error",
+      "error": "Cannot improve \"casio-calculator\": no existing index.html.",
+      "at": "2026-10-21T09:37:31.687Z"
+    }
+  ],
   "draft": "",
   "draftSize": 0,
-  "error": null
+  "error": "Cannot improve \"casio-calculator\": no existing index.html."
 }
