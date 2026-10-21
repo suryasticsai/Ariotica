@@ -188,6 +188,98 @@ That's the setup. No Python environment. No Docker image. No LangChain installat
 
 [![Meet Your Developer](https://img.shields.io/badge/⚡_MEET_ARIOTICA-111827?style=for-the-badge)](https://suryasticsai.github.io/Ariotica/)
 
+
+---
+
+<div align="center">
+
+## ☀️ THE HUMAN BEHIND THE AGENT
+
+<a href="https://github.com/suryasticsai">
+  <img
+    src="https://github.com/suryasticsai.png"
+    alt="Surya | Creator of Ariotica"
+    width="190"
+    style="border-radius:50%;border:4px solid #F7DF1E;"
+  />
+</a>
+
+# SURYA
+### @suryasticsai
+
+**Creator & Architect of Ariotica**
+
+*AI Toolmaker • Independent Developer • Automation Architect*
+
+### ONE HUMAN. ONE VISION. ONE AUTONOMOUS DEVELOPER.
+
+> "I didn't want another AI that tells me how to write code.
+> I wanted one that actually does the work."
+
+Ariotica was independently conceived and engineered by
+**Surya**, driven by a belief that powerful AI systems
+shouldn't require complicated infrastructure.
+
+**No LangChain. No Python. No Docker.**
+
+Just an idea, JavaScript, and the determination
+to make software build software.
+
+### ⚡ Less Framework. More Engineering.
+
+---
+
+### 🌐 FIND ME ACROSS THE INTERNET
+
+<a href="https://github.com/suryasticsai">
+  <img src="https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white" />
+</a>
+<a href="https://www.linkedin.com/in/suryasticsai">
+  <img src="https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white" />
+</a>
+<a href="https://suryasticsai.medium.com/">
+  <img src="https://img.shields.io/badge/Medium-000000?style=for-the-badge&logo=medium&logoColor=white" />
+</a>
+<a href="https://huggingface.co/spaces/Suryasticsai">
+  <img src="https://img.shields.io/badge/Hugging_Face-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black" />
+</a>
+
+<a href="https://suryasticsai.8b.io/">
+  <img src="https://img.shields.io/badge/Portfolio-2563EB?style=for-the-badge&logo=googlechrome&logoColor=white" />
+</a>
+<a href="https://alkembic.netlify.app/">
+  <img src="https://img.shields.io/badge/Alkembic-8B5CF6?style=for-the-badge&logo=netlify&logoColor=white" />
+</a>
+<a href="https://suryasticsai.github.io/Ariotica/">
+  <img src="https://img.shields.io/badge/Ariotica-Live_Agent-238636?style=for-the-badge&logo=githubactions&logoColor=white" />
+</a>
+
+<!-- Add your confirmed Instagram profile URL here -->
+<!-- Add your public Gmail address as a mailto link here -->
+
+---
+
+### 🧪 MORE THAN ONE EXPERIMENT
+
+**Explore the tools, agents, and ideas behind the creator.**
+
+[![AI Projects](https://img.shields.io/badge/Explore_AI_Experiments-Hugging_Face-FFD21E?style=flat-square&logo=huggingface&logoColor=black)](https://huggingface.co/spaces/Suryasticsai)
+[![Repositories](https://img.shields.io/badge/Explore_Repositories-GitHub-181717?style=flat-square&logo=github)](https://github.com/suryasticsai?tab=repositories)
+[![Writing](https://img.shields.io/badge/Read_My_Thoughts-Medium-000000?style=flat-square&logo=medium)](https://suryasticsai.medium.com/)
+
+---
+
+### BUILT BY ONE. DESIGNED TO BUILD MANY.
+
+**The agent writes software. The human wrote the agent.**
+
+*Created with curiosity. Engineered with simplicity.*
+
+**© Surya | @suryasticsai**
+
+</div>
+
+
 <sub>Built with JavaScript. Powered by GitHub. Designed to ship.</sub>
 
 </div>
