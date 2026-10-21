@@ -1,1 +1,1 @@
-Open index.html, style.css, and script.js in a folder and serve via a local web server or open index.html directly in a browser. No further actions required.
+Open the generated files in a folder, launch index.html in a modern browser, and verify that cards can be added, edited, dragged, exported, imported, and filtered without errors. Adjust CSS colors if needed for better contrast.
