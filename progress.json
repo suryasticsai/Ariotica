@@ -1,77 +1,12 @@
 {
-  "runId": "39558587853",
-  "started": "2026-10-21T06:56:45.499Z",
-  "updated": "2026-10-21T06:57:16.851Z",
-  "status": "done",
-  "issue": 33,
-  "statusCommentId": 6310035771,
-  "steps": [
-    {
-      "name": "Parse request",
-      "status": "done",
-      "at": "2026-10-21T06:56:46.956Z",
-      "sec": 0
-    },
-    {
-      "name": "Build RAG context",
-      "status": "done",
-      "at": "2026-10-21T06:56:49.554Z",
-      "sec": 2
-    },
-    {
-      "name": "Generate with AI",
-      "status": "done",
-      "at": "2026-10-21T06:57:02.264Z",
-      "promptChars": 13557,
-      "ragRefs": "2dooapp, areo",
-      "sec": 13
-    },
-    {
-      "name": "Groq · attempt 1",
-      "status": "done",
-      "at": "2026-10-21T06:57:01.284Z",
-      "sec": 12,
-      "chars": 5939,
-      "model": "openai/gpt-oss-120b"
-    },
-    {
-      "name": "Smoke test",
-      "status": "done",
-      "at": "2026-10-21T06:57:03.127Z",
-      "sec": 1
-    },
-    {
-      "name": "Security scan",
-      "status": "done",
-      "at": "2026-10-21T06:57:03.289Z",
-      "sec": 0
-    },
-    {
-      "name": "Commit files to projects/kanban/",
-      "status": "done",
-      "at": "2026-10-21T06:57:07.803Z",
-      "sec": 5
-    },
-    {
-      "name": "Update knowledge index",
-      "status": "done",
-      "at": "2026-10-21T06:57:14.383Z",
-      "sec": 3
-    }
-  ],
+  "runId": "39559154486",
+  "started": "2026-10-21T07:01:56.023Z",
+  "updated": "2026-10-21T07:01:56.024Z",
+  "status": "running",
+  "issue": 34,
+  "statusCommentId": null,
+  "steps": [],
   "draft": "",
   "draftSize": 0,
-  "error": null,
-  "securitySummary": {
-    "total": 1,
-    "high": 1,
-    "medium": 0,
-    "low": 0,
-    "byTool": {
-      "custom": 1,
-      "eslint": 0,
-      "sparrow": 0
-    }
-  },
-  "smoke": "pass"
+  "error": null
 }
