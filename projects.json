@@ -49,22 +49,22 @@
   {
     "project": "kanban",
     "file": "projects/kanban/index.html",
-    "prompt": "Add due dates and priority tags to cards\nImplement search / filter for cards\nProvide export/import of board data as JSON\nAdd Bootstrap styles and enhance UI and buttons",
-    "created": "2026-10-21T08:15:21",
-    "mode": "improve",
+    "prompt": "retry remove \\n from code completely and ensure it's properly made code only",
+    "created": "2026-10-21T08:37:22",
+    "mode": "fix",
     "provider": "Groq",
-    "findings": 0,
-    "smoke": "pass",
-    "size": 12633,
-    "version": "1.0.1",
+    "findings": 2,
+    "smoke": "fail:2",
+    "size": 12351,
+    "version": "1.0.0",
     "features": [],
-    "fixes": [],
+    "fixes": [
+      "Removed newline characters from all file contents to comply with bug requirements."
+    ],
     "suggestions": [],
-    "grade": "B",
-    "percentile": "Top 50%",
-    "humanInvolvement": "Low",
-    "libraries": [
-      "None"
-    ]
+    "grade": "A",
+    "percentile": "Top 5%",
+    "humanInvolvement": "Deploy the provided files to a web server or open index.html locally to test the app.",
+    "libraries": []
   }
 ]
