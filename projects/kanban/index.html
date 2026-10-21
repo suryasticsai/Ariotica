@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Kanban Board</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+<h1>Kanban Board</h1>
+</header>
+<main>
+<form id="add-form">
+<input type="text" id="title-input" placeholder="Title" required>
+<input type="text" id="desc-input" placeholder="Description" required>
+<select id="status-select">
+<option value="todo">To Do</option>
+<option value="inprogress">In Progress</option>
+<option value="done">Done</option>
+</select>
+<button type="submit">Add Card</button>
+</form>
+<div class="board">
+<div class="column" data-status="todo">
+<h2>🗒 To Do</h2>
+<ul class="card-list" data-status="todo"></ul>
+</div>
+<div class="column" data-status="inprogress">
+<h2>🚧 In Progress</h2>
+<ul class="card-list" data-status="inprogress"></ul>
+</div>
+<div class="column" data-status="done">
+<h2>✅ Done</h2>
+<ul class="card-list" data-status="done"></ul>
+</div>
+</div>
+</main>
+<script src="script.js"></script>
+
+<!-- Built by Ariotica AI -->
+<div style="position:fixed;bottom:12px;right:12px;opacity:0.35;font-size:11px;font-family:monospace;color:white;pointer-events:none;z-index:9999;">⚡ Ariotica</div>
+</body>
+</html>
