@@ -1,118 +1,193 @@
+
 <div align="center">
-  <img src="https://raw.githubusercontent.com/suryasticsai/Ariotica/main/Ariotica-logo.png" alt="Ariotica Logo" width="150" style="border-radius: 20px; margin-bottom: 20px;" />
 
-  # ⚡ Ariotica
-  
-  **The 100% Free, Self-Healing AI Engineering Pipeline.**
+<img src="https://raw.githubusercontent.com/suryasticsai/Ariotica/main/Ariotica-logo.png" alt="Ariotica — Your Live AI Software Developer" width="420" />
 
-  An autonomous agent that turns GitHub Issues into fully functional, single-file vanilla JS apps. It writes code, tests it in a headless browser, scans it for vulnerabilities, and fixes its own bugs.
+# ⚡ ARIOTICA
 
-  [![Live Demo](https://img.shields.io/badge/Live_Dashboard-suryasticsai.github.io/Ariotica-5ab552?style=for-the-badge&logo=github)](https://suryasticsai.github.io/Ariotica/)
-  [![Vanilla JS](https://img.shields.io/badge/Vanilla_JS-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](#)
-  [![Zero Cost](https://img.shields.io/badge/100%25_Free-00a86b?style=for-the-badge)](https://github.com/suryasticsai/Ariotica)
-  [![AI Agents](https://img.shields.io/badge/AI_Agentic_Workflow-blueviolet?style=for-the-badge)](#)
+### Your Live AI Software Developer.
+
+**Give it a task. Watch it ship.**
+
+*Not another chatbot that tells you how to code. A developer that actually does the work.*
+
+[![Launch Ariotica](https://img.shields.io/badge/▶_LAUNCH_LIVE_DEVELOPER-111827?style=for-the-badge&logo=github&logoColor=white)](https://suryasticsai.github.io/Ariotica/)
+[![GitHub](https://img.shields.io/badge/OPEN_SOURCE-181717?style=for-the-badge&logo=github)](https://github.com/suryasticsai/Ariotica)
+
+![JavaScript](https://img.shields.io/badge/100%25_JavaScript-F7DF1E?style=flat-square&logo=javascript&logoColor=black)
+![Python](https://img.shields.io/badge/Python-0-555?style=flat-square)
+![LangChain](https://img.shields.io/badge/LangChain-Not_Required-555?style=flat-square)
+![Docker](https://img.shields.io/badge/Docker-Not_Required-555?style=flat-square)
+![GitHub Actions](https://img.shields.io/badge/Runs_on-GitHub_Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white)
+
+**No Python · No LangChain · No Docker · No complicated infrastructure**
 
 </div>
 
 ---
 
-## 🚀 What is Ariotica?
+<div align="center">
 
-Ariotica is an **agentic AI orchestrator** built entirely on GitHub Actions. Unlike simple prompt-to-code wrappers, Ariotica is a closed-loop system. It doesn't just write code; it **tests it, secures it, and iterates on it** until it works perfectly.
+## 💬 What if your GitHub repository had its own developer?
 
-By leveraging a multi-provider free API fallback (Groq → Gemini → OpenRouter → Pollinations), it runs **100% free forever** without needing a credit card.
+**One that doesn't just suggest solutions. It builds them.**
 
-## ✨ Key Superpowers
+You open an issue. Ariotica picks it up. It writes the application, checks its work, fixes what breaks, and publishes the result.
 
-- 🧠 **RAG Memory (BM25):** The agent remembers every app it has ever built. If you ask for a new app, it searches its own codebase and issue history to reuse your favorite styling and patterns.
-- 🩺 **Self-Healing (JSDOM Smoke Tests):** Before committing, it loads the generated app in a headless browser, clicks every button, and catches runtime errors. If it crashes, it feeds the error back to the AI and forces it to fix itself.
-- 🛡️ **Built-in Security (SAST):** Every app is scanned by custom XSS filters, ESLint, and Sparrow SAST.
-- 💬 **Repo Chat:** Ask the agent questions directly in the issue thread, and it will answer with exact file citations.
-- 🎨 **Strictly Vanilla:** Enforces 100% vanilla HTML/CSS/JS. No React, no Tailwind, no CDNs. Just pure, lightweight, offline-ready code.
+**Your idea → A working app.**
 
----
+</div>
 
-## 🎮 How to Use the Agent
+## 👨‍💻 Meet the developer who lives in your repo
 
-Create a new issue or reply to an existing one using these tags:
+| You say | Ariotica does |
+|:---|:---|
+| 🏗️ **Build this** | Creates a working application from your idea |
+| ✨ **Make it better** | Improves features, design, and behavior |
+| 🩹 **Fix this bug** | Investigates, patches, and tests the fix |
+| 🛡️ **Audit the code** | Checks for security issues and attempts repairs |
+| 🧠 **Remember this** | Reuses relevant patterns from previous work |
+| 🚀 **Ship it** | Commits the result to your repository |
+| 💬 **Explain this** | Answers questions about the project |
 
-| Command | Action |
-| :--- | :--- |
-| **`[BUILD] my-app`** | Create a new app (use the issue body as the prompt). |
-| **`[improve] ...`** | Add features or change the UI of an existing app. |
-| **`[fix] ...`** | Describe a bug, and the agent will patch it. |
-| **`[audit]`** | Force a deep security scan and auto-fix any vulnerabilities. |
-| **`[delete]`** | Completely remove the app from the repo. |
-| **`[ask] ...`** | Ask the AI a question about the repo (e.g., *"[ask] how does the drag-and-drop work?"*). |
-
-*Example: Reply to an issue with `[improve] make the buttons larger and add a hover animation`.*
+> **A chatbot gives you code to copy. Ariotica gives you work that's done.**
 
 ---
 
-## 🖥️ The Live Dashboard
+## 🪄 Ridiculously simple. Deliberately powerful.
 
-Visit the **[Ariotica Web UI](https://suryasticsai.github.io/Ariotica/)** to interact with the agent visually.
+<div align="center">
 
-- **Direct Mode:** Paste a Fine-Grained Personal Access Token (with Actions & Contents Read/Write) to trigger builds directly from the UI.
-- **Issue Mode:** No token required. Simply opens a pre-filled GitHub issue.
-- **Live Progress:** Watch the agent think, write code, run tests, and commit in real-time via the progress modal.
+### ZERO heavyweight frameworks. ONE working AI developer.
+
+**No Python. No LangChain. No vector database. No Docker. No dedicated server.**
+
+Just **JavaScript + GitHub + AI**.
+
+*Because building an agent shouldn't require building a second company to host it.*
+
+</div>
+
+Ariotica uses GitHub Issues as its task board, GitHub Actions as its workspace, and your repository as its delivery destination. No sprawling platform to install. No separate dashboard backend to maintain.
+
+**Free-tier friendly**, with optional AI provider keys and subject to provider quotas and GitHub usage limits. No promises of infinite free compute, because even robots have rate limits.
 
 ---
 
-## 🏗️ Architecture
+## 🔁 It doesn't stop at the first answer
 
-Ariotica runs entirely inside a single GitHub Actions workflow:
+**Write → Check → Fix → Check again → Ship.**
+
+Ariotica is designed to catch problems before delivery, feed failures back into its generation loop, and try again. Its repository memory helps it reuse relevant patterns from earlier projects.
+
+It's not magic, and automated checks aren't a substitute for a human review on critical software. It's a developer-shaped workflow that actually follows through.
+
+---
+
+## 🎮 Manage your developer with a comment
+
+No complicated prompt console. Just talk to Ariotica where developers already work: **GitHub Issues**.
+
+| Command | Assignment |
+|:---|:---|
+| `[BUILD] kanban` | Build a Kanban app |
+| `[improve] add dark mode` | Upgrade the existing app |
+| `[fix] cards don't save` | Repair the bug |
+| `[audit]` | Review security and attempt fixes |
+| `[ask] how does storage work?` | Explain the codebase |
+| `[delete]` | Remove the app |
+
+**Example:** Open an issue titled `[BUILD] habit-tracker` and describe what you want. The issue becomes the assignment; the resulting commit becomes the delivery.
+
+<div align="center">
+
+[![Assign a Task](https://img.shields.io/badge/ASSIGN_YOUR_FIRST_TASK-238636?style=for-the-badge&logo=github)](https://github.com/suryasticsai/Ariotica/issues/new)
+
+</div>
+
+---
+
+## 🖥️ One dashboard. A developer at work.
+
+**[Open the Ariotica Live Dashboard →](https://suryasticsai.github.io/Ariotica/)**
+
+- **Issue Mode:** Create an assignment through GitHub, without putting a token into the dashboard.
+- **Direct Mode:** Use a GitHub token with the necessary permissions to trigger supported workflows.
+- **Build Progress:** Follow available workflow progress and results.
+- **Delivered Apps:** Explore the projects committed to the repository.
+
+> **Security note:** Treat GitHub personal access tokens like passwords. Use fine-grained permissions and never commit tokens to source code.
+
+---
+
+## 🧩 The entire idea, in one picture
 
 ```text
-User Prompt (Issue/UI)
-      │
-      ▼
-[RAG Search] ──► Finds similar past apps & code chunks
-      │
-      ▼
-[LLM Providers] ──► Groq ──► Gemini ──► OpenRouter ──► Pollinations
-      │
-      ▼
-[JSON Parser] ──► Extracts HTML
-      │
-      ▼
-[SAST Scanners] ──► Custom XSS + ESLint + Sparrow
-      │
-      ▼
-[JSDOM Smoke Test] ──► Clicks all buttons, catches errors
-      │
-      ▼ (If error, automatically fixes and retests)
-      │
-      ▼
-[Commit] ──► Saves to `projects/app-name.html`
+       💡 YOUR IDEA
+            │
+            ▼
+     📝 GITHUB ISSUE
+            │
+            ▼
+     🤖 ARIOTICA WORKS
+            │
+       ┌────┴────┐
+       ▼         ▼
+   🧠 REMEMBER  🛠️ BUILD
+                 │
+                 ▼
+             🛡️ CHECK
+                 │
+          Needs a fix?
+             ↙   ↘
+           YES    NO
+            │      │
+          🩹 FIX   │
+            │      │
+            └─►🔁─┘
+                   │
+                   ▼
+              🚀 COMMIT
+                   │
+                   ▼
+            ✨ YOUR APP
 ```
 
-## 📁 Project Structure
+<details>
+<summary><b>🔧 Curious about the engine?</b></summary>
 
-- `generate.js` — The core agentic loop.
-- `lib/providers.js` — The self-healing AI provider fallback system.
-- `lib/rag.js` — Zero-dependency BM25 search engine.
-- `lib/smoke.js` — JSDOM headless browser testing.
-- `lib/scan.js` — ESLint & SAST security scanners.
-- `index.html` — The GitHub Pages dashboard.
+Ariotica is driven by JavaScript in GitHub Actions. Its agent workflow can combine AI provider fallback, lightweight repository search, code checks, and automated smoke tests. The aim is to keep the system understandable and avoid heavyweight orchestration frameworks.
+
+The generated applications favor lightweight vanilla HTML, CSS, and JavaScript. Some development-time checks may use Node packages; **no heavyweight agent framework** does not necessarily mean **zero npm dependencies**.
+
+</details>
 
 ---
 
-## 🛠️ Setup Your Own Instance
+## ⚡ Give Ariotica a home in your GitHub
 
-Want to fork this and run your own AI engineering team?
+1. **Fork** this repository.
+2. Enable **GitHub Actions** and configure workflow write permissions as required.
+3. Add supported AI provider API keys under **Settings → Secrets and variables → Actions**.
+4. Enable **GitHub Pages** for the dashboard, if desired.
+5. Open an issue: **`[BUILD] calculator`**.
 
-1. Fork this repository.
-2. Go to **Settings → Actions → General** and set Workflow permissions to **Read and write**.
-3. Go to **Settings → Secrets and variables → Actions** and add these free API keys:
-   - `GROQ_API_KEY` (Get it free here)
-   - `GEMINI_API_KEY` (Get it free here)
-   - `OPENROUTER_API_KEY` (Get it free here)
-4. Go to **Settings → Pages** and set the source to **Deploy from a branch → main → / (root)**.
-5. Open a new issue titled `[BUILD] calculator` and watch the magic happen.
+That's the setup. No Python environment. No Docker image. No LangChain installation. No separate server fleet.
+
+*Provider access and quotas depend on the services you configure.*
 
 ---
 
 <div align="center">
-  <i>Built for the open web. Powered by free AI tiers. Tested by robots.</i>
+
+### ⚡ Stop asking AI how to build software.
+
+# Give AI the job.
+
+**Ariotica. Your repository's live software developer.**
+
+[![Meet Your Developer](https://img.shields.io/badge/⚡_MEET_ARIOTICA-111827?style=for-the-badge)](https://suryasticsai.github.io/Ariotica/)
+
+<sub>Built with JavaScript. Powered by GitHub. Designed to ship.</sub>
+
 </div>
