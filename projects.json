@@ -66,5 +66,38 @@
     "percentile": "Top 5%",
     "humanInvolvement": "Deploy the provided files to a web server or open index.html locally to test the app.",
     "libraries": []
+  },
+  {
+    "project": "random-forest",
+    "file": "projects/random-forest/index.html",
+    "prompt": "Create an application using maps which integrated all possibilities of Travelling, buying food and entertainment which is helpful for user to travel with the satisfactory needs when received to their destination",
+    "created": "2026-10-21T15:09:51",
+    "mode": "create",
+    "provider": "Groq",
+    "findings": 1,
+    "smoke": "fail:2",
+    "size": 5095,
+    "version": "1.0.0",
+    "features": [
+      "Interactive SVG map to pick a destination coordinate",
+      "Separate sections for Travel, Food, and Entertainment planning",
+      "Data persistence using localStorage for location and lists",
+      "Pure vanilla JavaScript with no external dependencies",
+      "Responsive basic styling using only system fonts",
+      "Safe handling of user input via textContent"
+    ],
+    "fixes": [
+      "Ensured all event listeners are attached after DOM load",
+      "Replaced any potential innerHTML usage with textContent"
+    ],
+    "suggestions": [
+      "Add a real map integration using an open‑source library (e.g., Leaflet with offline tiles)",
+      "Implement edit/remove functionality for list items",
+      "Allow exporting and importing plans as JSON"
+    ],
+    "grade": "A",
+    "percentile": "Top 10%",
+    "humanInvolvement": "Upload the three files (index.html, style.css, script.js) to a web server or local development folder and open index.html in a browser. No further build steps are required.",
+    "libraries": []
   }
 ]
