@@ -1,8 +1,8 @@
 {
   "runId": "39567793513",
   "started": "2026-10-21T08:14:51.188Z",
-  "updated": "2026-10-21T08:15:20.396Z",
-  "status": "running",
+  "updated": "2026-10-21T08:15:25.941Z",
+  "status": "done",
   "issue": 35,
   "statusCommentId": 6311328170,
   "steps": [
@@ -51,9 +51,27 @@
       "status": "done",
       "at": "2026-10-21T08:15:19.649Z",
       "sec": 13
+    },
+    {
+      "name": "Update knowledge index",
+      "status": "done",
+      "at": "2026-10-21T08:15:24.604Z",
+      "sec": 2
     }
   ],
   "draft": "",
   "draftSize": 0,
-  "error": null
+  "error": null,
+  "securitySummary": {
+    "total": 0,
+    "high": 0,
+    "medium": 0,
+    "low": 0,
+    "byTool": {
+      "custom": 0,
+      "eslint": 0,
+      "sparrow": 0
+    }
+  },
+  "smoke": "pass"
 }
