@@ -1,11 +1,39 @@
 {
   "runId": "39560079751",
   "started": "2026-10-21T07:10:08.923Z",
-  "updated": "2026-10-21T07:10:08.924Z",
+  "updated": "2026-10-21T07:10:29.665Z",
   "status": "running",
   "issue": 36,
-  "statusCommentId": null,
-  "steps": [],
+  "statusCommentId": 6310243812,
+  "steps": [
+    {
+      "name": "Parse request",
+      "status": "done",
+      "at": "2026-10-21T07:10:10.351Z",
+      "sec": 0
+    },
+    {
+      "name": "Build RAG context",
+      "status": "done",
+      "at": "2026-10-21T07:10:12.167Z",
+      "sec": 1
+    },
+    {
+      "name": "Generate with AI",
+      "status": "running",
+      "at": "2026-10-21T07:10:12.167Z",
+      "promptChars": 11898,
+      "ragRefs": "none"
+    },
+    {
+      "name": "Groq · attempt 1",
+      "status": "done",
+      "at": "2026-10-21T07:10:28.935Z",
+      "sec": 17,
+      "chars": 10795,
+      "model": "openai/gpt-oss-120b"
+    }
+  ],
   "draft": "",
   "draftSize": 0,
   "error": null
