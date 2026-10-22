@@ -1,84 +1,12 @@
 {
-  "runId": "39814364511",
-  "started": "2026-10-22T16:28:39.769Z",
-  "updated": "2026-10-22T16:29:09.090Z",
-  "status": "error",
-  "issue": 42,
-  "statusCommentId": 6345829164,
-  "steps": [
-    {
-      "name": "Parse request",
-      "status": "done",
-      "at": "2026-10-22T16:28:41.498Z",
-      "sec": 0
-    },
-    {
-      "name": "Build RAG context",
-      "status": "done",
-      "at": "2026-10-22T16:28:43.204Z",
-      "sec": 1
-    },
-    {
-      "name": "Generate with AI (model race)",
-      "status": "done",
-      "at": "2026-10-22T16:28:52.307Z",
-      "promptChars": 1630,
-      "ragRefs": "2dooapp, areo",
-      "sec": 9
-    },
-    {
-      "name": "Groq · racing",
-      "status": "done",
-      "at": "2026-10-22T16:28:51.401Z",
-      "sec": 8,
-      "chars": 7012,
-      "model": "openai/gpt-oss-120b"
-    },
-    {
-      "name": "OpenRouter · racing",
-      "status": "cancelled",
-      "at": "2026-10-22T16:28:52.307Z",
-      "sec": 9,
-      "note": "lost the race"
-    },
-    {
-      "name": "Smoke test",
-      "status": "done",
-      "at": "2026-10-22T16:28:52.307Z",
-      "note": "ran during the model race"
-    },
-    {
-      "name": "Security scan",
-      "status": "done",
-      "at": "2026-10-22T16:28:52.393Z",
-      "sec": 0
-    },
-    {
-      "name": "Commit files to projects/mykanbanapp/",
-      "status": "done",
-      "at": "2026-10-22T16:28:59.283Z",
-      "sec": 7
-    },
-    {
-      "name": "Write build receipt",
-      "status": "done",
-      "at": "2026-10-22T16:29:03.555Z",
-      "sec": 2
-    },
-    {
-      "name": "Update knowledge index",
-      "status": "done",
-      "at": "2026-10-22T16:29:08.331Z",
-      "sec": 3
-    },
-    {
-      "name": "Error",
-      "status": "error",
-      "error": "Cannot read properties of undefined (reading 'slice')",
-      "at": "2026-10-22T16:29:08.331Z"
-    }
-  ],
+  "runId": "39821191655",
+  "started": "2026-10-22T17:16:45.996Z",
+  "updated": "2026-10-22T17:16:45.997Z",
+  "status": "running",
+  "issue": 43,
+  "statusCommentId": null,
+  "steps": [],
   "draft": "",
   "draftSize": 0,
-  "error": "Cannot read properties of undefined (reading 'slice')"
+  "error": null
 }
