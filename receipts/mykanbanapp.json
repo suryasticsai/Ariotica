@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "app": "mykanbanapp",
+  "files": {
+    "index.html": "e3a8278b6a79b9c93e28cd49b708d21dae0758ab4a4ce61961dde8f59cd56d43",
+    "style.css": "fac6e5e19fd7707f713ad8c14034e41bbea4b0956eb899ad0f9c6e1678635149",
+    "script.js": "eefb3dba6af951170fa5efcf162ce183b7160cf54c6e99cd0c226719834e8f58",
+    "meta.json": "cfc7dc1b03fd6d12e4dd487b2dc73ffbf9e4b88b7f364ff8636a11ada67165fc"
+  },
+  "bytes": 6911,
+  "builtAt": "2026-10-22T16:29:02.022Z",
+  "mode": "create",
+  "repo": "suryasticsai/Ariotica",
+  "runId": "39814364511",
+  "commit": "3cdc937877e7dd2573576ad600458df259dc4d1e",
+  "model": {
+    "provider": "Groq",
+    "name": "openai/gpt-oss-120b"
+  },
+  "race": [
+    {
+      "provider": "Groq",
+      "model": "openai/gpt-oss-120b",
+      "sec": 8,
+      "ok": true,
+      "score": 100,
+      "reason": ""
+    }
+  ],
+  "checks": {
+    "complete": true,
+    "vanilla": true,
+    "externalRefs": [],
+    "zeroDeps": true,
+    "smoke": "pass",
+    "smokeErrors": [],
+    "scan": {
+      "total": 2,
+      "high": 1,
+      "medium": 1,
+      "low": 0,
+      "byTool": {
+        "custom": 1,
+        "eslint": 1,
+        "sparrow": 0
+      }
+    }
+  },
+  "promptSha256": "c8a56849ae7c9583ca607ebcc9ea1c05d1f3f48766dee46afbbf5c56b32d0218",
+  "prompt": "A kanban board with 3 columns, cards draggable, local storage, dark theme",
+  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js mykanbanapp"
+}
