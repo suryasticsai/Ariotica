@@ -1,8 +1,8 @@
 {
   "runId": "39826588763",
   "started": "2026-10-22T17:53:37.214Z",
-  "updated": "2026-10-22T17:54:02.806Z",
-  "status": "running",
+  "updated": "2026-10-22T17:54:17.779Z",
+  "status": "done",
   "issue": 43,
   "statusCommentId": 6347509889,
   "steps": [
@@ -58,9 +58,34 @@
       "status": "done",
       "at": "2026-10-22T17:54:01.921Z",
       "sec": 7
+    },
+    {
+      "name": "Write build receipt",
+      "status": "done",
+      "at": "2026-10-22T17:54:07.465Z",
+      "sec": 2
+    },
+    {
+      "name": "Update knowledge index",
+      "status": "done",
+      "at": "2026-10-22T17:54:14.602Z",
+      "sec": 4
     }
   ],
   "draft": "",
   "draftSize": 0,
-  "error": null
+  "error": null,
+  "securitySummary": {
+    "total": 1,
+    "high": 1,
+    "medium": 0,
+    "low": 0,
+    "byTool": {
+      "custom": 1,
+      "eslint": 0,
+      "sparrow": 0
+    }
+  },
+  "smoke": "pass",
+  "sha256": "81bf8e7175c3223d2124878a0f4d65b101f115510c5e573bd84598c2932f81d9"
 }
