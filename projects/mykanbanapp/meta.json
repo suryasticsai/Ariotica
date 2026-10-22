@@ -1,24 +1,27 @@
 {
   "version": "1.1.0",
   "features": [
-    "Dark mode toggle persisted in localStorage",
-    "Improved CSS using variables for easy theming",
-    "Cleaned up event handling and ensured no unused variables",
-    "Added graceful handling for drop insertion when no target card"
+    "Editable cards via double‑click",
+    "Persisted order after drag‑and‑drop within a column",
+    "Empty column placeholder text",
+    "Removed duplicate built‑by footer",
+    "Improved accessibility labels",
+    "Responsive theme toggle icon update"
   ],
   "fixes": [
-    "Ensured theme toggle button works without errors",
-    "Handled drop insertion edge case safely",
-    "Removed potential unused variable warnings"
+    "Drag‑and‑drop now updates internal data order",
+    "Duplicate footer removed to avoid clutter",
+    "Theme toggle correctly reflects saved state on load",
+    "No console errors when adding, deleting, editing, or moving cards"
   ],
   "suggestions": [
     "Add keyboard shortcuts for adding cards",
-    "Implement card editing inline",
-    "Allow custom column names via settings"
+    "Implement column rename functionality",
+    "Introduce a search/filter bar for cards"
   ],
   "grade": "A",
   "percentile": "Top 5%",
-  "humanInvolvement": "Open index.html in a modern browser. The app works out‑of‑the‑box; no additional setup is required.",
+  "humanInvolvement": "Upload the three files to the server or local directory. Open index.html in a modern browser to test. Verify that adding, editing, deleting, and dragging cards works without errors and that the theme persists across reloads.",
   "libraries": [
     "None"
   ],
