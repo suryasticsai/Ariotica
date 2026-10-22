@@ -1,77 +1,89 @@
 document.addEventListener('DOMContentLoaded', () => {
-  const storageKey = 'kanbanData';
-  const themeKey = 'kanbanTheme';
-  const columnIds = ['todo', 'inprogress', 'done'];
+  const STORAGE_KEY = 'kanbanData';
+  const THEME_KEY = 'kanbanTheme';
+  const COLUMNS = ['todo', 'inprogress', 'done'];
 
-  const boardData = loadData();
-  applyTheme();
-  renderBoard();
-  attachAddHandlers();
-  attachThemeToggle();
+  const data = loadData();
+  applySavedTheme();
+  renderAll();
+  initAddButtons();
+  initThemeToggle();
 
   function loadData() {
-    const raw = localStorage.getItem(storageKey);
-    if (raw) {
-      try {
-        const parsed = JSON.parse(raw);
-        if (parsed && parsed.columns) return parsed;
-      } catch { }
-    }
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return { columns: { todo: [], inprogress: [], done: [] } };
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && parsed.columns) return parsed;
+    } catch { }
     return { columns: { todo: [], inprogress: [], done: [] } };
   }
 
   function saveData() {
-    localStorage.setItem(storageKey, JSON.stringify(boardData));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
   }
 
-  function renderBoard() {
-    columnIds.forEach(id => {
+  function renderAll() {
+    COLUMNS.forEach(id => {
       const list = document.querySelector(`.card-list[data-id="${id}"]`);
       list.innerHTML = '';
-      boardData.columns[id].forEach(card => {
-        list.appendChild(createCardElement(card, id));
-      });
+      data.columns[id].forEach(card => list.appendChild(createCard(card, id)));
     });
-    attachDragHandlers();
+    initDragAndDrop();
   }
 
-  function createCardElement(card, colId) {
+  function createCard(card, colId) {
     const el = document.createElement('div');
     el.className = 'card';
-    el.setAttribute('draggable', 'true');
+    el.draggable = true;
     el.dataset.id = card.id;
-    const span = document.createElement('span');
-    span.textContent = card.text;
+
+    const txt = document.createElement('span');
+    txt.textContent = card.text;
+    txt.title = 'Double‑click to edit';
+    txt.addEventListener('dblclick', () => {
+      const newText = prompt('Edit card title:', card.text);
+      if (newText !== null && newText !== '') {
+        card.text = newText;
+        txt.textContent = newText;
+        saveData();
+      }
+    });
+
     const del = document.createElement('button');
     del.className = 'deleteBtn';
     del.textContent = '✕';
     del.addEventListener('click', () => {
-      const idx = boardData.columns[colId].findIndex(c => c.id === card.id);
-      if (idx > -1) boardData.columns[colId].splice(idx, 1);
+      const idx = data.columns[colId].findIndex(c => c.id === card.id);
+      if (idx > -1) data.columns[colId].splice(idx, 1);
       saveData();
       el.remove();
     });
-    el.appendChild(span);
+
+    el.appendChild(txt);
     el.appendChild(del);
     return el;
   }
 
-  function attachAddHandlers() {
+  function initAddButtons() {
     document.querySelectorAll('.addBtn').forEach(btn => {
       btn.addEventListener('click', () => {
-        const colId = btn.parentElement.getAttribute('data-id');
+        const colId = btn.parentElement.dataset.id;
         const title = prompt('Enter card title:');
         if (!title) return;
-        const card = { id: Date.now().toString() + Math.random().toString(36).substr(2, 5), text: title };
-        boardData.columns[colId].push(card);
+        const card = {
+          id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+          text: title
+        };
+        data.columns[colId].push(card);
         saveData();
         const list = document.querySelector(`.card-list[data-id="${colId}"]`);
-        list.appendChild(createCardElement(card, colId));
+        list.appendChild(createCard(card, colId));
       });
     });
   }
 
-  function attachDragHandlers() {
+  function initDragAndDrop() {
     document.querySelectorAll('.card').forEach(card => {
       card.addEventListener('dragstart', ev => {
         ev.dataTransfer.setData('text/plain', card.dataset.id);
@@ -96,44 +108,53 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!dragged) return;
         const sourceCol = dragged.parentElement.parentElement.dataset.id;
         const targetCol = list.dataset.id;
+        const beforeEl = ev.target.closest('.card');
         if (sourceCol === targetCol) {
-          const before = ev.target.closest('.card');
-          if (before) list.insertBefore(dragged, before);
+          if (beforeEl && beforeEl !== dragged) list.insertBefore(dragged, beforeEl);
           else list.appendChild(dragged);
+          reorderColumn(targetCol, list);
           return;
         }
-        const srcArr = boardData.columns[sourceCol];
+        // move between columns
+        const srcArr = data.columns[sourceCol];
         const idx = srcArr.findIndex(c => c.id === cardId);
         if (idx > -1) {
-          const [cardObj] = srcArr.splice(idx, 1);
-          boardData.columns[targetCol].push(cardObj);
+          const [moved] = srcArr.splice(idx, 1);
+          data.columns[targetCol].push(moved);
           saveData();
         }
-        list.appendChild(dragged);
+        if (beforeEl) list.insertBefore(dragged, beforeEl);
+        else list.appendChild(dragged);
       });
     });
   }
 
-  function applyTheme() {
-    const saved = localStorage.getItem(themeKey);
-    const dark = saved !== 'light';
-    document.body.classList.toggle('light', !dark);
-    updateToggleIcon(dark);
+  function reorderColumn(colId, listEl) {
+    const newOrder = [];
+    listEl.querySelectorAll('.card').forEach(cardEl => {
+      const id = cardEl.dataset.id;
+      const obj = data.columns[colId].find(c => c.id === id);
+      if (obj) newOrder.push(obj);
+    });
+    data.columns[colId] = newOrder;
+    saveData();
   }
 
-  function attachThemeToggle() {
-    const toggle = document.getElementById('themeToggle');
-    if (!toggle) return;
-    toggle.addEventListener('click', () => {
+  function initThemeToggle() {
+    const btn = document.getElementById('themeToggle');
+    if (!btn) return;
+    btn.addEventListener('click', () => {
       const isLight = document.body.classList.toggle('light');
-      localStorage.setItem(themeKey, isLight ? 'light' : 'dark');
-      updateToggleIcon(!isLight);
+      localStorage.setItem(THEME_KEY, isLight ? 'light' : 'dark');
+      btn.textContent = isLight ? '☀️' : '🌙';
     });
   }
 
-  function updateToggleIcon(isDark) {
-    const toggle = document.getElementById('themeToggle');
-    if (!toggle) return;
-    toggle.textContent = isDark ? '🌙' : '☀️';
+  function applySavedTheme() {
+    const saved = localStorage.getItem(THEME_KEY);
+    const isLight = saved === 'light';
+    document.body.classList.toggle('light', isLight);
+    const btn = document.getElementById('themeToggle');
+    if (btn) btn.textContent = isLight ? '☀️' : '🌙';
   }
 });
