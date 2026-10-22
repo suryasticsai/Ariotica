@@ -4,15 +4,12 @@ on:
   workflow_dispatch:
     inputs:
       project:
-        description: 'Project name'
         type: string
         required: true
       prompt:
-        description: 'What should it build / change / fix?'
         type: string
         required: true
       mode:
-        description: 'Mode'
         type: choice
         options: [create, improve, fix, audit, delete]
         default: create
@@ -24,6 +21,11 @@ on:
 permissions:
   contents: write
   issues: write
+
+# Smart Concurrency: Prevents overlapping builds for the same project
+concurrency:
+  group: ariotica-${{ github.event.issue.number || inputs.project || 'manual' }}
+  cancel-in-progress: false
 
 jobs:
   generate:
@@ -43,11 +45,18 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+          cache: 'npm'
 
       - name: Install dependencies
         run: npm install
 
-      - name: Generate
+      - name: Build Knowledge Index
+        run: node build-index.js
+
+      - name: Run Agent Unit Tests
+        run: npm test
+
+      - name: Generate App with AI
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
@@ -55,6 +64,9 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           PROVIDER_ORDER: ${{ vars.PROVIDER_ORDER }}
           RACE_SIZE: ${{ vars.RACE_SIZE }}
+          GROQ_MODEL: ${{ vars.GROQ_MODEL }}
+          OPENROUTER_MODEL: ${{ vars.OPENROUTER_MODEL }}
+          HF_MODEL: ${{ vars.HF_MODEL }}
           EVENT_NAME: ${{ github.event_name }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
           ISSUE_BODY: ${{ github.event.issue.body }}
@@ -66,3 +78,97 @@ jobs:
           DISPATCH_MODE: ${{ inputs.mode }}
           RUN_ID: ${{ github.run_id }}
         run: node generate.js
+
+      # =========================================================
+      # NEW FEATURE: Post-Process PWA Injection
+      # Turns the generated apps into installable PWAs
+      # =========================================================
+      - name: Make Apps Installable (PWA)
+        run: |
+          node - <<'EOF'
+          const fs = require('fs');
+          const path = require('path');
+          
+          const projectsDir = 'projects';
+          if (!fs.existsSync(projectsDir)) process.exit(0);
+
+          const folders = fs.readdirSync(projectsDir).filter(f => fs.statSync(path.join(projectsDir, f)).isDirectory());
+          
+          for (const folder of folders) {
+            const dir = path.join(projectsDir, folder);
+            const htmlPath = path.join(dir, 'index.html');
+            if (!fs.existsSync(htmlPath)) continue;
+
+            // 1. Create manifest.json
+            const manifest = {
+              name: folder.replace(/-/g, ' ').toUpperCase(),
+              short_name: folder,
+              start_url: ".",
+              display: "standalone",
+              background_color: "#0b1410",
+              theme_color: "#5ab552",
+              icons: [{
+                src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>",
+                sizes: "512x512",
+                type: "image/svg+xml"
+              }]
+            };
+            fs.writeFileSync(path.join(dir, 'manifest.json'), JSON.stringify(manifest, null, 2));
+
+            // 2. Create sw.js (Service Worker)
+            const sw = `
+              const CACHE = 'ariotica-v1';
+              self.addEventListener('install', (e) => {
+                e.waitUntil(caches.open(CACHE).then(c => c.addAll(['./', './index.html', './style.css', './script.js'])));
+              });
+              self.addEventListener('fetch', (e) => {
+                e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
+              });
+            `;
+            fs.writeFileSync(path.join(dir, 'sw.js'), sw);
+
+            // 3. Inject into index.html
+            let html = fs.readFileSync(htmlPath, 'utf8');
+            
+            // Inject Manifest
+            if (!html.includes('manifest.json')) {
+              html = html.replace('</head>', `  <link rel="manifest" href="manifest.json">\n  <meta name="theme-color" content="#5ab552">\n</head>`);
+            }
+            
+            // Inject Service Worker registration
+            if (!html.includes('sw.js')) {
+              const swRegister = `
+              <script>
+                if ('serviceWorker' in navigator) {
+                  window.addEventListener('load', () => {
+                    navigator.serviceWorker.register('sw.js').catch(err => console.log('SW failed', err));
+                  });
+                }
+              </script>
+              </body>`;
+              html = html.replace('</body>', swRegister);
+            }
+
+            fs.writeFileSync(htmlPath, html);
+            console.log(`✅ PWA enabled for: ${folder}`);
+          }
+          EOF
+
+      - name: Commit PWA updates
+        run: |
+          git config user.name "ariotica-bot"
+          git config user.email "ariotica-bot@users.noreply.github.com"
+          git add projects/
+          # Only commit if there are changes
+          git diff --staged --quiet || git commit -m "chore: make generated apps installable (PWA)"
+          git push
+
+      - name: Upload Generated App Artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ariotica-app-${{ github.run_id }}
+          path: |
+            projects/
+            receipts/
+          retention-days: 7
