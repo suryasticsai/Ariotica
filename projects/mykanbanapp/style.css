@@ -1,16 +1,48 @@
-/* System font stack */
+/* System font stack and CSS variables */
+:root {
+  --bg-dark: #1e1e1e;
+  --bg-light: #ffffff;
+  --card-dark: #424242;
+  --card-light: #f5f5f5;
+  --col-dark: #2b2b2b;
+  --col-light: #e0e0e0;
+  --text-dark: #f0f0f0;
+  --text-light: #000000;
+  --accent-dark: #3a3a3a;
+  --accent-light: #e0e0e0;
+  --accent-hover-dark: #505050;
+  --accent-hover-light: #c0c0c0;
+}
+
 body {
   margin: 0;
   padding: 0;
   font-family: system-ui, Georgia, ui-monospace, Menlo, sans-serif;
-  background-color: #1e1e1e;
-  color: #f0f0f0;
+  background-color: var(--bg-dark);
+  color: var(--text-dark);
+  transition: background-color 0.3s, color 0.3s;
+}
+
+body.light {
+  background-color: var(--bg-light);
+  color: var(--text-light);
 }
 
 h1 {
   text-align: center;
   padding: 1rem;
   margin: 0;
+}
+
+#themeToggle {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: inherit;
 }
 
 .board {
@@ -23,11 +55,16 @@ h1 {
 
 .column {
   flex: 1;
-  background-color: #2b2b2b;
+  background-color: var(--col-dark);
   border-radius: 8px;
   padding: 0.5rem;
   display: flex;
   flex-direction: column;
+  transition: background-color 0.3s;
+}
+
+body.light .column {
+  background-color: var(--col-light);
 }
 
 .column h2 {
@@ -39,15 +76,24 @@ h1 {
 .addBtn {
   margin-bottom: 0.5rem;
   padding: 0.3rem;
-  background-color: #3a3a3a;
-  color: #f0f0f0;
+  background-color: var(--accent-dark);
+  color: inherit;
   border: none;
   border-radius: 4px;
   cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+body.light .addBtn {
+  background-color: var(--accent-light);
 }
 
 .addBtn:hover {
-  background-color: #505050;
+  background-color: var(--accent-hover-dark);
+}
+
+body.light .addBtn:hover {
+  background-color: var(--accent-hover-light);
 }
 
 .card-list {
@@ -57,7 +103,7 @@ h1 {
 }
 
 .card {
-  background-color: #424242;
+  background-color: var(--card-dark);
   margin: 0.3rem 0;
   padding: 0.5rem;
   border-radius: 4px;
@@ -65,6 +111,11 @@ h1 {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  transition: background-color 0.2s;
+}
+
+body.light .card {
+  background-color: var(--card-light);
 }
 
 .card:active {
@@ -81,4 +132,8 @@ h1 {
 
 .column.drag-over {
   background-color: #3d3d3d;
+}
+
+body.light .column.drag-over {
+  background-color: #d0d0d0;
 }
