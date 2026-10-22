@@ -1,23 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
   const storageKey = 'kanbanData';
+  const themeKey = 'kanbanTheme';
   const columnIds = ['todo', 'inprogress', 'done'];
-  const columnNames = { todo: 'To Do', inprogress: 'In Progress', done: 'Done' };
 
   const boardData = loadData();
+  applyTheme();
   renderBoard();
-
-  document.querySelectorAll('.addBtn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const colId = btn.parentElement.getAttribute('data-id');
-      const title = prompt('Enter card title:');
-      if (!title) return;
-      const card = { id: Date.now().toString() + Math.random().toString(36).substr(2, 5), text: title };
-      boardData.columns[colId].push(card);
-      saveData();
-      const list = document.querySelector(`.card-list[data-id="${colId}"]`);
-      list.appendChild(createCardElement(card, colId));
-    });
-  });
+  attachAddHandlers();
+  attachThemeToggle();
 
   function loadData() {
     const raw = localStorage.getItem(storageKey);
@@ -66,6 +56,21 @@ document.addEventListener('DOMContentLoaded', () => {
     return el;
   }
 
+  function attachAddHandlers() {
+    document.querySelectorAll('.addBtn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const colId = btn.parentElement.getAttribute('data-id');
+        const title = prompt('Enter card title:');
+        if (!title) return;
+        const card = { id: Date.now().toString() + Math.random().toString(36).substr(2, 5), text: title };
+        boardData.columns[colId].push(card);
+        saveData();
+        const list = document.querySelector(`.card-list[data-id="${colId}"]`);
+        list.appendChild(createCardElement(card, colId));
+      });
+    });
+  }
+
   function attachDragHandlers() {
     document.querySelectorAll('.card').forEach(card => {
       card.addEventListener('dragstart', ev => {
@@ -92,10 +97,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const sourceCol = dragged.parentElement.parentElement.dataset.id;
         const targetCol = list.dataset.id;
         if (sourceCol === targetCol) {
-          list.insertBefore(dragged, ev.target.closest('.card'));
+          const before = ev.target.closest('.card');
+          if (before) list.insertBefore(dragged, before);
+          else list.appendChild(dragged);
           return;
         }
-        // remove from source data
         const srcArr = boardData.columns[sourceCol];
         const idx = srcArr.findIndex(c => c.id === cardId);
         if (idx > -1) {
@@ -106,5 +112,28 @@ document.addEventListener('DOMContentLoaded', () => {
         list.appendChild(dragged);
       });
     });
+  }
+
+  function applyTheme() {
+    const saved = localStorage.getItem(themeKey);
+    const dark = saved !== 'light';
+    document.body.classList.toggle('light', !dark);
+    updateToggleIcon(dark);
+  }
+
+  function attachThemeToggle() {
+    const toggle = document.getElementById('themeToggle');
+    if (!toggle) return;
+    toggle.addEventListener('click', () => {
+      const isLight = document.body.classList.toggle('light');
+      localStorage.setItem(themeKey, isLight ? 'light' : 'dark');
+      updateToggleIcon(!isLight);
+    });
+  }
+
+  function updateToggleIcon(isDark) {
+    const toggle = document.getElementById('themeToggle');
+    if (!toggle) return;
+    toggle.textContent = isDark ? '🌙' : '☀️';
   }
 });
