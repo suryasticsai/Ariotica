@@ -1,0 +1,22 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+    paths: ['lib/**', 'test/**', 'generate.js']
+  pull_request:
+    paths: ['lib/**', 'test/**', 'generate.js']
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - run: npm install
+      - run: npm test
