@@ -1,8 +1,8 @@
 {
   "runId": "39814364511",
   "started": "2026-10-22T16:28:39.769Z",
-  "updated": "2026-10-22T16:29:00.158Z",
-  "status": "running",
+  "updated": "2026-10-22T16:29:09.090Z",
+  "status": "error",
   "issue": 42,
   "statusCommentId": 6345829164,
   "steps": [
@@ -58,9 +58,27 @@
       "status": "done",
       "at": "2026-10-22T16:28:59.283Z",
       "sec": 7
+    },
+    {
+      "name": "Write build receipt",
+      "status": "done",
+      "at": "2026-10-22T16:29:03.555Z",
+      "sec": 2
+    },
+    {
+      "name": "Update knowledge index",
+      "status": "done",
+      "at": "2026-10-22T16:29:08.331Z",
+      "sec": 3
+    },
+    {
+      "name": "Error",
+      "status": "error",
+      "error": "Cannot read properties of undefined (reading 'slice')",
+      "at": "2026-10-22T16:29:08.331Z"
     }
   ],
   "draft": "",
   "draftSize": 0,
-  "error": null
+  "error": "Cannot read properties of undefined (reading 'slice')"
 }
