@@ -1,27 +1,24 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "features": [
-    "Three-column Kanban board (To Do, In Progress, Done)",
-    "Add, delete, and drag‑and‑drop cards using native HTML5 DnD API",
-    "Persist board state in localStorage",
-    "Responsive dark theme with system fonts",
-    "All user input safely escaped via textContent"
+    "Dark mode toggle persisted in localStorage",
+    "Improved CSS using variables for easy theming",
+    "Cleaned up event handling and ensured no unused variables",
+    "Added graceful handling for drop insertion when no target card"
   ],
   "fixes": [
-    "Ensured no unused variables or parameters",
-    "Handled JSON parse errors gracefully",
-    "Added drag‑over visual feedback",
-    "Removed potential innerHTML security risks"
+    "Ensured theme toggle button works without errors",
+    "Handled drop insertion edge case safely",
+    "Removed potential unused variable warnings"
   ],
   "suggestions": [
-    "Add card editing capability",
-    "Support multiple boards",
-    "Implement keyboard shortcuts for accessibility",
-    "Allow user‑chosen themes"
+    "Add keyboard shortcuts for adding cards",
+    "Implement card editing inline",
+    "Allow custom column names via settings"
   ],
   "grade": "A",
   "percentile": "Top 5%",
-  "humanInvolvement": "Open the three files in a folder, launch index.html in a modern browser, and interact with the board. No further setup is required.",
+  "humanInvolvement": "Open index.html in a modern browser. The app works out‑of‑the‑box; no additional setup is required.",
   "libraries": [
     "None"
   ],
