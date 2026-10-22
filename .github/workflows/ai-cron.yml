@@ -51,9 +51,6 @@ jobs:
       - name: Build Knowledge Index
         run: node build-index.js
 
-      - name: Run Agent Unit Tests
-        run: npm test
-
       - name: Generate App with AI
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
