@@ -170,35 +170,8 @@ const genMessages = (userText) => [{ role: 'system', content: GEN_SYSTEM }, { ro
 const HINT = '\n\n💬 Reply with `[improve] …`, `[fix] …`, `[audit]`, `[delete]` — or `[ask] …` to ask me anything about this repo.';
 const MENTIONS_SCAN = /\b(sonar|scan|scanner|lint|security|findings?|warnings?|issues?)\b/i;
 
-function parseMultiFileResponse(text) {
-  let clean = String(text || '').trim();
-  clean = clean.replace(/^```(?:json)?\s*\n?/, '').replace(/\n?```\s*$/, '');
-  const start = clean.indexOf('{');
-  const end = clean.lastIndexOf('}');
-  if (start === -1 || end === -1) return null;
-
-  try {
-    const data = JSON.parse(clean.slice(start, end + 1));
-    let files = data.files || {};
-    if (data.html && !files['index.html']) files = { 'index.html': data.html };
-    return {
-      files: files,
-      version: data.version || '1.0.0',
-      features: Array.isArray(data.features) ? data.features : [],
-      fixes: Array.isArray(data.fixes) ? data.fixes : [],
-      suggestions: Array.isArray(data.suggestions) ? data.suggestions : [],
-      grade: data.grade || 'B',
-      percentile: data.percentile || 'Top 50%',
-      humanInvolvement: data.humanInvolvement || 'Low',
-      libraries: Array.isArray(data.libraries) ? data.libraries : ['None']
-    };
-  } catch (e) {
-    return null;
-  }
-}
-
 async function gradeHtml(text) {
-  const meta = parseMultiFileResponse(text);
+  const meta = T.parseMultiFileResponse(text);
   if (!meta || !meta.files || !meta.files['index.html']) {
     return { ok: false, score: 0, html: text, reason: 'invalid JSON or missing index.html' };
   }
@@ -471,13 +444,11 @@ async function main() {
     if (fixed) { cand = fixed; files = fixed.grade.files; testHtml = fixed.grade.html; smoke = fixed.grade.smoke; meta = fixed.grade.meta; provider = fixed.provider; model = fixed.model; }
   }
 
-  // Inject watermark into HTML
   if (files['index.html']) {
     const watermark = `\n<!-- Built by Ariotica AI -->\n<div style="position:fixed;bottom:12px;right:12px;opacity:0.35;font-size:11px;font-family:monospace;color:white;pointer-events:none;z-index:9999;">⚡ Ariotica</div>`;
     files['index.html'] = files['index.html'].replace(/<\/body>/i, `${watermark}\n</body>`);
   }
 
-  // Create meta.json for the dashboard/issue metadata
   const metaJson = {
     version: meta.version,
     features: meta.features,
