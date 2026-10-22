@@ -132,26 +132,23 @@ function aiEvents() {
   };
 }
 
-const RULES = `Build a PURE VANILLA JAVASCRIPT web app using multiple files.
+const RULES = `You are a Senior UI/UX Engineer building a PURE VANILLA JAVASCRIPT web app using multiple files.
 STRICT RULES:
 - Create separate files: index.html, style.css, script.js.
 - Link them properly using <link rel="stylesheet" href="style.css"> and <script src="script.js"></script>.
-- NO frameworks or UI libraries of any kind.
-- NO external URLs: no CDN scripts, no external fonts, no external images.
-- NO import/export/require. NO fetch/XHR at runtime.
-- Use ONLY: DOM APIs, CSS, localStorage, sessionStorage, Canvas, SVG, emoji.
-- System fonts only (system-ui, Georgia, ui-monospace, Menlo).
-- Always escape user input with textContent — never innerHTML for untrusted data.
-- Add rel="noopener" to any target="_blank" link.
-- Never declare unused variables or parameters. If a caught error is not used, write catch { ... } with no binding.
+- NO frameworks, NO external URLs, NO import/export/require.
+- **DESIGN SYSTEM**: You MUST use CSS variables (:root) for colors. Use a modern, sleek aesthetic. Use Flexbox/Grid. Use smooth transitions (0.3s ease) on all hover states and button clicks.
+- **RESPONSIVE**: Must look perfect on mobile (375px) and desktop. Use media queries.
+- **ACCESSIBILITY**: Use semantic HTML, aria-labels, and ensure high contrast.
+- **UX**: Always include a clear empty state (e.g., "No tasks yet, add one!"). Handle edge cases gracefully.
+- Use only: DOM APIs, CSS, localStorage, Canvas, SVG, emoji. System fonts only (system-ui, Georgia, monospace).
 - The app must run without console errors on load and when every button is pressed once.
-- Keep the app compact enough to finish in one response.
 
 OUTPUT FORMAT: reply with ONLY one JSON object and nothing else.
 {
   "files": {
     "index.html": "<!DOCTYPE html>...",
-    "style.css": "body { ... }",
+    "style.css": ":root { ... }",
     "script.js": "console.log('...');"
   },
   "version": "1.0.0",
@@ -405,6 +402,7 @@ async function main() {
     fullPrompt += `\n\nCURRENT FILES:\n[index.html]:\n${existingHtml}\n\n[style.css]:\n${existingCss}\n\n[script.js]:\n${existingJs}`;
   }
 
+  // 1) Race
   let cand = await step('Generate with AI (model race)', () => generate(fullPrompt), { promptChars: fullPrompt.length, ragRefs: refs.join(', ') || 'none' });
   let raceReport = cand.race.slice();
 
@@ -416,11 +414,7 @@ async function main() {
       : `it used a forbidden library (matched ${v.hit}). Use ONLY vanilla JavaScript.`;
     cand = await step('Retry (rejected output)', () => generate(`Previous attempt was rejected: ${why}\n\n` + fullPrompt));
     raceReport = raceReport.concat(cand.race);
-    if (structurallyBad(cand)) {
-      const html = cand.grade.html;
-      currentDraft = html;
-      throw new Error(`Still rejected after retry (${cand.grade.reason || 'invalid output'}) from ${cand.provider}`);
-    }
+    if (structurallyBad(cand)) throw new Error(`Still rejected after retry (${cand.grade.reason || 'invalid output'}) from ${cand.provider}`);
   }
 
   let files = cand.grade.files;
@@ -432,18 +426,27 @@ async function main() {
   steps.push({ name: 'Smoke test', status: smoke.ok ? 'done' : 'error', at: new Date().toISOString(), note: 'ran during the model race', error: smoke.ok ? undefined : `${smoke.errors.length} runtime error(s)` });
   await pushProgress();
 
-  if (!smoke.ok && testHtml.length <= EXISTING_LIMIT) {
+  // 2) 3-Step Self-Healing Loop
+  let attempt = 1;
+  while (!smoke.ok && attempt <= 3 && testHtml.length <= EXISTING_LIMIT) {
     const repairPrompt = `${RULES}Fix the runtime errors in this app. Keep everything else exactly as it is.\n\nRUNTIME ERRORS:\n${smoke.errors.map((e) => '- ' + e).join('\n')}\n\nCURRENT HTML:\n${testHtml}`;
     const baseline = cand.grade.score;
-    const fixed = await softStep('Repair runtime errors', async () => {
+    
+    const fixed = await softStep(`Repair attempt ${attempt}`, async () => {
       const r = await generate(repairPrompt);
       raceReport = raceReport.concat(r.race);
       if (structurallyBad(r) || r.grade.score <= baseline) throw new Error('repair did not improve the app; keeping the original');
       return r;
     });
-    if (fixed) { cand = fixed; files = fixed.grade.files; testHtml = fixed.grade.html; smoke = fixed.grade.smoke; meta = fixed.grade.meta; provider = fixed.provider; model = fixed.model; }
+
+    if (fixed) { 
+      cand = fixed; files = fixed.grade.files; testHtml = fixed.grade.html; smoke = fixed.grade.smoke; meta = fixed.grade.meta; provider = fixed.provider; model = fixed.model; 
+      if (smoke.ok) break;
+    }
+    attempt++;
   }
 
+  // 3) Watermark & Meta
   if (files['index.html']) {
     const watermark = `\n<!-- Built by Ariotica AI -->\n<div style="position:fixed;bottom:12px;right:12px;opacity:0.35;font-size:11px;font-family:monospace;color:white;pointer-events:none;z-index:9999;">⚡ Ariotica</div>`;
     files['index.html'] = files['index.html'].replace(/<\/body>/i, `${watermark}\n</body>`);
