@@ -1,91 +1,12 @@
 {
-  "runId": "39821191655",
-  "started": "2026-10-22T17:16:45.996Z",
-  "updated": "2026-10-22T17:17:18.154Z",
-  "status": "done",
+  "runId": "39826588763",
+  "started": "2026-10-22T17:53:37.214Z",
+  "updated": "2026-10-22T17:53:37.216Z",
+  "status": "running",
   "issue": 43,
-  "statusCommentId": 6346773218,
-  "steps": [
-    {
-      "name": "Parse request",
-      "status": "done",
-      "at": "2026-10-22T17:16:49.781Z",
-      "sec": 0
-    },
-    {
-      "name": "Build RAG context",
-      "status": "done",
-      "at": "2026-10-22T17:16:52.020Z",
-      "sec": 1
-    },
-    {
-      "name": "Generate with AI (model race)",
-      "status": "done",
-      "at": "2026-10-22T17:17:01.000Z",
-      "promptChars": 7614,
-      "ragRefs": "hii",
-      "sec": 9
-    },
-    {
-      "name": "Groq · racing",
-      "status": "done",
-      "at": "2026-10-22T17:17:00.235Z",
-      "sec": 8,
-      "chars": 9209,
-      "model": "openai/gpt-oss-120b"
-    },
-    {
-      "name": "OpenRouter · racing",
-      "status": "cancelled",
-      "at": "2026-10-22T17:17:01.000Z",
-      "sec": 9,
-      "note": "lost the race"
-    },
-    {
-      "name": "Smoke test",
-      "status": "done",
-      "at": "2026-10-22T17:17:01.000Z",
-      "note": "ran during the model race"
-    },
-    {
-      "name": "Security scan",
-      "status": "done",
-      "at": "2026-10-22T17:17:01.089Z",
-      "sec": 0
-    },
-    {
-      "name": "Commit files to projects/mykanbanapp/",
-      "status": "done",
-      "at": "2026-10-22T17:17:08.142Z",
-      "sec": 7
-    },
-    {
-      "name": "Write build receipt",
-      "status": "done",
-      "at": "2026-10-22T17:17:11.652Z",
-      "sec": 1
-    },
-    {
-      "name": "Update knowledge index",
-      "status": "done",
-      "at": "2026-10-22T17:17:15.699Z",
-      "sec": 3
-    }
-  ],
+  "statusCommentId": null,
+  "steps": [],
   "draft": "",
   "draftSize": 0,
-  "error": null,
-  "securitySummary": {
-    "total": 1,
-    "high": 1,
-    "medium": 0,
-    "low": 0,
-    "byTool": {
-      "custom": 1,
-      "eslint": 0,
-      "sparrow": 0
-    }
-  },
-  "smoke": "pass",
-  "sha256": "006f2ccc4cd685984e7c4291147770f3c66165ad69fc97b2907d6e1f8efd2647"
+  "error": null
 }
