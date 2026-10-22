@@ -2,17 +2,17 @@
   "schema": 1,
   "app": "mykanbanapp",
   "files": {
-    "index.html": "e3a8278b6a79b9c93e28cd49b708d21dae0758ab4a4ce61961dde8f59cd56d43",
-    "style.css": "fac6e5e19fd7707f713ad8c14034e41bbea4b0956eb899ad0f9c6e1678635149",
-    "script.js": "eefb3dba6af951170fa5efcf162ce183b7160cf54c6e99cd0c226719834e8f58",
-    "meta.json": "cfc7dc1b03fd6d12e4dd487b2dc73ffbf9e4b88b7f364ff8636a11ada67165fc"
+    "index.html": "006f2ccc4cd685984e7c4291147770f3c66165ad69fc97b2907d6e1f8efd2647",
+    "style.css": "99a01a9b07ce3f6229c4d471c1b2d5e0ecdcf8fea8c99dcae41e535c153208e6",
+    "script.js": "e0f46ebb661a4822fcc509c779630ebdcd27aba95b2031eb63e3f21d543a520a",
+    "meta.json": "aaaa73534933c1752f620d196393825cbcd5789b072687dda6c634ae1bf86bc0"
   },
-  "bytes": 6911,
-  "builtAt": "2026-10-22T16:29:02.022Z",
-  "mode": "create",
+  "bytes": 9023,
+  "builtAt": "2026-10-22T17:17:10.271Z",
+  "mode": "improve",
   "repo": "suryasticsai/Ariotica",
-  "runId": "39814364511",
-  "commit": "3cdc937877e7dd2573576ad600458df259dc4d1e",
+  "runId": "39821191655",
+  "commit": "9fe516dbace1ee484deaf25e4315f98246562290",
   "model": {
     "provider": "Groq",
     "name": "openai/gpt-oss-120b"
@@ -27,6 +27,7 @@
       "reason": ""
     }
   ],
+  "sha256": "006f2ccc4cd685984e7c4291147770f3c66165ad69fc97b2907d6e1f8efd2647",
   "checks": {
     "complete": true,
     "vanilla": true,
@@ -35,18 +36,18 @@
     "smoke": "pass",
     "smokeErrors": [],
     "scan": {
-      "total": 2,
+      "total": 1,
       "high": 1,
-      "medium": 1,
+      "medium": 0,
       "low": 0,
       "byTool": {
         "custom": 1,
-        "eslint": 1,
+        "eslint": 0,
         "sparrow": 0
       }
     }
   },
-  "promptSha256": "c8a56849ae7c9583ca607ebcc9ea1c05d1f3f48766dee46afbbf5c56b32d0218",
-  "prompt": "A kanban board with 3 columns, cards draggable, local storage, dark theme",
+  "promptSha256": "d4913c8ee34337c27ebd4b7fb26df4f72f2df71e78d2f20b3ccc139e248172a3",
+  "prompt": "Fix this app and add dark mode",
   "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js mykanbanapp"
 }
