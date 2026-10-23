@@ -1,91 +1,12 @@
 {
-  "runId": "39826588763",
-  "started": "2026-10-22T17:53:37.214Z",
-  "updated": "2026-10-22T17:54:17.779Z",
-  "status": "done",
-  "issue": 43,
-  "statusCommentId": 6347509889,
-  "steps": [
-    {
-      "name": "Parse request",
-      "status": "done",
-      "at": "2026-10-22T17:53:40.570Z",
-      "sec": 0
-    },
-    {
-      "name": "Build RAG context",
-      "status": "done",
-      "at": "2026-10-22T17:53:44.215Z",
-      "sec": 1
-    },
-    {
-      "name": "Generate with AI (model race)",
-      "status": "done",
-      "at": "2026-10-22T17:53:54.457Z",
-      "promptChars": 9931,
-      "ragRefs": "none",
-      "sec": 10
-    },
-    {
-      "name": "Groq · racing",
-      "status": "done",
-      "at": "2026-10-22T17:53:53.432Z",
-      "sec": 9,
-      "chars": 10226,
-      "model": "openai/gpt-oss-120b"
-    },
-    {
-      "name": "OpenRouter · racing",
-      "status": "cancelled",
-      "at": "2026-10-22T17:53:54.457Z",
-      "sec": 10,
-      "note": "lost the race"
-    },
-    {
-      "name": "Smoke test",
-      "status": "done",
-      "at": "2026-10-22T17:53:54.457Z",
-      "note": "ran during the model race"
-    },
-    {
-      "name": "Security scan",
-      "status": "done",
-      "at": "2026-10-22T17:53:54.605Z",
-      "sec": 0
-    },
-    {
-      "name": "Commit files to projects/mykanbanapp/",
-      "status": "done",
-      "at": "2026-10-22T17:54:01.921Z",
-      "sec": 7
-    },
-    {
-      "name": "Write build receipt",
-      "status": "done",
-      "at": "2026-10-22T17:54:07.465Z",
-      "sec": 2
-    },
-    {
-      "name": "Update knowledge index",
-      "status": "done",
-      "at": "2026-10-22T17:54:14.602Z",
-      "sec": 4
-    }
-  ],
+  "runId": "39917171373",
+  "started": "2026-10-23T07:21:35.951Z",
+  "updated": "2026-10-23T07:21:35.953Z",
+  "status": "running",
+  "issue": 44,
+  "statusCommentId": null,
+  "steps": [],
   "draft": "",
   "draftSize": 0,
-  "error": null,
-  "securitySummary": {
-    "total": 1,
-    "high": 1,
-    "medium": 0,
-    "low": 0,
-    "byTool": {
-      "custom": 1,
-      "eslint": 0,
-      "sparrow": 0
-    }
-  },
-  "smoke": "pass",
-  "sha256": "81bf8e7175c3223d2124878a0f4d65b101f115510c5e573bd84598c2932f81d9"
+  "error": null
 }
