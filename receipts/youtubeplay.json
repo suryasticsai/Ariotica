@@ -2,17 +2,17 @@
   "schema": 1,
   "app": "youtubeplay",
   "files": {
-    "index.html": "7376dec55d51185fb3e6f1eef35250bb8801299733a342196ef24b0c998c2467",
-    "style.css": "77cceae5b9c352434002dffe6228072d953536156801a94c10c9203ffc09c121",
-    "script.js": "aca9a230d1c81d085b1c2312cfda51cce23de9e86e91ef77d4a80bae626849bf",
-    "meta.json": "5c4dee3f7ef8ddc9de77ece58fccb3fb05e679d3c7feb0098818a5fab535c8bb"
+    "index.html": "facafabf7be4e57fc3155c8db3c4fbca3a4d2736693d7a55620a733d0be0a5e1",
+    "style.css": "af1927a2de609c051c190b19e51af5c11470716a29ac04b3a8a787e4b2b941dc",
+    "script.js": "7bf2bac3a91a5d3ee02c1c6c8b83044f0771f032435d6a093eacb90259e437c6",
+    "meta.json": "362f776d2a35d7f08c9368d7b88444bfd5ea62e65d09c22587f50bef91b5c8f4"
   },
-  "bytes": 5303,
-  "builtAt": "2026-10-23T07:21:53.011Z",
-  "mode": "create",
+  "bytes": 6803,
+  "builtAt": "2026-10-23T07:39:39.181Z",
+  "mode": "fix",
   "repo": "suryasticsai/Ariotica",
-  "runId": "39917171373",
-  "commit": "3115a8ee708766018e2ce1645c6690b8bf8e74ff",
+  "runId": "39919191969",
+  "commit": "e18af1694f7033c729b582ebec3b5c5e24dbe7f6",
   "model": {
     "provider": "Groq",
     "name": "openai/gpt-oss-120b"
@@ -27,7 +27,7 @@
       "reason": ""
     }
   ],
-  "sha256": "7376dec55d51185fb3e6f1eef35250bb8801299733a342196ef24b0c998c2467",
+  "sha256": "facafabf7be4e57fc3155c8db3c4fbca3a4d2736693d7a55620a733d0be0a5e1",
   "checks": {
     "complete": true,
     "vanilla": true,
@@ -36,18 +36,18 @@
     "smoke": "pass",
     "smokeErrors": [],
     "scan": {
-      "total": 0,
+      "total": 1,
       "high": 0,
-      "medium": 0,
+      "medium": 1,
       "low": 0,
       "byTool": {
         "custom": 0,
-        "eslint": 0,
+        "eslint": 1,
         "sparrow": 0
       }
     }
   },
-  "promptSha256": "91db4f6c295292cd6ef09c5737308a18fd7338e1aa55075da42b5790c7e3e1c1",
-  "prompt": "Create simple youtube embedded player within cool UI with all play pause search options",
+  "promptSha256": "e52edfe31624f28e374e1149585f2cb37fd8a56e7f0e2a942de98f159bc745a9",
+  "prompt": "user can paste any kind of link in that search box we shall still navigate to desired video and play it \nExample of youtube links \n1. https://youtu.be/AhVHtwh5k3E\n2. https://m.youtube.com/watch?v=AhVHtwh5k3E \n3. \nhttps://www.youtube.com/wat",
   "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js youtubeplay"
 }
