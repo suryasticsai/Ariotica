@@ -28,10 +28,19 @@ body {
 }
 
 .header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   padding: 1rem;
   background: var(--color-primary);
   color: #fff;
   text-align: center;
+}
+
+.yt-logo {
+  width: 24px;
+  height: auto;
 }
 
 .main {
