@@ -2,17 +2,17 @@
   "schema": 1,
   "app": "youtubeplay",
   "files": {
-    "index.html": "3e8cfcfcf0af1edee484358dcdbf7b81d2723e2471bdf3b0a4712da5fd393ae1",
-    "style.css": "e62999db5041aed0a4f8cd4f3398cb9d8eeaf8717cb8de5766ca96bca044e01c",
-    "script.js": "639ede2eb782e950df34bd60d67404bd03d9cb637e7bf73384312a90ff24925b",
-    "meta.json": "23e8accb9aef21c69a069ab268422c5cd10020989fa3edab189b98f634f12d48"
+    "index.html": "bb1a295060ddb2f852eacd6dba45280ce7850ee890a92136b9189e37c719d1ff",
+    "style.css": "c51d675f06bfb1ff1c88afe75d9d1198baae13fa18c40d9516cf828e4696eab4",
+    "script.js": "cd965726de20158aaeb6f6f77b0c3e8fa12516232372018cfcd2b994504a4d79",
+    "meta.json": "afee246ac41d17a52e97501a25fd5435d824ef8fbb7344d02ab0852dfdb0d38e"
   },
-  "bytes": 11033,
-  "builtAt": "2026-10-23T07:51:50.252Z",
+  "bytes": 12029,
+  "builtAt": "2026-10-23T10:13:54.791Z",
   "mode": "fix",
   "repo": "suryasticsai/Ariotica",
-  "runId": "39920563934",
-  "commit": "0d6245867f87063e9cf09d03667b7684bd00a28c",
+  "runId": "39937543170",
+  "commit": "14d4bfcb3c18a72c04c72d0ba5f956c6c1151c91",
   "model": {
     "provider": "Groq",
     "name": "openai/gpt-oss-120b"
@@ -21,13 +21,13 @@
     {
       "provider": "Groq",
       "model": "openai/gpt-oss-120b",
-      "sec": 10,
+      "sec": 12,
       "ok": true,
       "score": 100,
       "reason": ""
     }
   ],
-  "sha256": "3e8cfcfcf0af1edee484358dcdbf7b81d2723e2471bdf3b0a4712da5fd393ae1",
+  "sha256": "bb1a295060ddb2f852eacd6dba45280ce7850ee890a92136b9189e37c719d1ff",
   "checks": {
     "complete": true,
     "vanilla": true,
@@ -36,18 +36,18 @@
     "smoke": "pass",
     "smokeErrors": [],
     "scan": {
-      "total": 2,
-      "high": 1,
+      "total": 1,
+      "high": 0,
       "medium": 1,
       "low": 0,
       "byTool": {
-        "custom": 1,
+        "custom": 0,
         "eslint": 1,
         "sparrow": 0
       }
     }
   },
-  "promptSha256": "88e98dfa9f43ed571f469407c2f3aae74ea6caf11590f5867b1dea36d885e8e9",
-  "prompt": "retry to add the feature which i requested, also send me link of source code folder",
+  "promptSha256": "038def9faa9de349ac3fceab7cfa0f6bee12ad333c23bc010ba3fe1bd8b9a3bc",
+  "prompt": "❌ Failed\n\nThe \"string\" argument must be of type string or an instance of Buffer or ArrayBuffer. Received an instance of Array\n\n\nFix it please make sure you add the transcript feature use some free open source external js libraries to make i",
   "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js youtubeplay"
 }
