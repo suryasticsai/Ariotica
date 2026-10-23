@@ -4,6 +4,7 @@
   --color-primary-dark: #004bbb;
   --color-text: #222222;
   --color-muted: #666666;
+  --color-success: #28a745;
   --radius: 8px;
   --transition: 0.3s ease;
   --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -104,6 +105,64 @@ iframe {
   border: none;
 }
 
+.transcript-section {
+  width: 100%;
+  max-width: 800px;
+  background: #fff;
+  border: 1px solid var(--color-muted);
+  border-radius: var(--radius);
+  padding: 1rem;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+  transition: var(--transition);
+}
+
+.transcript-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+}
+
+.transcript-header h2 {
+  font-size: 1.2rem;
+  margin: 0;
+  color: var(--color-text);
+}
+
+.copy-btn {
+  padding: 0.3rem 0.6rem;
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: var(--transition);
+}
+
+.copy-btn:hover,
+.copy-btn:focus {
+  background: var(--color-primary-dark);
+}
+
+.transcript-list {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-top: 0.5rem;
+}
+
+.transcript-list li {
+  margin-bottom: 0.4rem;
+  line-height: 1.4;
+  min-height: 1.2rem; /* reserve space while typing */
+}
+
+.transcript-message {
+  color: var(--color-muted);
+  font-style: italic;
+  margin-top: 0.5rem;
+}
+
 @media (max-width: 480px) {
   .header {
     font-size: 1.2rem;
@@ -113,5 +172,9 @@ iframe {
   .controls input,
   .controls button {
     font-size: 0.9rem;
+  }
+
+  .transcript-header h2 {
+    font-size: 1rem;
   }
 }
