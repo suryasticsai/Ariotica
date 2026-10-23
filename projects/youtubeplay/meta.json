@@ -1,22 +1,11 @@
 {
-  "version": "1.1.0",
-  "features": [
-    "Accepts full YouTube URLs, shortened links, embed links, and plain video IDs",
-    "Robust video ID extraction with fallback handling"
-  ],
-  "fixes": [
-    "Added extractVideoID function to parse various YouTube URL formats",
-    "Updated input placeholder and aria-label for clarity",
-    "Ensured empty state displays when input is invalid"
-  ],
-  "suggestions": [
-    "Add keyboard shortcut (Enter) to trigger loading",
-    "Persist last loaded video in localStorage",
-    "Include a thumbnail preview before loading"
-  ],
-  "grade": "A",
-  "percentile": "Top 5%",
-  "humanInvolvement": "Open index.html in a browser, test loading videos using different URL formats to verify correct behavior. No further code changes required.",
+  "version": "1.0.0",
+  "features": [],
+  "fixes": [],
+  "suggestions": [],
+  "grade": "B",
+  "percentile": "Top 50%",
+  "humanInvolvement": "Low",
   "libraries": [
     "None"
   ],
