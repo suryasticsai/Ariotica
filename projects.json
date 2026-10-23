@@ -142,5 +142,38 @@
     ],
     "sha256": "bb1a295060ddb2f852eacd6dba45280ce7850ee890a92136b9189e37c719d1ff",
     "receipt": "receipts/youtubeplay.json"
+  },
+  {
+    "project": "to-do-list",
+    "file": "projects/to-do-list/index.html",
+    "prompt": "Create to do list app please",
+    "created": "2026-10-23T14:23:50",
+    "mode": "create",
+    "provider": "Groq",
+    "model": "openai/gpt-oss-120b",
+    "findings": 1,
+    "smoke": "pass",
+    "size": 7042,
+    "version": "1.0.0",
+    "features": [
+      "Add, toggle, and delete tasks",
+      "Persist tasks with localStorage",
+      "Responsive layout for mobile and desktop",
+      "Accessible markup with ARIA labels and high contrast",
+      "Smooth transitions on hover and button interactions",
+      "Clear empty state message when no tasks exist"
+    ],
+    "fixes": [],
+    "suggestions": [
+      "Add drag‑and‑drop reordering of tasks",
+      "Implement due dates and reminders",
+      "Provide dark‑mode toggle using CSS variables"
+    ],
+    "grade": "A",
+    "percentile": "Top 5%",
+    "humanInvolvement": "Open the project folder, serve the files (e.g., with a simple http server or by opening index.html directly), and interact with the app. No further action is required.",
+    "libraries": [],
+    "sha256": "194ce2e94874c94b07ed6eb998e693d74388ec22d1a09267eaa78673c91f8cad",
+    "receipt": "receipts/to-do-list.json"
   }
 ]
