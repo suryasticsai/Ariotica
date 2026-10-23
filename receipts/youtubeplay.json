@@ -2,17 +2,17 @@
   "schema": 1,
   "app": "youtubeplay",
   "files": {
-    "index.html": "facafabf7be4e57fc3155c8db3c4fbca3a4d2736693d7a55620a733d0be0a5e1",
-    "style.css": "af1927a2de609c051c190b19e51af5c11470716a29ac04b3a8a787e4b2b941dc",
-    "script.js": "7bf2bac3a91a5d3ee02c1c6c8b83044f0771f032435d6a093eacb90259e437c6",
-    "meta.json": "362f776d2a35d7f08c9368d7b88444bfd5ea62e65d09c22587f50bef91b5c8f4"
+    "index.html": "3e8cfcfcf0af1edee484358dcdbf7b81d2723e2471bdf3b0a4712da5fd393ae1",
+    "style.css": "e62999db5041aed0a4f8cd4f3398cb9d8eeaf8717cb8de5766ca96bca044e01c",
+    "script.js": "639ede2eb782e950df34bd60d67404bd03d9cb637e7bf73384312a90ff24925b",
+    "meta.json": "23e8accb9aef21c69a069ab268422c5cd10020989fa3edab189b98f634f12d48"
   },
-  "bytes": 6803,
-  "builtAt": "2026-10-23T07:39:39.181Z",
+  "bytes": 11033,
+  "builtAt": "2026-10-23T07:51:50.252Z",
   "mode": "fix",
   "repo": "suryasticsai/Ariotica",
-  "runId": "39919191969",
-  "commit": "e18af1694f7033c729b582ebec3b5c5e24dbe7f6",
+  "runId": "39920563934",
+  "commit": "0d6245867f87063e9cf09d03667b7684bd00a28c",
   "model": {
     "provider": "Groq",
     "name": "openai/gpt-oss-120b"
@@ -21,13 +21,13 @@
     {
       "provider": "Groq",
       "model": "openai/gpt-oss-120b",
-      "sec": 6,
+      "sec": 10,
       "ok": true,
       "score": 100,
       "reason": ""
     }
   ],
-  "sha256": "facafabf7be4e57fc3155c8db3c4fbca3a4d2736693d7a55620a733d0be0a5e1",
+  "sha256": "3e8cfcfcf0af1edee484358dcdbf7b81d2723e2471bdf3b0a4712da5fd393ae1",
   "checks": {
     "complete": true,
     "vanilla": true,
@@ -36,18 +36,18 @@
     "smoke": "pass",
     "smokeErrors": [],
     "scan": {
-      "total": 1,
-      "high": 0,
+      "total": 2,
+      "high": 1,
       "medium": 1,
       "low": 0,
       "byTool": {
-        "custom": 0,
+        "custom": 1,
         "eslint": 1,
         "sparrow": 0
       }
     }
   },
-  "promptSha256": "e52edfe31624f28e374e1149585f2cb37fd8a56e7f0e2a942de98f159bc745a9",
-  "prompt": "user can paste any kind of link in that search box we shall still navigate to desired video and play it \nExample of youtube links \n1. https://youtu.be/AhVHtwh5k3E\n2. https://m.youtube.com/watch?v=AhVHtwh5k3E \n3. \nhttps://www.youtube.com/wat",
+  "promptSha256": "88e98dfa9f43ed571f469407c2f3aae74ea6caf11590f5867b1dea36d885e8e9",
+  "prompt": "retry to add the feature which i requested, also send me link of source code folder",
   "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js youtubeplay"
 }
