@@ -13,7 +13,8 @@ const PROJECTS_DIR  = 'projects';
 const RECEIPTS_DIR  = 'receipts';
 const MANIFEST_PATH = 'projects.json';
 
-const EXISTING_LIMIT = 40000;
+const EXISTING_LIMIT = 30000;
+const CSS_JS_LIMIT = 15000;
 const STATUS_EVERY   = 5000;
 
 const [OWNER, REPO] = (process.env.GITHUB_REPOSITORY || '').split('/');
@@ -125,8 +126,8 @@ STRICT RULES:
 - **RESPONSIVE**: Must look perfect on mobile (375px) and desktop. Use media queries.
 - **ACCESSIBILITY**: Use semantic HTML, aria-labels, and ensure high contrast.
 - **UX**: Always include a clear empty state (e.g., "No tasks yet, add one!"). Handle edge cases gracefully.
-- **STORAGE NAMESPACING**: If you use localStorage, ALL keys MUST be prefixed with the app's name (e.g., "kanban_items" not "items") to prevent data collisions.
-- Use only: DOM APIs, CSS, localStorage, Canvas, SVG, emoji. System fonts only (system-ui, Georgia, monospace).
+- **STORAGE NAMESPACING**: If you use localStorage, ALL keys MUST be prefixed with the app's name (e.g., "kanban_items" not "items").
+- Use only: DOM APIs, CSS, localStorage, Canvas, SVG, emoji. System fonts only.
 - The app must run without console errors on load and when every button is pressed once.
 
 OUTPUT FORMAT: reply with ONLY one JSON object and nothing else.
@@ -144,10 +145,14 @@ OUTPUT FORMAT: reply with ONLY one JSON object and nothing else.
 }
 `;
 
+const SKILL_RULES = `You are an expert technical author.
+Write a dense, 500-word markdown cheatsheet on how to implement the requested skill in vanilla JavaScript.
+Include short, copy-pasteable code snippets. Focus on best practices.
+Reply with ONLY the raw markdown text. No JSON. No conversational filler.`;
+
 const GEN_SYSTEM = 'You reply with a single valid JSON object only. No markdown fences, no other text.';
 const genMessages = (userText) => [{ role: 'system', content: GEN_SYSTEM }, { role: 'user', content: userText }];
-const HINT = '\n\n💬 Reply with `[improve] …`, `[fix] …`, `[audit]`, `[delete]` — or `[ask] …` to ask me anything about this repo.';
-const MENTIONS_SCAN = /\b(sonar|scan|scanner|lint|security|findings?|warnings?|issues?)\b/i;
+const HINT = '\n\n💬 Reply with `[improve] …`, `[fix] …`, `[audit]`, `[delete]`, `[ask] …`, or `[skill] …` to ask/teach me anything.';
 
 async function gradeHtml(text) {
   const meta = T.parseMultiFileResponse(text);
@@ -181,62 +186,40 @@ async function gradeHtml(text) {
 const structurallyBad = (c) => !c.grade.files || !c.grade.files['index.html'] || !T.isVanilla(c.grade.html).ok;
 const generate = (userText) => askAI(genMessages(userText), { json: true, grade: gradeHtml, onEvent: aiEvents() });
 
-function raceLine(report) {
-  const rows = (report || []).filter((r) => r.provider).slice(-6)
-    .map((r) => `${r.provider}${r.sec != null ? ` ${r.sec}s` : ''} ${r.reason === 'lost the race' ? '⏹️' : r.ok ? '✅' : '❌'}`);
-  return rows.length > 1 ? rows.join(' · ') : '';
-}
-
 async function readFile(path) {
   try { const { data } = await octokit.repos.getContent({ owner: OWNER, repo: REPO, path, ref: BRANCH }); if (Array.isArray(data)) return null; return Buffer.from(data.content, 'base64').toString('utf8'); }
   catch (e) { if (e.status === 404) return null; throw e; }
 }
 
-async function deleteFile(path, message) {
-  try {
-    const { data } = await octokit.repos.getContent({ owner: OWNER, repo: REPO, path, ref: BRANCH });
-    if (Array.isArray(data)) return false;
-    await octokit.repos.deleteFile({ owner: OWNER, repo: REPO, path, message, sha: data.sha, branch: BRANCH });
-    return true;
-  } catch (e) { if (e.status === 404) return false; throw e; }
-}
-
-// NEW: Atomic Multi-file Commit using Git Tree API
 async function atomicCommit(files, deletedPaths, message) {
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
-      // 1. Get latest commit and tree
       const { data: refData } = await octokit.git.getRef({ owner: OWNER, repo: REPO, ref: `heads/${BRANCH}` });
       const latestCommitSha = refData.object.sha;
       const { data: commitData } = await octokit.git.getCommit({ owner: OWNER, repo: REPO, commit_sha: latestCommitSha });
       
-      // 2. Create blobs for all files
       const treeItems = [];
       for (const [path, content] of Object.entries(files)) {
         const { data: blob } = await octokit.git.createBlob({ owner: OWNER, repo: REPO, content, encoding: 'utf-8' });
         treeItems.push({ path, mode: '100644', type: 'blob', sha: blob.sha });
       }
 
-      // 3. Create tree
       const { data: newTree } = await octokit.git.createTree({ 
         owner: OWNER, repo: REPO, 
         base_tree: commitData.tree.sha, 
         tree: treeItems 
       });
 
-      // 4. Create commit
       const { data: newCommit } = await octokit.git.createCommit({
         owner: OWNER, repo: REPO, message,
         tree: newTree.sha, parents: [latestCommitSha]
       });
 
-      // 5. Update ref
       await octokit.git.updateRef({ owner: OWNER, repo: REPO, ref: `heads/${BRANCH}`, sha: newCommit.sha });
       return newCommit.sha;
     } catch (e) {
       if (attempt === 3) throw e;
-      console.log(`[commit] collision on attempt ${attempt}, retrying...`);
-      await new Promise(r => setTimeout(r, 2000)); // Wait 2s and retry
+      await new Promise(r => setTimeout(r, 2000));
     }
   }
 }
@@ -302,19 +285,6 @@ async function threadHistory(issue, skipIds) {
   } catch { return []; }
 }
 
-function sourceLinks(hits) {
-  const seen = new Set(); const out = [];
-  for (const h of hits) {
-    const c = h.chunk; const r = Rag.ref(c);
-    if (seen.has(r)) continue; seen.add(r);
-    const link = /^issue#\d+$/.test(c.path)
-      ? `https://github.com/${OWNER}/${REPO}/issues/${c.path.slice(6)}`
-      : `https://github.com/${OWNER}/${REPO}/blob/${BRANCH}/${c.path}${c.start ? `#L${c.start}-L${c.end}` : ''}`;
-    out.push(`- [\`${r}\`](${link})`);
-  }
-  return out.slice(0, 6).join('\n');
-}
-
 async function runAsk({ issue, prompt, commentId }) {
   if (!prompt) throw new Error('Add your question after [ask]');
   const chunks = await step('Index repo', async () => K.collectRepoChunks(process.cwd()).concat(await K.collectIssueChunks(octokit, OWNER, REPO)));
@@ -328,9 +298,9 @@ async function runAsk({ issue, prompt, commentId }) {
   let body;
   try {
     const r = await step('Answer', () => askAI(messages, { maxTokens: 1200, onEvent: aiEvents() }));
-    body = `${r.text.trim()}\n\n**Sources** (via ${r.provider})\n${sourceLinks(hits) || '_none_'}`;
+    body = `${r.text.trim()}\n\n**Sources** (via ${r.provider})\n${hits.map((h) => `- [\`${Rag.ref(h.chunk)}\`]`).join('\n')}`;
   } catch (e) {
-    body = `⚠️ No AI provider answered. Closest matches:\n${hits.slice(0, 3).map((h) => `- \`${Rag.ref(h.chunk)}\``).join('\n')}`;
+    body = `⚠️ No AI provider answered.`;
   }
   await finishStatus(issue, body + HINT, false);
   await pushProgress({ status: 'done' });
@@ -338,7 +308,7 @@ async function runAsk({ issue, prompt, commentId }) {
 
 async function main() {
   const inputs = resolveInputs();
-  if (!inputs) { console.log('Comment has no [improve|fix|audit|delete|ask] tag - ignoring.'); return; }
+  if (!inputs) { console.log('Comment has no valid tag - ignoring.'); return; }
   const { project, prompt, mode, issue, commentId } = inputs;
   currentIssue = issue;
 
@@ -353,12 +323,23 @@ async function main() {
 
   if (commentId) {
     try { await octokit.reactions.createForIssueComment({ owner: OWNER, repo: REPO, comment_id: commentId, content: 'eyes' }); } catch (e) { }
-    if (mode !== 'ask') { try { await octokit.issues.update({ owner: OWNER, repo: REPO, issue_number: issue, state: 'open' }); } catch { } }
+    if (mode !== 'ask' && mode !== 'skill') { try { await octokit.issues.update({ owner: OWNER, repo: REPO, issue_number: issue, state: 'open' }); } catch { } }
   }
   const quoted = prompt ? `\n> ${prompt.slice(0, 200).replace(/\n/g, ' ')}` : '';
   await startStatusComment(issue, mode === 'ask' ? `🔎 **Searching the repo…**${quoted}` : `⏳ **Working on it** — \`${mode}\` on \`${slug}\`${quoted}`);
 
   if (mode === 'ask') return runAsk(inputs);
+
+  // NEW: SKILL MODE
+  if (mode === 'skill') {
+    const skillName = prompt.slice(0, 30).replace(/[^a-z0-9]/gi, '-').toLowerCase();
+    const r = await step('Generate Skill Cheatsheet', () => askAI([{ role: 'system', content: SKILL_RULES }, { role: 'user', content: prompt }]));
+    const filePath = `knowledge/skills/${skillName}.md`;
+    await atomicCommit({ [filePath]: r.text }, [], `docs: add skill ${skillName}`);
+    await finishStatus(issue, `🧠 **Skill Learned:** I have written a cheatsheet for **${skillName}** and saved it to \`${filePath}\`. I will automatically use this knowledge in future builds!`, true);
+    await pushProgress({ status: 'done' });
+    return;
+  }
 
   let manifest = [];
   try { const raw = await readFile(MANIFEST_PATH); if (raw) manifest = JSON.parse(raw); if (!Array.isArray(manifest)) manifest = []; } catch { manifest = []; }
@@ -372,7 +353,7 @@ async function main() {
         try { await octokit.repos.deleteFile({ owner: OWNER, repo: REPO, path: p, message: `chore: delete ${slug}`, sha: (await octokit.repos.getContent({owner: OWNER, repo: REPO, path: p})).data.sha, branch: BRANCH }); existed = true; } catch {}
       }
     }
-    try { await deleteFile(receiptPath, `chore: remove receipt ${slug}`); } catch { }
+    try { await octokit.repos.deleteFile({ owner: OWNER, repo: REPO, path: receiptPath, message: `chore: remove receipt ${slug}`, sha: (await octokit.repos.getContent({owner: OWNER, repo: REPO, path: receiptPath})).data.sha, branch: BRANCH }); } catch { }
     manifest = manifest.filter((e) => e.project !== slug);
     const manifestJson = JSON.stringify(manifest, null, 2) + '\n';
     await atomicCommit({ [MANIFEST_PATH]: manifestJson }, [], `chore: delete ${slug}`);
@@ -405,6 +386,8 @@ async function main() {
   let fullPrompt = RULES + ask + ragCtx;
   if (existingHtml) {
     if (existingHtml.length > EXISTING_LIMIT) existingHtml = existingHtml.slice(0, EXISTING_LIMIT);
+    if (existingCss.length > CSS_JS_LIMIT) existingCss = existingCss.slice(0, CSS_JS_LIMIT);
+    if (existingJs.length > CSS_JS_LIMIT) existingJs = existingJs.slice(0, CSS_JS_LIMIT);
     fullPrompt += `\n\nCURRENT FILES:\n[index.html]:\n${existingHtml}\n\n[style.css]:\n${existingCss}\n\n[script.js]:\n${existingJs}`;
   }
 
@@ -450,27 +433,74 @@ async function main() {
     attempt++;
   }
 
-  if (files['index.html']) {
-    if (!files['index.html'].includes('Built by Ariotica')) {
-      const watermark = `\n<!-- Built by Ariotica AI -->\n<div style="position:fixed;bottom:12px;right:12px;opacity:0.35;font-size:11px;font-family:monospace;color:white;pointer-events:none;z-index:9999;">⚡ Ariotica</div>`;
-      files['index.html'] = files['index.html'].replace(/<\/body>/i, `${watermark}\n</body>`);
-    }
+  const security = await step('Security scan', () => runAllScanners(testHtml));
 
-    const cspTag = `<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; connect-src 'none'; img-src 'self' data:;">`;
-    if (!files['index.html'].includes('Content-Security-Policy')) {
-      files['index.html'] = files['index.html'].replace('<head>', `<head>\n  ${cspTag}`);
-    }
-  }
-
+  // PUBLISH GATE: If score is too low, abort
   let score = 100;
   if (!smoke.ok) score -= 30;
   if (smoke.errors.length > 0) score -= Math.min(smoke.errors.length * 5, 20);
-  
-  const security = await step('Security scan', () => runAllScanners(testHtml));
   if (security.counts.high > 0) score -= 20;
   if (security.counts.medium > 0) score -= 10;
   if (testHtml.length > 50000) score -= 5;
 
+  if (score < 50) {
+    const report = `❌ **Build Failed: Score too low (${score}/100)**\n\n`;
+    const errors = smoke.errors.length ? `\n**Runtime Errors:**\n${smoke.errors.map(e => `- ${e}`).join('\n')}` : '';
+    const secs = security.findings.length ? `\n**Security Issues:**\n${security.findings.map(f => `- [${f.sev}] ${f.msg}`).join('\n')}` : '';
+    await finishStatus(issue, report + errors + secs + '\n\nThe broken code was **not** committed.', false);
+    await pushProgress({ status: 'error' });
+    process.exit(1);
+  }
+
+  // POST-PROCESSING: PWA, Watermark, CSP
+  let currentHtml = files['index.html'];
+  let currentCss = files['style.css'];
+  let currentJs = files['script.js'];
+
+  // 1. Inject Watermark (Idempotent)
+  if (!currentHtml.includes('Built by Ariotica')) {
+    const watermark = `\n<!-- Built by Ariotica AI -->\n<div style="position:fixed;bottom:12px;right:12px;opacity:0.35;font-size:11px;font-family:monospace;color:white;pointer-events:none;z-index:9999;">⚡ Ariotica</div>`;
+    currentHtml = currentHtml.replace(/<\/body>/i, `${watermark}\n</body>`);
+  }
+
+  // 2. Inject CSP
+  const cspTag = `<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; connect-src 'none'; img-src 'self' data:;">`;
+  if (!currentHtml.includes('Content-Security-Policy')) {
+    currentHtml = currentHtml.replace('<head>', `<head>\n  ${cspTag}`);
+  }
+
+  // 3. Generate PWA
+  let hash = 0;
+  for (let i = 0; i < slug.length; i++) hash = slug.charCodeAt(i) + ((hash << 5) - hash);
+  const color = `hsl(${Math.abs(hash % 360)}, 70%, 50%)`;
+  const letter = slug.charAt(0).toUpperCase();
+
+  const manifest = {
+    name: slug.replace(/-/g, ' ').toUpperCase(),
+    short_name: slug,
+    start_url: ".",
+    display: "standalone",
+    background_color: "#0b1410",
+    theme_color: color,
+    icons: [{
+      src: `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230b1410'/><text x='50%' y='55%' font-size='60' fill='${encodeURIComponent(color)}' font-family='system-ui' font-weight='bold' text-anchor='middle' dominant-baseline='middle'>${letter}</text></svg>`,
+      sizes: "512x512",
+      type: "image/svg+xml"
+    }]
+  };
+  files['manifest.json'] = JSON.stringify(manifest, null, 2);
+  files['sw.js'] = `const CACHE='ariotica-v1';self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./','./index.html','./style.css','./script.js']))));self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request))));`;
+
+  if (!currentHtml.includes('manifest.json')) {
+    currentHtml = currentHtml.replace('</head>', `  <link rel="manifest" href="manifest.json">\n  <meta name="theme-color" content="${color}">\n</head>`);
+  }
+  if (!currentHtml.includes('sw.js')) {
+    currentHtml = currentHtml.replace('</body>', `<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(err=>console.log(err))})}</script>\n</body>`);
+  }
+
+  files['index.html'] = currentHtml;
+
+  // GRADE
   let grade = 'F';
   if (score >= 90) grade = 'A+';
   else if (score >= 80) grade = 'A';
@@ -503,12 +533,9 @@ async function main() {
   };
   files['meta.json'] = JSON.stringify(metaJson, null, 2);
 
-  // 1. Calculate Receipt (Before commit so we can hash the final files)
   const receipt = R.buildReceipt({ repo: `${OWNER}/${REPO}`, slug, files, mode, runId: RUN_ID, commit: null, provider, model, race: raceReport, smoke, security: security.counts, prompt, vanilla: T.isVanilla(testHtml) });
-  const receiptJson = JSON.stringify(receipt, null, 2) + '\n';
-  files[receiptPath] = receiptJson;
+  files[receiptPath] = JSON.stringify(receipt, null, 2) + '\n';
 
-  // 2. Update Manifest
   const idx = manifest.findIndex((e) => e.project === slug);
   const entry = { 
     project: slug, file: mainFile, prompt: prompt.slice(0, 240), created: new Date().toISOString().slice(0, 19), mode, provider, model, 
@@ -520,10 +547,8 @@ async function main() {
   if (idx === -1) manifest.push(entry); else manifest[idx] = Object.assign({}, manifest[idx], entry);
   files[MANIFEST_PATH] = JSON.stringify(manifest, null, 2) + '\n';
 
-  // 3. One Atomic Commit
   const commitSha = await step(`Commit files to ${baseDir}/`, () => atomicCommit(files, [], `feat: ${slug} v${version} (${mode})`));
 
-  // 4. Add commit SHA to receipt and overwrite it (second commit just for the receipt)
   receipt.commit = commitSha;
   files[receiptPath] = JSON.stringify(receipt, null, 2) + '\n';
   await atomicCommit({ [receiptPath]: files[receiptPath] }, [], `chore: receipt ${slug}`);
