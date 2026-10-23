@@ -1,72 +1,12 @@
 {
-  "runId": "39921171796",
-  "started": "2026-10-23T07:56:52.493Z",
-  "updated": "2026-10-23T07:57:25.804Z",
-  "status": "error",
+  "runId": "39937543170",
+  "started": "2026-10-23T10:13:30.987Z",
+  "updated": "2026-10-23T10:13:30.988Z",
+  "status": "running",
   "issue": 44,
-  "statusCommentId": 6360268151,
-  "steps": [
-    {
-      "name": "Parse request",
-      "status": "done",
-      "at": "2026-10-23T07:56:54.246Z",
-      "sec": 0
-    },
-    {
-      "name": "Build RAG context",
-      "status": "done",
-      "at": "2026-10-23T07:56:57.359Z",
-      "sec": 1
-    },
-    {
-      "name": "Generate with AI (model race)",
-      "status": "done",
-      "at": "2026-10-23T07:57:08.553Z",
-      "promptChars": 11673,
-      "ragRefs": "none",
-      "sec": 11
-    },
-    {
-      "name": "Groq · racing",
-      "status": "done",
-      "at": "2026-10-23T07:57:07.646Z",
-      "sec": 10,
-      "chars": 11453,
-      "model": "openai/gpt-oss-120b"
-    },
-    {
-      "name": "OpenRouter · racing",
-      "status": "cancelled",
-      "at": "2026-10-23T07:57:08.554Z",
-      "sec": 11,
-      "note": "lost the race"
-    },
-    {
-      "name": "Smoke test",
-      "status": "done",
-      "at": "2026-10-23T07:57:08.554Z",
-      "note": "ran during the model race"
-    },
-    {
-      "name": "Security scan",
-      "status": "done",
-      "at": "2026-10-23T07:57:08.709Z",
-      "sec": 0
-    },
-    {
-      "name": "Commit files to projects/youtubeplay/",
-      "status": "done",
-      "at": "2026-10-23T07:57:22.857Z",
-      "sec": 14
-    },
-    {
-      "name": "Error",
-      "status": "error",
-      "error": "The \"string\" argument must be of type string or an instance of Buffer or ArrayBuffer. Received an instance of Array",
-      "at": "2026-10-23T07:57:25.023Z"
-    }
-  ],
+  "statusCommentId": null,
+  "steps": [],
   "draft": "",
   "draftSize": 0,
-  "error": "The \"string\" argument must be of type string or an instance of Buffer or ArrayBuffer. Received an instance of Array"
+  "error": null
 }
