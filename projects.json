@@ -110,38 +110,36 @@
   {
     "project": "youtubeplay",
     "file": "projects/youtubeplay/index.html",
-    "prompt": "Create simple youtube embedded player within cool UI with all play pause search options",
-    "created": "2026-10-23T07:21:54",
-    "mode": "create",
+    "prompt": "user can paste any kind of link in that search box we shall still navigate to desired video and play it \nExample of youtube links \n1. https://youtu.be/AhVHtwh5k3E\n2. https://m.youtube.com/watch?v=AhVHtwh5k3E \n3. \nhttps://www.youtube.com/wat",
+    "created": "2026-10-23T07:39:40",
+    "mode": "fix",
     "provider": "Groq",
     "model": "openai/gpt-oss-120b",
-    "findings": 0,
+    "findings": 1,
     "smoke": "pass",
-    "size": 5299,
-    "version": "1.0.0",
+    "size": 6795,
+    "version": "1.1.0",
     "features": [
-      "Responsive layout using Flexbox and CSS variables",
-      "Accessible semantic markup with ARIA labels",
-      "Empty state placeholder when no video is loaded",
-      "Input field to enter YouTube video ID and load dynamically",
-      "Smooth transition effects on hover and focus"
+      "Accepts full YouTube URLs, shortened links, embed links, and plain video IDs",
+      "Robust video ID extraction with fallback handling"
     ],
     "fixes": [
-      "Ensured no console errors on load or button clicks",
-      "Handled empty input gracefully by restoring empty state"
+      "Added extractVideoID function to parse various YouTube URL formats",
+      "Updated input placeholder and aria-label for clarity",
+      "Ensured empty state displays when input is invalid"
     ],
     "suggestions": [
-      "Integrate YouTube Iframe API for programmatic play/pause controls",
-      "Add a thumbnail preview list for recent videos",
-      "Implement keyboard shortcuts for accessibility"
+      "Add keyboard shortcut (Enter) to trigger loading",
+      "Persist last loaded video in localStorage",
+      "Include a thumbnail preview before loading"
     ],
     "grade": "A",
     "percentile": "Top 5%",
-    "humanInvolvement": "Open the project folder, place the three files (index.html, style.css, script.js) together, and open index.html in a browser. No further setup is required.",
+    "humanInvolvement": "Open index.html in a browser, test loading videos using different URL formats to verify correct behavior. No further code changes required.",
     "libraries": [
       "None"
     ],
-    "sha256": "7376dec55d51185fb3e6f1eef35250bb8801299733a342196ef24b0c998c2467",
+    "sha256": "facafabf7be4e57fc3155c8db3c4fbca3a4d2736693d7a55620a733d0be0a5e1",
     "receipt": "receipts/youtubeplay.json"
   }
 ]
