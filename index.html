@@ -41,7 +41,9 @@
     <div class="mb-3">
       <label class="form-label text-muted">What do you want to do?</label>
       <select id="actionSelect" class="form-select bg-dark text-white border-secondary" onchange="updateUI()">
-        <option value="create">✨ Create a new app</option>
+        <select id="actionSelect" class="form-select">
+  <option value="create">✨ Create a new app</option>
+  <option value="skill">🧠 Teach the Agent a Skill</option>
         <option value="improve">🔄 Improve an app</option>
         <option value="fix">🔧 Fix a bug</option>
       </select>
