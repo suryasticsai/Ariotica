@@ -1,1 +1,1 @@
-The generated code is ready to be placed into the project folder. Review the UI on both mobile and desktop to ensure the typing speed feels natural, and optionally adjust the typing speed variable in script.js. If you need subtitles in languages other than English, modify the fetchSubtitles URL to include the appropriate 'lang' query parameter.
+Deploy the three files to a static web server or open index.html locally. Verify that videos load and transcripts appear. If CORS issues persist in certain browsers, consider hosting a simple proxy.
