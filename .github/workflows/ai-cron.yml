@@ -33,8 +33,19 @@ jobs:
 
     if: |
       github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'issues' && startsWith(github.event.issue.title, '[BUILD]')) ||
-      (github.event_name == 'issue_comment' && startsWith(github.event.issue.title, '[BUILD]'))
+      (github.event_name == 'issues' && 
+       startsWith(github.event.issue.title, '[BUILD]') && 
+       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association)) ||
+      (github.event_name == 'issue_comment' && 
+       !github.event.issue.pull_request &&
+       startsWith(github.event.issue.title, '[BUILD]') &&
+       github.event.comment.user.type != 'Bot' &&
+       contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association) &&
+       (contains(github.event.comment.body, '[improve]') ||
+        contains(github.event.comment.body, '[fix]') ||
+        contains(github.event.comment.body, '[audit]') ||
+        contains(github.event.comment.body, '[delete]') ||
+        contains(github.event.comment.body, '[ask]')))
 
     steps:
       - name: Checkout
@@ -48,20 +59,12 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build Knowledge Index
-        run: node build-index.js
-
       - name: Generate App with AI
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          PROVIDER_ORDER: ${{ vars.PROVIDER_ORDER }}
-          RACE_SIZE: ${{ vars.RACE_SIZE }}
-          GROQ_MODEL: ${{ vars.GROQ_MODEL }}
-          OPENROUTER_MODEL: ${{ vars.OPENROUTER_MODEL }}
-          HF_MODEL: ${{ vars.HF_MODEL }}
           EVENT_NAME: ${{ github.event_name }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
           ISSUE_BODY: ${{ github.event.issue.body }}
@@ -74,86 +77,13 @@ jobs:
           RUN_ID: ${{ github.run_id }}
         run: node generate.js
 
-      - name: Make Apps Installable (PWA)
-        run: |
-          node - <<'EOF'
-          const fs = require('fs');
-          const path = require('path');
-          
-          const projectsDir = 'projects';
-          if (!fs.existsSync(projectsDir)) process.exit(0);
+      - name: Rebuild Knowledge Index
+        run: node build-index.js
 
-          const folders = fs.readdirSync(projectsDir).filter(f => fs.statSync(path.join(projectsDir, f)).isDirectory());
-          
-          for (const folder of folders) {
-            const dir = path.join(projectsDir, folder);
-            const htmlPath = path.join(dir, 'index.html');
-            if (!fs.existsSync(htmlPath)) continue;
-
-            const manifest = {
-              name: folder.replace(/-/g, ' ').toUpperCase(),
-              short_name: folder,
-              start_url: ".",
-              display: "standalone",
-              background_color: "#0b1410",
-              theme_color: "#5ab552",
-              icons: [{
-                src: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚡</text></svg>",
-                sizes: "512x512",
-                type: "image/svg+xml"
-              }]
-            };
-            fs.writeFileSync(path.join(dir, 'manifest.json'), JSON.stringify(manifest, null, 2));
-
-            const sw = `
-              const CACHE = 'ariotica-v1';
-              self.addEventListener('install', (e) => {
-                e.waitUntil(caches.open(CACHE).then(c => c.addAll(['./', './index.html', './style.css', './script.js'])));
-              });
-              self.addEventListener('fetch', (e) => {
-                e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
-              });
-            `;
-            fs.writeFileSync(path.join(dir, 'sw.js'), sw);
-
-            let html = fs.readFileSync(htmlPath, 'utf8');
-            
-            if (!html.includes('manifest.json')) {
-              html = html.replace('</head>', `  <link rel="manifest" href="manifest.json">\n  <meta name="theme-color" content="#5ab552">\n</head>`);
-            }
-            
-            if (!html.includes('sw.js')) {
-              const swRegister = `
-              <script>
-                if ('serviceWorker' in navigator) {
-                  window.addEventListener('load', () => {
-                    navigator.serviceWorker.register('sw.js').catch(err => console.log('SW failed', err));
-                  });
-                }
-              </script>
-              </body>`;
-              html = html.replace('</body>', swRegister);
-            }
-
-            fs.writeFileSync(htmlPath, html);
-            console.log(`✅ PWA enabled for: ${folder}`);
-          }
-          EOF
-
-      - name: Commit PWA updates
+      - name: Commit Knowledge Index
         run: |
           git config user.name "ariotica-bot"
           git config user.email "ariotica-bot@users.noreply.github.com"
-          git add projects/
-          git diff --staged --quiet || git commit -m "chore: make generated apps installable (PWA)"
+          git add knowledge/index.json
+          git diff --staged --quiet || git commit -m "chore: rebuild knowledge index"
           git push
-
-      - name: Upload Generated App Artifact
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: ariotica-app-${{ github.run_id }}
-          path: |
-            projects/
-            receipts/
-          retention-days: 7
