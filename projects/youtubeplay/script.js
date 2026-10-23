@@ -1,80 +1,160 @@
-// Vanilla JS YouTube embed manager with robust URL parsing
+// Vanilla JS YouTube player with live‑typing transcript
 
 document.addEventListener('DOMContentLoaded', function () {
   const loadBtn = document.getElementById('load-btn');
   const videoInput = document.getElementById('video-id');
   const container = document.getElementById('player-container');
+  const transcriptEl = document.getElementById('transcript');
+  const transcriptMsg = document.getElementById('transcript-message');
+  const copyBtn = document.getElementById('copy-transcript');
 
-  // Helper: remove all children from the player container
+  // ---------- Helper UI ----------
   function clearContainer() {
     while (container.firstChild) {
       container.removeChild(container.firstChild);
     }
   }
 
-  // Show the empty‑state message
   function showEmptyState() {
     const p = document.createElement('p');
     p.className = 'empty-state';
     p.textContent = 'No video loaded, add one!';
     container.appendChild(p);
+    clearTranscript();
   }
 
-  // Extract a YouTube video ID from a variety of possible inputs.
-  // Accepts full URLs, shortened URLs, embed URLs, or a plain ID.
+  function clearTranscript() {
+    transcriptEl.innerHTML = '';
+    transcriptMsg.textContent = '';
+  }
+
+  // ---------- Video ID extraction ----------
   function extractVideoID(input) {
     const trimmed = input.trim();
     if (!trimmed) return '';
-
-    // If the input looks like a plain video ID (11 chars, alphanum, -,_)
     const plainIdPattern = /^[a-zA-Z0-9_-]{11}$/;
-    if (plainIdPattern.test(trimmed)) {
-      return trimmed;
-    }
-
-    // Regular expression to capture the ID from common YouTube URL formats
+    if (plainIdPattern.test(trimmed)) return trimmed;
     const regex = /(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/|v\/|shorts\/|live\/|user\/.*\/|.*[?&]v=))([^?&\s]{11})/i;
     const match = trimmed.match(regex);
-    if (match && match[1]) {
-      return match[1];
-    }
-
-    // Fallback: try to locate the v= parameter manually (covers URLs with extra params)
-    const urlObj = (() => {
-      try { return new URL(trimmed); } catch (e) { return null; }
-    })();
-    if (urlObj && urlObj.searchParams.has('v')) {
-      const v = urlObj.searchParams.get('v');
-      if (plainIdPattern.test(v)) return v;
-    }
-
-    // If nothing matched, return empty string so the caller can handle it gracefully
+    if (match && match[1]) return match[1];
+    try {
+      const url = new URL(trimmed);
+      if (url.searchParams.has('v')) {
+        const v = url.searchParams.get('v');
+        if (plainIdPattern.test(v)) return v;
+      }
+    } catch (e) { /* ignore */ }
     return '';
   }
 
-  // Load the video into an iframe using the extracted ID
+  // ---------- Video loading ----------
   function loadVideo(id) {
     if (!id) return;
     clearContainer();
     const iframe = document.createElement('iframe');
-    iframe.setAttribute('src', `https://www.youtube.com/embed/${id}?rel=0`);
+    iframe.setAttribute('src', `https://www.youtube.com/embed/${id}?rel=0&enablejsapi=1`);
     iframe.setAttribute('allow', 'accelerometer; autoplay; clipboard-write; encrypted-media; picture-in-picture');
     iframe.setAttribute('allowfullscreen', '');
     iframe.setAttribute('title', 'YouTube video player');
     container.appendChild(iframe);
   }
 
-  loadBtn.addEventListener('click', function () {
+  // ---------- Subtitle fetching ----------
+  async function fetchSubtitles(videoId) {
+    const url = `https://www.youtube.com/api/timedtext?lang=en&v=${videoId}`;
+    try {
+      const response = await fetch(url);
+      if (!response.ok) throw new Error('Network response was not ok');
+      const text = await response.text();
+      // Simple check – if XML is empty, YouTube returns an empty <transcript></transcript>
+      if (!text.includes('<text')) return [];
+      return parseSubtitlesXML(text);
+    } catch (e) {
+      console.error('Subtitle fetch error:', e);
+      return [];
+    }
+  }
+
+  function parseSubtitlesXML(xmlString) {
+    const parser = new DOMParser();
+    const xml = parser.parseFromString(xmlString, 'application/xml');
+    const texts = xml.getElementsByTagName('text');
+    const cues = [];
+    for (let i = 0; i < texts.length; i++) {
+      const el = texts[i];
+      const start = parseFloat(el.getAttribute('start'));
+      const dur = parseFloat(el.getAttribute('dur'));
+      // YouTube XML may encode HTML entities – let the browser decode them
+      const txt = el.textContent.replace(/\s+/g, ' ').trim();
+      cues.push({ start, dur, text: txt });
+    }
+    return cues;
+  }
+
+  // ---------- Typing effect ----------
+  function typeText(element, fullText, callback) {
+    let idx = 0;
+    const speed = 30; // ms per character
+    function step() {
+      if (idx < fullText.length) {
+        element.textContent += fullText.charAt(idx);
+        idx++;
+        setTimeout(step, speed);
+      } else if (typeof callback === 'function') {
+        callback();
+      }
+    }
+    step();
+  }
+
+  // ---------- Transcript handling ----------
+  async function displayTranscript(videoId) {
+    clearTranscript();
+    const cues = await fetchSubtitles(videoId);
+    if (!cues.length) {
+      transcriptMsg.textContent = 'No subtitles found for this video.';
+      return;
+    }
+    transcriptMsg.textContent = '';
+    cues.forEach((cue) => {
+      const li = document.createElement('li');
+      transcriptEl.appendChild(li);
+      // Schedule typing according to cue.start (seconds)
+      setTimeout(() => {
+        typeText(li, cue.text);
+      }, cue.start * 1000);
+    });
+  }
+
+  // ---------- Copy transcript ----------
+  copyBtn.addEventListener('click', function () {
+    const items = Array.from(transcriptEl.querySelectorAll('li')).map(li => li.textContent.trim()).filter(t => t);
+    if (!items.length) {
+      alert('Nothing to copy yet.');
+      return;
+    }
+    const fullText = items.join('\n');
+    navigator.clipboard.writeText(fullText).then(() => {
+      copyBtn.textContent = 'Copied!';
+      setTimeout(() => copyBtn.textContent = 'Copy', 1500);
+    }).catch(err => {
+      console.error('Copy failed', err);
+    });
+  });
+
+  // ---------- Load button ----------
+  loadBtn.addEventListener('click', async function () {
     const rawInput = videoInput.value;
     const videoId = extractVideoID(rawInput);
     if (videoId) {
       loadVideo(videoId);
+      await displayTranscript(videoId);
     } else {
       clearContainer();
       showEmptyState();
     }
   });
 
-  // Initialize with empty state
+  // Initialize UI
   showEmptyState();
 });
