@@ -1,155 +1,119 @@
-[![Launch](https://img.shields.io/badge/%E2%96%B6_LAUNCH_THE_DASHBOARD-0b1410?style=for-the-badge&logo=github&logoColor=5ab552)](https://suryasticsai.github.io/Ariotica/)
-[![Assign a task](https://img.shields.io/badge/ASSIGN_A_TASK-238636?style=for-the-badge&logo=github&logoColor=white)](https://github.com/suryasticsai/Ariotica/issues/new)
+<div align="center">
 
-![Vanilla JS](https://img.shields.io/badge/Vanilla_JS-F7DF1E?style=flat-square&logo=javascript&logoColor=black)
-![GitHub Actions](https://img.shields.io/badge/Runs_on-GitHub_Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white)
-![PWA](https://img.shields.io/badge/PWA-Installable-5ab552?style=flat-square&logo=pwa&logoColor=white)
-![Models](https://img.shields.io/badge/Models-Parallel_Racing-1f6f3a?style=flat-square)
-![Verified](https://img.shields.io/badge/Receipts-SHA256_Verified-1f6f3a?style=flat-square)
+  <img src="https://raw.githubusercontent.com/suryasticsai/Ariotica/main/Ariotica-logo.png" alt="Ariotica Logo" width="150" style="border-radius: 20px; margin-bottom: 20px;" />
 
----
+  # ⚡ Ariotica
 
-⚡ The idea
+  **The 100% Free, Self-Healing AI Engineering Pipeline.**
 
-Most AI coding tools hand you a platform to install, a subscription to pay, or a terminal to babysit.
+  An autonomous agent that turns GitHub Issues into fully functional, single-file vanilla JS apps. It writes code, tests it in a headless browser, scans it for vulnerabilities, and fixes its own bugs.
 
-Ariotica hands you a folder.
+  [![Live Demo](https://img.shields.io/badge/Live_Dashboard-suryasticsai.github.io/Ariotica-5ab552?style=for-the-badge&logo=github)](https://suryasticsai.github.io/Ariotica/)
+  [![Vanilla JS](https://img.shields.io/badge/Vanilla_JS-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](#)
+  [![Zero Cost](https://img.shields.io/badge/100%25_Free-00a86b?style=for-the-badge)](https://github.com/suryasticsai/Ariotica)
+  [![AI Agents](https://img.shields.io/badge/AI_Agentic_Workflow-blueviolet?style=for-the-badge)](#)
 
-You open a GitHub issue. A workflow wakes up, fires the prompt at multiple LLMs simultaneously, grabs the first successful result, writes a multi-file app, tests it in a headless browser, automatically repairs its own bugs, injects PWA support so you can install it on your phone, and cryptographically signs the commit.
-
-> A chatbot gives you code to copy. Ariotica gives you a deployed, self-healing, installable application.
+</div>
 
 ---
 
-🎛️ Run it from a comment
+## 🚀 What is Ariotica?
 
-Everything is driven from GitHub Issues, where you already work.
+Ariotica is an **agentic AI orchestrator** built entirely on GitHub Actions. Unlike simple prompt-to-code wrappers, Ariotica is a closed-loop system. It doesn't just write code; it **tests it, secures it, and iterates on it** until it works perfectly.
 
-You write	Ariotica does	
-Issue title `[BUILD] habit-tracker`, with the idea in the body	🏗️ Builds a new multi-file app (`index.html`, `style.css`, `script.js`)	
-`[improve] add dark mode`	✨ Upgrades the existing app, keeping what works	
-`[fix] cards don't save`	🩹 Patches the bug and re-runs the smoke test	
-`[fix] fix those scanner issues`	🔎 Re-scans the code and fixes the findings	
-`[audit]`	🛡️ Reviews security and repairs what it can	
-`[ask] which provider built habit-tracker?`	🧠 Answers from the repo's code, apps and issue history, citing file and line	
-`[delete]`	🗑️ Removes the app	
+By leveraging a multi-provider free API fallback (Groq → Gemini → OpenRouter → Pollinations), it runs **100% free forever** without needing a credit card.
 
-Put the tag at the start or the end of your comment. Quote-reply works. Comments without a tag are ignored, and only repo collaborators can trigger a run.
+## ✨ Key Superpowers
 
-While it works, Ariotica keeps one live comment updated with each step and its timing, then replaces it with the result and closes the issue.
+- 🧠 **RAG Memory (BM25):** The agent remembers every app it has ever built. If you ask for a new app, it searches its own codebase and issue history to reuse your favorite styling and patterns.
+- 🩺 **Self-Healing (JSDOM Smoke Tests):** Before committing, it loads the generated app in a headless browser, clicks every button, and catches runtime errors. If it crashes, it feeds the error back to the AI and forces it to fix itself.
+- 🛡️ **Built-in Security (SAST):** Every app is scanned by custom XSS filters, ESLint, and Sparrow SAST.
+- 💬 **Repo Chat:** Ask the agent questions directly in the issue thread, and it will answer with exact file citations.
+- 🎨 **Strictly Vanilla:** Enforces 100% vanilla HTML/CSS/JS. No React, no Tailwind, no CDNs. Just pure, lightweight, offline-ready code.
 
 ---
 
-🔁 What happens after you press enter
+## 🎮 How to Use the Agent
 
-```mermaid
-flowchart LR
-  A["💡 Your idea"] --> B["📝 Issue or comment"]
-  B --> C{{"🤖 Ariotica on GitHub Actions"}}
-  C --> D["🏁 Model Race<br/>(Groq · OpenRouter · Gemini · Pollinations · Hugging Face)"]
-  D --> E["🛠️ Multi-file Generation"]
-  E --> F["🧪 JSDOM Smoke Test"]
-  F -->|clean| H["🛡️ SAST Scans"]
-  F -->|errors| G["🩹 Self-Healing<br/>up to 3 repair rounds"]
-  G --> H
-  H --> I["⚡ PWA Injection"]
-  I --> J["🚀 Commit + SHA-256 Receipt"]
-  J --> K["✨ Installable App"]
-```
+Create a new issue or reply to an existing one using these tags:
 
-Race → Write → Test → Repair (up to 3x) → Scan → PWA → Sign.
+| Command | Action |
+| :--- | :--- |
+| **`[BUILD] my-app`** | Create a new app (use the issue body as the prompt). |
+| **`[improve] ...`** | Add features or change the UI of an existing app. |
+| **`[fix] ...`** | Describe a bug, and the agent will patch it. |
+| **`[audit]`** | Force a deep security scan and auto-fix any vulnerabilities. |
+| **`[delete]`** | Completely remove the app from the repo. |
+| **`[ask] ...`** | Ask the AI a question about the repo (e.g., *"[ask] how does the drag-and-drop work?"*). |
 
-The generated app is loaded in a headless DOM, every button is pressed once, and uncaught errors go back to the model for up to three repair rounds before anything is committed.
+*Example: Reply to an issue with `[improve] make the buttons larger and add a hover animation`.*
 
 ---
 
-🧬 What makes it different
+## 🖥️ The Live Dashboard
 
-	Ariotica	Typical alternatives	
-Where it runs	Your own GitHub Actions	Hosted SaaS, a Docker runtime, or your local terminal	
-What you operate	Nothing: no server, no database, no container	A platform, an account, or a Python environment	
-Interface	Issues and comments	Web UI, IDE, or CLI	
-Models	Parallel race across Groq, OpenRouter, Gemini, Pollinations and Hugging Face — first to pass wins	One default provider or one plan	
-Memory	Built-in BM25 search over your repo and issue history, no vector DB	A vector store, a closed index, or none	
-Verification	Cryptographic SHA-256 receipts + JSDOM runtime testing + SAST	Varies by tool	
-Output	Multi-file architectures (`html`/`css`/`js`) wrapped in an installable PWA	Patches to any codebase	
+Visit the **[Ariotica Web UI](https://suryasticsai.github.io/Ariotica/)** to interact with the agent visually.
 
-That last row is also the honest limit: Ariotica is a small-app factory, not a refactoring agent for a large codebase. Tools like GitHub's Copilot coding agent, OpenHands and Aider are the right choice for that. Ariotica is for when you want a fully functional, offline-capable app from one sentence and nothing to install.
+- **Direct Mode:** Paste a Fine-Grained Personal Access Token (with Actions & Contents Read/Write) to trigger builds directly from the UI.
+- **Issue Mode:** No token required. Simply opens a pre-filled GitHub issue.
+- **Live Progress:** Watch the agent think, write code, run tests, and commit in real-time via the progress modal.
 
 ---
 
-🧠 Under the hood
+## 🏗️ Architecture
 
-Instead of trying one provider, waiting for it to fail, and trying the next, Ariotica fires the request at multiple providers simultaneously.
-
-- The first provider to return a valid, passing app wins.
-- The losing requests are instantly cancelled to save API limits.
-- Providers are tried in order: Groq → OpenRouter → Gemini → Pollinations → Hugging Face.
-- If Groq goes down, the next provider takes the win in seconds instead of you waiting through a timeout.
-- Set `RACE_SIZE=2` (or higher) in your repo variables to control how many race at once.
-
-`lib/rag.js` is a dependency-free BM25 search engine in about 150 lines, with code-aware tokenizing (camelCase, snake_case, paths), line-accurate chunks and per-file diversity. It indexes:
-
-- every source file and generated app,
-- `projects.json`, so the agent knows what it built, when, and with which provider,
-- issue and comment history.
-
-`[ask]` answers use only the retrieved context, cite `path:line`, and say so when the repo doesn't contain the answer. The same index is published as `knowledge/index.json` for the dashboard chat.
-
-1. The model replies with a strict JSON object containing `index.html`, `style.css`, and `script.js`. No markdown chatter.
-2. A vanilla check rejects frameworks, CDNs and external URLs.
-3. A jsdom smoke test loads the app, fills inputs, presses buttons and collects uncaught errors.
-4. Self-Healing: If the app crashes, the error is fed back to the AI. It loops up to 3 times to fix its own bugs, accepting only a strictly better result.
-5. ESLint plus custom security patterns scan the merged HTML.
-6. PWA Injection: A post-processing script adds a manifest and service worker, making the app installable on iOS/Android.
-7. Build Receipts: The workflow generates a `receipts/<app>.json` file containing a SHA-256 hash of every generated file. Run `node verify-receipt.js <app>` locally to prove the AI's output hasn't been tampered with.
+Ariotica runs entirely inside a single GitHub Actions workflow:
 
 ```text
-generate.js          the agent: inputs, pipeline, model race, self-healing, PWA
-verify-receipt.js    CLI tool to verify SHA-256 hashes of generated apps
-lib/providers.js     parallel multi-provider LLM client
-lib/rag.js           BM25 search (runs in Node and in the browser)
-lib/knowledge.js     what the agent knows: files, manifest, issues
-lib/scan.js          static security scanners
-lib/smoke.js         jsdom runtime test
-lib/receipt.js       cryptographic hashing logic
-projects/            the apps it has built (index.html, style.css, script.js, meta.json)
-receipts/            the cryptographic proof of every build
-projects.json        manifest of every build
+User Prompt (Issue/UI)
+      │
+      ▼
+[RAG Search] ──► Finds similar past apps & code chunks
+      │
+      ▼
+[LLM Providers] ──► Groq ──► Gemini ──► OpenRouter ──► Pollinations
+      │
+      ▼
+[JSON Parser] ──► Extracts HTML
+      │
+      ▼
+[SAST Scanners] ──► Custom XSS + ESLint + Sparrow
+      │
+      ▼
+[JSDOM Smoke Test] ──► Clicks all buttons, catches errors
+      │
+      ▼ (If error, automatically fixes and retests)
+      │
+      ▼
+[Commit] ──► Saves to `projects/app-name.html`
 ```
 
+## 📁 Project Structure
+
+- `generate.js` — The core agentic loop.
+- `lib/providers.js` — The self-healing AI provider fallback system.
+- `lib/rag.js` — Zero-dependency BM25 search engine.
+- `lib/smoke.js` — JSDOM headless browser testing.
+- `lib/scan.js` — ESLint & SAST security scanners.
+- `index.html` — The GitHub Pages dashboard.
+
 ---
 
-🚀 Give it a home in your GitHub
+## 🛠️ Setup Your Own Instance
+
+Want to fork this and run your own AI engineering team?
 
 1. Fork this repository.
-2. Under Settings → Actions → General, set workflow permissions to Read and write.
-3. Under Settings → Secrets and variables → Actions, add one or more keys: `GROQ_API_KEY`, `OPENROUTER_API_KEY`, `HF_TOKEN`. None are strictly required — Pollinations works without a key.
-4. Turn on GitHub Pages from the `main` branch for the premium dashboard.
-5. Open an issue titled `[BUILD] calculator` and describe what you want.
-
-No Python environment, no Docker image, no server fleet.
-
-> Security note: The dashboard's Direct mode uses a GitHub personal access token. Treat it like a password, give it fine-grained permissions on this repo only, and never commit it. Issue mode needs no token.
+2. Go to **Settings → Actions → General** and set Workflow permissions to **Read and write**.
+3. Go to **Settings → Secrets and variables → Actions** and add these free API keys:
+   - `GROQ_API_KEY` (Get it free here)
+   - `GEMINI_API_KEY` (Get it free here)
+   - `OPENROUTER_API_KEY` (Get it free here)
+4. Go to **Settings → Pages** and set the source to **Deploy from a branch → main → / (root)**.
+5. Open a new issue titled `[BUILD] calculator` and watch the magic happen.
 
 ---
 
-☀️ The human behind the agent
-
-Surya · [@suryasticsai](https://github.com/suryasticsai)
-
-AI toolmaker · independent developer · automation architect
-
-"I didn't want another AI that tells me how to write code.
-I wanted one that actually does the work."
-
-[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/suryasticsai)
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/suryasticsai)
-[![Medium](https://img.shields.io/badge/Medium-000000?style=for-the-badge&logo=medium&logoColor=white)](https://medium.com/@suryasticsai)
-[![Hugging Face](https://img.shields.io/badge/Hugging_Face-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black)](https://huggingface.co/suryasticsai)
-[![Portfolio](https://img.shields.io/badge/Portfolio-2563EB?style=for-the-badge&logo=googlechrome&logoColor=white)](https://suryasticsai.github.io)
-[![Alkembic](https://img.shields.io/badge/Alkembic-8B5CF6?style=for-the-badge&logo=netlify&logoColor=white)](https://alkembic.app)
-
-The agent writes software. The human wrote the agent.
-
-Built with JavaScript. Powered by GitHub. Designed to ship. © 2026 Surya
+<div align="center">
+  <i>Built for the open web. Powered by free AI tiers. Tested by robots.</i>
+</div>
