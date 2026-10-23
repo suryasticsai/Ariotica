@@ -63,7 +63,6 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // ---------- Subtitle fetching ----------
   async function fetchSubtitles(videoId) {
-    // Using video.google.com endpoint which is more permissive for CORS in most browsers.
     const url = `https://video.google.com/timedtext?lang=en&v=${videoId}`;
     try {
       const response = await fetch(url);
@@ -135,13 +134,31 @@ document.addEventListener('DOMContentLoaded', function () {
       alert('Nothing to copy yet.');
       return;
     }
-    const fullText = items.join('\n');
-    navigator.clipboard.writeText(fullText).then(() => {
-      copyBtn.textContent = 'Copied!';
-      setTimeout(() => copyBtn.textContent = 'Copy', 1500);
-    }).catch(err => {
-      console.error('Copy failed', err);
-    });
+    const fullText = String(items.join('\n'));
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(fullText).then(() => {
+        copyBtn.textContent = 'Copied!';
+        setTimeout(() => copyBtn.textContent = 'Copy', 1500);
+      }).catch(err => {
+        console.error('Copy failed', err);
+        alert('Copy failed. Please copy manually.');
+      });
+    } else {
+      // Fallback for older browsers
+      const textarea = document.createElement('textarea');
+      textarea.value = fullText;
+      document.body.appendChild(textarea);
+      textarea.select();
+      try {
+        document.execCommand('copy');
+        copyBtn.textContent = 'Copied!';
+        setTimeout(() => copyBtn.textContent = 'Copy', 1500);
+      } catch (err) {
+        console.error('Fallback copy failed', err);
+        alert('Copy failed.');
+      }
+      document.body.removeChild(textarea);
+    }
   });
 
   // ---------- Load button ----------
