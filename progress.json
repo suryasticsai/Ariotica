@@ -1,8 +1,8 @@
 {
   "runId": "39920009785",
   "started": "2026-10-23T07:46:29.145Z",
-  "updated": "2026-10-23T07:47:00.027Z",
-  "status": "running",
+  "updated": "2026-10-23T07:47:01.937Z",
+  "status": "error",
   "issue": 44,
   "statusCommentId": 6360103403,
   "steps": [
@@ -58,9 +58,15 @@
       "status": "done",
       "at": "2026-10-23T07:46:59.270Z",
       "sec": 14
+    },
+    {
+      "name": "Error",
+      "status": "error",
+      "error": "The \"string\" argument must be of type string or an instance of Buffer or ArrayBuffer. Received an instance of Array",
+      "at": "2026-10-23T07:47:01.189Z"
     }
   ],
   "draft": "",
   "draftSize": 0,
-  "error": null
+  "error": "The \"string\" argument must be of type string or an instance of Buffer or ArrayBuffer. Received an instance of Array"
 }
