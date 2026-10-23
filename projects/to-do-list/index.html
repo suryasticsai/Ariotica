@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Todo List</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="header"><h1>Todo List</h1></header>
+<main class="main">
+<section class="todo-app" aria-label="Todo application">
+<form id="task-form" aria-label="Add new task">
+<input type="text" id="task-input" placeholder="What needs to be done?" aria-label="Task description" required />
+<button type="submit" aria-label="Add task">Add</button>
+</form>
+<ul id="task-list" class="task-list" aria-live="polite"></ul>
+<p id="empty-state" class="empty-state" hidden>No tasks yet, add one!</p>
+</section>
+</main>
+<script src="script.js"></script>
+
+<!-- Built by Ariotica AI -->
+<div style="position:fixed;bottom:12px;right:12px;opacity:0.35;font-size:11px;font-family:monospace;color:white;pointer-events:none;z-index:9999;">⚡ Ariotica</div>
+</body>
+</html>
