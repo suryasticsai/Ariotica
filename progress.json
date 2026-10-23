@@ -1,8 +1,8 @@
 {
   "runId": "39919191969",
   "started": "2026-10-23T07:39:22.744Z",
-  "updated": "2026-10-23T07:39:44.671Z",
-  "status": "running",
+  "updated": "2026-10-23T07:39:47.567Z",
+  "status": "done",
   "issue": 44,
   "statusCommentId": 6359989631,
   "steps": [
@@ -74,5 +74,18 @@
   ],
   "draft": "",
   "draftSize": 0,
-  "error": null
+  "error": null,
+  "securitySummary": {
+    "total": 1,
+    "high": 0,
+    "medium": 1,
+    "low": 0,
+    "byTool": {
+      "custom": 0,
+      "eslint": 1,
+      "sparrow": 0
+    }
+  },
+  "smoke": "pass",
+  "sha256": "facafabf7be4e57fc3155c8db3c4fbca3a4d2736693d7a55620a733d0be0a5e1"
 }
