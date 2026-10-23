@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "app": "to-do-list",
+  "files": {
+    "index.html": "194ce2e94874c94b07ed6eb998e693d74388ec22d1a09267eaa78673c91f8cad",
+    "style.css": "785cbe94224e0de94c294ed342470088f639c147b111420ea00f6d862fecc600",
+    "script.js": "789db81a11ae6fd856226ee4b76fbb2144dc195251320f7d5c83225ef6383fa5",
+    "meta.json": "e7eabf8a24d6201db8321929446e58bc556be74856ae979197768f2eac1b0251"
+  },
+  "bytes": 7052,
+  "builtAt": "2026-10-23T14:23:49.751Z",
+  "mode": "create",
+  "repo": "suryasticsai/Ariotica",
+  "runId": "39969170103",
+  "commit": "d9270f9f03ed58d7bf71f6d14d9e16e766b9365d",
+  "model": {
+    "provider": "Groq",
+    "name": "openai/gpt-oss-120b"
+  },
+  "race": [
+    {
+      "provider": "Groq",
+      "model": "openai/gpt-oss-120b",
+      "sec": 12,
+      "ok": true,
+      "score": 100,
+      "reason": ""
+    }
+  ],
+  "sha256": "194ce2e94874c94b07ed6eb998e693d74388ec22d1a09267eaa78673c91f8cad",
+  "checks": {
+    "complete": true,
+    "vanilla": true,
+    "externalRefs": [],
+    "zeroDeps": true,
+    "smoke": "pass",
+    "smokeErrors": [],
+    "scan": {
+      "total": 1,
+      "high": 1,
+      "medium": 0,
+      "low": 0,
+      "byTool": {
+        "custom": 1,
+        "eslint": 0,
+        "sparrow": 0
+      }
+    }
+  },
+  "promptSha256": "b70f9d7b8eaf8b9e014ac0fd51169b42e9cf5f54ebcb8ea8d54e75fcaec00663",
+  "prompt": "Create to do list app please",
+  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js to-do-list"
+}
