@@ -110,36 +110,40 @@
   {
     "project": "youtubeplay",
     "file": "projects/youtubeplay/index.html",
-    "prompt": "user can paste any kind of link in that search box we shall still navigate to desired video and play it \nExample of youtube links \n1. https://youtu.be/AhVHtwh5k3E\n2. https://m.youtube.com/watch?v=AhVHtwh5k3E \n3. \nhttps://www.youtube.com/wat",
-    "created": "2026-10-23T07:39:40",
+    "prompt": "retry to add the feature which i requested, also send me link of source code folder",
+    "created": "2026-10-23T07:51:51",
     "mode": "fix",
     "provider": "Groq",
     "model": "openai/gpt-oss-120b",
-    "findings": 1,
+    "findings": 2,
     "smoke": "pass",
-    "size": 6795,
-    "version": "1.1.0",
+    "size": 11009,
+    "version": "1.0.0",
     "features": [
-      "Accepts full YouTube URLs, shortened links, embed links, and plain video IDs",
-      "Robust video ID extraction with fallback handling"
+      "Responsive YouTube embed using Flexbox/Grid",
+      "Live‑typing transcript fetched from YouTube's timedtext API",
+      "Clear empty state with high‑contrast messaging",
+      "Accessible ARIA labels and semantic markup",
+      "Copy‑to‑clipboard button with feedback",
+      "CSS design system with variables, smooth transitions, and mobile‑first media queries"
     ],
     "fixes": [
-      "Added extractVideoID function to parse various YouTube URL formats",
-      "Updated input placeholder and aria-label for clarity",
-      "Ensured empty state displays when input is invalid"
+      "Ensured empty‑state is shown when video ID is invalid",
+      "Handled subtitle‑fetch failures gracefully without console errors",
+      "Added explicit clearContainer before showing empty state to avoid duplicate elements"
     ],
     "suggestions": [
-      "Add keyboard shortcut (Enter) to trigger loading",
-      "Persist last loaded video in localStorage",
-      "Include a thumbnail preview before loading"
+      "Add support for multiple subtitle languages",
+      "Implement a search history dropdown for previously loaded videos",
+      "Provide a dark‑mode toggle using CSS variables"
     ],
     "grade": "A",
     "percentile": "Top 5%",
-    "humanInvolvement": "Open index.html in a browser, test loading videos using different URL formats to verify correct behavior. No further code changes required.",
+    "humanInvolvement": "Create a new folder on your computer (e.g., 'yt-transcript-app'), add the three files above named exactly index.html, style.css, and script.js, then open index.html in a modern browser. No external hosting is required; all code runs locally. To share the source code folder, zip the folder and upload it to any file‑sharing service of your choice.",
     "libraries": [
       "None"
     ],
-    "sha256": "facafabf7be4e57fc3155c8db3c4fbca3a4d2736693d7a55620a733d0be0a5e1",
+    "sha256": "3e8cfcfcf0af1edee484358dcdbf7b81d2723e2471bdf3b0a4712da5fd393ae1",
     "receipt": "receipts/youtubeplay.json"
   }
 ]
