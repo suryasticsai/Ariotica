@@ -12,11 +12,8 @@ const { askAI } = require('./lib/providers');
 const PROJECTS_DIR  = 'projects';
 const RECEIPTS_DIR  = 'receipts';
 const MANIFEST_PATH = 'projects.json';
-const PROGRESS_PATH = 'progress.json';
-const INDEX_PATH    = 'knowledge/index.json';
 
 const EXISTING_LIMIT = 40000;
-const PROGRESS_EVERY = 20000;
 const STATUS_EVERY   = 5000;
 
 const [OWNER, REPO] = (process.env.GITHUB_REPOSITORY || '').split('/');
@@ -34,7 +31,6 @@ let currentIssue = null;
 let statusCommentId = null;
 let statusHeader = '';
 let statusDone = false;
-let lastPush = 0;
 let lastStatus = 0;
 const started = new Date().toISOString();
 
@@ -84,18 +80,6 @@ async function finishStatus(issue, body, close) {
 
 async function pushProgress(update = {}, force = false) {
   await updateStatusComment(force || !!update.status);
-  const mustPush = force || update.status || currentError;
-  if (!mustPush && Date.now() - lastPush < PROGRESS_EVERY) return;
-  lastPush = Date.now();
-  const payload = {
-    runId: RUN_ID, started, updated: new Date().toISOString(),
-    status: currentError ? 'error' : (update.status || 'running'),
-    issue: currentIssue, statusCommentId,
-    steps, draft: currentDraft.slice(0, 8000), draftSize: currentDraft.length,
-    error: currentError, ...update,
-  };
-  try { await writeFile(PROGRESS_PATH, JSON.stringify(payload, null, 2), `chore(progress): ${steps[steps.length - 1]?.name || 'init'}`); }
-  catch (e) { console.log('[progress] write failed:', e.message); }
 }
 
 async function step(name, fn, meta = {}) {
@@ -141,6 +125,7 @@ STRICT RULES:
 - **RESPONSIVE**: Must look perfect on mobile (375px) and desktop. Use media queries.
 - **ACCESSIBILITY**: Use semantic HTML, aria-labels, and ensure high contrast.
 - **UX**: Always include a clear empty state (e.g., "No tasks yet, add one!"). Handle edge cases gracefully.
+- **STORAGE NAMESPACING**: If you use localStorage, ALL keys MUST be prefixed with the app's name (e.g., "kanban_items" not "items") to prevent data collisions.
 - Use only: DOM APIs, CSS, localStorage, Canvas, SVG, emoji. System fonts only (system-ui, Georgia, monospace).
 - The app must run without console errors on load and when every button is pressed once.
 
@@ -151,12 +136,9 @@ OUTPUT FORMAT: reply with ONLY one JSON object and nothing else.
     "style.css": ":root { ... }",
     "script.js": "console.log('...');"
   },
-  "version": "1.0.0",
   "features": ["List of new features added"],
   "fixes": ["List of bugs fixed"],
   "suggestions": ["Ideas for the next version"],
-  "grade": "A+, A, B, etc",
-  "percentile": "Top 5%",
   "humanInvolvement": "Explain what the human needs to do next",
   "libraries": ["List any external libraries used (None preferred)"]
 }
@@ -172,7 +154,7 @@ async function gradeHtml(text) {
   if (!meta || !meta.files || !meta.files['index.html']) {
     return { ok: false, score: 0, html: text, reason: 'invalid JSON or missing index.html' };
   }
-  
+
   let testHtml = meta.files['index.html'];
   for (const [name, content] of Object.entries(meta.files)) {
     if (name.endsWith('.css')) {
@@ -190,7 +172,7 @@ async function gradeHtml(text) {
   if (!T.isUsable(testHtml)) return { ok: false, score: 0, html: testHtml, reason: 'incomplete or malformed HTML' };
   const v = T.isVanilla(testHtml);
   if (!v.ok) return { ok: false, score: 10, html: testHtml, reason: `forbidden pattern ${v.hit}` };
-  
+
   const smoke = await smokeTest(testHtml);
   const n = smoke.errors.length;
   return { ok: smoke.ok, score: 100 - 10 * Math.min(n, 9), html: testHtml, files: meta.files, meta, smoke, reason: smoke.ok ? '' : `${n} runtime error(s)` };
@@ -210,14 +192,6 @@ async function readFile(path) {
   catch (e) { if (e.status === 404) return null; throw e; }
 }
 
-async function writeFile(path, content, message) {
-  let sha = null;
-  try { const { data } = await octokit.repos.getContent({ owner: OWNER, repo: REPO, path, ref: BRANCH }); if (!Array.isArray(data)) sha = data.sha; }
-  catch (e) { if (e.status !== 404) throw e; }
-  const res = await octokit.repos.createOrUpdateFileContents({ owner: OWNER, repo: REPO, path, message, content: Buffer.from(content, 'utf8').toString('base64'), branch: BRANCH, ...(sha ? { sha } : {}) });
-  return res.data && res.data.commit && res.data.commit.sha;
-}
-
 async function deleteFile(path, message) {
   try {
     const { data } = await octokit.repos.getContent({ owner: OWNER, repo: REPO, path, ref: BRANCH });
@@ -225,6 +199,46 @@ async function deleteFile(path, message) {
     await octokit.repos.deleteFile({ owner: OWNER, repo: REPO, path, message, sha: data.sha, branch: BRANCH });
     return true;
   } catch (e) { if (e.status === 404) return false; throw e; }
+}
+
+// NEW: Atomic Multi-file Commit using Git Tree API
+async function atomicCommit(files, deletedPaths, message) {
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      // 1. Get latest commit and tree
+      const { data: refData } = await octokit.git.getRef({ owner: OWNER, repo: REPO, ref: `heads/${BRANCH}` });
+      const latestCommitSha = refData.object.sha;
+      const { data: commitData } = await octokit.git.getCommit({ owner: OWNER, repo: REPO, commit_sha: latestCommitSha });
+      
+      // 2. Create blobs for all files
+      const treeItems = [];
+      for (const [path, content] of Object.entries(files)) {
+        const { data: blob } = await octokit.git.createBlob({ owner: OWNER, repo: REPO, content, encoding: 'utf-8' });
+        treeItems.push({ path, mode: '100644', type: 'blob', sha: blob.sha });
+      }
+
+      // 3. Create tree
+      const { data: newTree } = await octokit.git.createTree({ 
+        owner: OWNER, repo: REPO, 
+        base_tree: commitData.tree.sha, 
+        tree: treeItems 
+      });
+
+      // 4. Create commit
+      const { data: newCommit } = await octokit.git.createCommit({
+        owner: OWNER, repo: REPO, message,
+        tree: newTree.sha, parents: [latestCommitSha]
+      });
+
+      // 5. Update ref
+      await octokit.git.updateRef({ owner: OWNER, repo: REPO, ref: `heads/${BRANCH}`, sha: newCommit.sha });
+      return newCommit.sha;
+    } catch (e) {
+      if (attempt === 3) throw e;
+      console.log(`[commit] collision on attempt ${attempt}, retrying...`);
+      await new Promise(r => setTimeout(r, 2000)); // Wait 2s and retry
+    }
+  }
 }
 
 function resolveInputs() {
@@ -258,7 +272,7 @@ async function buildRagContext(prompt, manifest, currentSlug) {
     .map((e) => ({ ...e, score: similarity(prompt, e.prompt || '') }))
     .sort((a, b) => b.score - a.score).slice(0, 2).filter((e) => e.score > 0.15);
   if (!scored.length) return { ctx: '', refs: [] };
-  
+
   let ctx = '\n\nREFERENCE APPS (style hints only):\n'; const refs = [];
   for (const e of scored) { 
     refs.push(e.project); 
@@ -277,13 +291,6 @@ async function buildRagContext(prompt, manifest, currentSlug) {
     } catch (err) { }
   }
   return { ctx, refs };
-}
-
-async function updateKnowledgeIndex(overrides, removed) {
-  const chunks = K.collectRepoChunks(process.cwd(), { overrides, removed })
-    .concat(await K.collectIssueChunks(octokit, OWNER, REPO));
-  await writeFile(INDEX_PATH, JSON.stringify(K.buildIndexObject(chunks)), 'chore: knowledge index');
-  return chunks.length;
 }
 
 async function threadHistory(issue, skipIds) {
@@ -339,7 +346,7 @@ async function main() {
   await step('Parse request', async () => inputs);
   const slug = T.slugify(project);
   if (!slug) throw new Error('Project name needs at least one letter or digit');
-  
+
   const baseDir = `${PROJECTS_DIR}/${slug}`;
   const mainFile = `${baseDir}/index.html`;
   const receiptPath = `${RECEIPTS_DIR}/${slug}.json`;
@@ -368,8 +375,7 @@ async function main() {
     try { await deleteFile(receiptPath, `chore: remove receipt ${slug}`); } catch { }
     manifest = manifest.filter((e) => e.project !== slug);
     const manifestJson = JSON.stringify(manifest, null, 2) + '\n';
-    await writeFile(MANIFEST_PATH, manifestJson, 'chore: manifest');
-    await softStep('Update knowledge index', () => updateKnowledgeIndex({ [MANIFEST_PATH]: manifestJson }, [receiptPath]));
+    await atomicCommit({ [MANIFEST_PATH]: manifestJson }, [], `chore: delete ${slug}`);
     await finishStatus(issue, existed ? `🗑 Deleted \`${slug}\`.` : `\`${slug}\` did not exist.`, true);
     await pushProgress({ status: 'done' }); return;
   }
@@ -377,7 +383,7 @@ async function main() {
   let existingHtml = await readFile(mainFile);
   let existingCss = await readFile(`${baseDir}/style.css`) || '';
   let existingJs = await readFile(`${baseDir}/script.js`) || '';
-  
+
   if ((mode === 'improve' || mode === 'fix' || mode === 'audit') && !existingHtml) throw new Error(`Cannot ${mode} "${slug}": no existing file.`);
 
   let ask;
@@ -402,7 +408,6 @@ async function main() {
     fullPrompt += `\n\nCURRENT FILES:\n[index.html]:\n${existingHtml}\n\n[style.css]:\n${existingCss}\n\n[script.js]:\n${existingJs}`;
   }
 
-  // 1) Race
   let cand = await step('Generate with AI (model race)', () => generate(fullPrompt), { promptChars: fullPrompt.length, ragRefs: refs.join(', ') || 'none' });
   let raceReport = cand.race.slice();
 
@@ -422,16 +427,15 @@ async function main() {
   let smoke = cand.grade.smoke;
   let meta = cand.grade.meta;
   let provider = cand.provider; let model = cand.model;
-  
+
   steps.push({ name: 'Smoke test', status: smoke.ok ? 'done' : 'error', at: new Date().toISOString(), note: 'ran during the model race', error: smoke.ok ? undefined : `${smoke.errors.length} runtime error(s)` });
   await pushProgress();
 
-  // 2) 3-Step Self-Healing Loop
   let attempt = 1;
   while (!smoke.ok && attempt <= 3 && testHtml.length <= EXISTING_LIMIT) {
     const repairPrompt = `${RULES}Fix the runtime errors in this app. Keep everything else exactly as it is.\n\nRUNTIME ERRORS:\n${smoke.errors.map((e) => '- ' + e).join('\n')}\n\nCURRENT HTML:\n${testHtml}`;
     const baseline = cand.grade.score;
-    
+
     const fixed = await softStep(`Repair attempt ${attempt}`, async () => {
       const r = await generate(repairPrompt);
       raceReport = raceReport.concat(r.race);
@@ -446,69 +450,97 @@ async function main() {
     attempt++;
   }
 
-  // 3) Watermark & Meta
   if (files['index.html']) {
-    const watermark = `\n<!-- Built by Ariotica AI -->\n<div style="position:fixed;bottom:12px;right:12px;opacity:0.35;font-size:11px;font-family:monospace;color:white;pointer-events:none;z-index:9999;">⚡ Ariotica</div>`;
-    files['index.html'] = files['index.html'].replace(/<\/body>/i, `${watermark}\n</body>`);
+    if (!files['index.html'].includes('Built by Ariotica')) {
+      const watermark = `\n<!-- Built by Ariotica AI -->\n<div style="position:fixed;bottom:12px;right:12px;opacity:0.35;font-size:11px;font-family:monospace;color:white;pointer-events:none;z-index:9999;">⚡ Ariotica</div>`;
+      files['index.html'] = files['index.html'].replace(/<\/body>/i, `${watermark}\n</body>`);
+    }
+
+    const cspTag = `<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; connect-src 'none'; img-src 'self' data:;">`;
+    if (!files['index.html'].includes('Content-Security-Policy')) {
+      files['index.html'] = files['index.html'].replace('<head>', `<head>\n  ${cspTag}`);
+    }
+  }
+
+  let score = 100;
+  if (!smoke.ok) score -= 30;
+  if (smoke.errors.length > 0) score -= Math.min(smoke.errors.length * 5, 20);
+  
+  const security = await step('Security scan', () => runAllScanners(testHtml));
+  if (security.counts.high > 0) score -= 20;
+  if (security.counts.medium > 0) score -= 10;
+  if (testHtml.length > 50000) score -= 5;
+
+  let grade = 'F';
+  if (score >= 90) grade = 'A+';
+  else if (score >= 80) grade = 'A';
+  else if (score >= 70) grade = 'B';
+  else if (score >= 60) grade = 'C';
+
+  let version = '1.0.0';
+  if (meta.version) version = meta.version;
+  else {
+    try {
+      const oldMeta = JSON.parse(await readFile(`${baseDir}/meta.json`) || '{}');
+      if (oldMeta.version) {
+        const parts = oldMeta.version.split('.').map(Number);
+        parts[2] += 1;
+        version = parts.join('.');
+      }
+    } catch {}
   }
 
   const metaJson = {
-    version: meta.version,
-    features: meta.features,
-    fixes: meta.fixes,
-    suggestions: meta.suggestions,
-    grade: meta.grade,
-    percentile: meta.percentile,
-    humanInvolvement: meta.humanInvolvement,
-    libraries: meta.libraries,
+    version: version,
+    features: Array.isArray(meta.features) ? meta.features : [],
+    fixes: Array.isArray(meta.fixes) ? meta.fixes : [],
+    suggestions: Array.isArray(meta.suggestions) ? meta.suggestions : [],
+    grade: grade,
+    percentile: score >= 90 ? 'Top 5%' : score >= 80 ? 'Top 20%' : 'Top 50%',
+    humanInvolvement: meta.humanInvolvement || 'None',
+    libraries: Array.isArray(meta.libraries) ? meta.libraries : ['None'],
     _watermark: "⚡ Built by Ariotica AI"
   };
   files['meta.json'] = JSON.stringify(metaJson, null, 2);
 
-  const security = await step('Security scan', () => runAllScanners(testHtml));
-  
-  const commitSha = await step(`Commit files to ${baseDir}/`, async () => {
-    let lastSha;
-    for (const [filename, content] of Object.entries(files)) {
-      lastSha = await writeFile(`${baseDir}/${filename}`, content, `feat: ${slug} v${meta.version} (${mode})`);
-    }
-    return lastSha;
-  });
-
-  const receipt = R.buildReceipt({ repo: `${OWNER}/${REPO}`, slug, files, mode, runId: RUN_ID, commit: commitSha, provider, model, race: raceReport, smoke, security: security.counts, prompt, vanilla: T.isVanilla(testHtml) });
+  // 1. Calculate Receipt (Before commit so we can hash the final files)
+  const receipt = R.buildReceipt({ repo: `${OWNER}/${REPO}`, slug, files, mode, runId: RUN_ID, commit: null, provider, model, race: raceReport, smoke, security: security.counts, prompt, vanilla: T.isVanilla(testHtml) });
   const receiptJson = JSON.stringify(receipt, null, 2) + '\n';
-  const receiptWritten = (await softStep('Write build receipt', async () => { await writeFile(receiptPath, receiptJson, `chore: receipt ${slug}`); return true; })) === true;
+  files[receiptPath] = receiptJson;
 
-  const smokeLabel = smoke.skipped ? 'skipped' : smoke.ok ? 'pass' : `fail:${smoke.errors.length}`;
+  // 2. Update Manifest
   const idx = manifest.findIndex((e) => e.project === slug);
   const entry = { 
     project: slug, file: mainFile, prompt: prompt.slice(0, 240), created: new Date().toISOString().slice(0, 19), mode, provider, model, 
-    findings: security.counts.total, smoke: smokeLabel, size: Object.values(files).reduce((a, b) => a + b.length, 0),
-    version: meta.version, features: meta.features, fixes: meta.fixes, suggestions: meta.suggestions,
-    grade: meta.grade, percentile: meta.percentile, humanInvolvement: meta.humanInvolvement, libraries: meta.libraries,
-    sha256: receipt.sha256, ...(receiptWritten ? { receipt: receiptPath } : {}) 
+    findings: security.counts.total, smoke: smoke.ok ? 'pass' : `fail:${smoke.errors.length}`, size: Object.values(files).reduce((a, b) => a + b.length, 0),
+    version: version, features: metaJson.features, fixes: metaJson.fixes, suggestions: metaJson.suggestions,
+    grade: grade, percentile: metaJson.percentile, humanInvolvement: metaJson.humanInvolvement, libraries: metaJson.libraries,
+    sha256: receipt.sha256, receipt: receiptPath 
   };
-  
   if (idx === -1) manifest.push(entry); else manifest[idx] = Object.assign({}, manifest[idx], entry);
-  const manifestJson = JSON.stringify(manifest, null, 2) + '\n';
-  await writeFile(MANIFEST_PATH, manifestJson, 'chore: manifest');
-  await softStep('Update knowledge index', () => updateKnowledgeIndex(
-    { [mainFile]: files['index.html'], [MANIFEST_PATH]: manifestJson, ...(receiptWritten ? { [receiptPath]: receiptJson } : {}) },
-    []));
+  files[MANIFEST_PATH] = JSON.stringify(manifest, null, 2) + '\n';
+
+  // 3. One Atomic Commit
+  const commitSha = await step(`Commit files to ${baseDir}/`, () => atomicCommit(files, [], `feat: ${slug} v${version} (${mode})`));
+
+  // 4. Add commit SHA to receipt and overwrite it (second commit just for the receipt)
+  receipt.commit = commitSha;
+  files[receiptPath] = JSON.stringify(receipt, null, 2) + '\n';
+  await atomicCommit({ [receiptPath]: files[receiptPath] }, [], `chore: receipt ${slug}`);
 
   const url = `https://${OWNER}.github.io/${REPO}/${baseDir}/`;
   let body = `✅ **${mode}** complete: \`${baseDir}/\` via **${provider}**${model ? ` (${model})` : ''}\n\nLive in ~1 min: ${url}`;
   const rl = raceLine(raceReport); if (rl) body += `\n\n🏁 Model race: ${rl}`;
   if (!smoke.skipped) body += smoke.ok ? '\n\n🧪 Smoke test: passed' : `\n\n🧪 Smoke test: ⚠️ ${smoke.errors.length} runtime issue(s) remain\n${smoke.errors.slice(0, 3).map((e) => '- ' + e).join('\n')}`;
-  if (receiptWritten) body += `\n\n🧾 Receipt: [\`sha256:${receipt.sha256.slice(0, 12)}…\`](https://github.com/${OWNER}/${REPO}/blob/${BRANCH}/${receiptPath}) · zero-deps ${receipt.checks.zeroDeps ? '✅' : '⚠️'} · verify with \`node verify-receipt.js ${slug}\``;
-  
-  if (meta.version) body += `\n\n**🏷️ Version:** \`v${meta.version}\``;
-  if (meta.features.length) body += `\n\n**✨ New Features:**\n${meta.features.map(f => `- ${f}`).join('\n')}`;
-  if (meta.fixes.length) body += `\n\n**🔧 Bugs Fixed:**\n${meta.fixes.map(f => `- ${f}`).join('\n')}`;
+  body += `\n\n🧾 Receipt: [\`sha256:${receipt.sha256.slice(0, 12)}…\`](https://github.com/${OWNER}/${REPO}/blob/${BRANCH}/${receiptPath}) · zero-deps ${receipt.checks.zeroDeps ? '✅' : '⚠️'} · verify with \`node verify-receipt.js ${slug}\``;
+
+  if (version) body += `\n\n**🏷️ Version:** \`v${version}\``;
+  if (metaJson.features.length) body += `\n\n**✨ New Features:**\n${metaJson.features.map(f => `- ${f}`).join('\n')}`;
+  if (metaJson.fixes.length) body += `\n\n**🔧 Bugs Fixed:**\n${metaJson.fixes.map(f => `- ${f}`).join('\n')}`;
   if (security.findings.length) body += `\n\n**Scanner findings (${security.findings.length}):**\n` + security.findings.slice(0, 5).map((f) => `- [${f.sev}] ${f.msg}`).join('\n');
 
   await finishStatus(issue, body + HINT, true);
-  await pushProgress({ status: 'done', securitySummary: security.counts, smoke: smokeLabel, sha256: receipt.sha256 });
+  await pushProgress({ status: 'done', securitySummary: security.counts, smoke: smoke.ok ? 'pass' : 'fail', sha256: receipt.sha256 });
 }
 
 main().catch(async (err) => {
