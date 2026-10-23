@@ -66,7 +66,6 @@ document.addEventListener('DOMContentLoaded', function () {
       const response = await fetch(url);
       if (!response.ok) throw new Error('Network response was not ok');
       const text = await response.text();
-      // Simple check – if XML is empty, YouTube returns an empty <transcript></transcript>
       if (!text.includes('<text')) return [];
       return parseSubtitlesXML(text);
     } catch (e) {
@@ -84,7 +83,6 @@ document.addEventListener('DOMContentLoaded', function () {
       const el = texts[i];
       const start = parseFloat(el.getAttribute('start'));
       const dur = parseFloat(el.getAttribute('dur'));
-      // YouTube XML may encode HTML entities – let the browser decode them
       const txt = el.textContent.replace(/\s+/g, ' ').trim();
       cues.push({ start, dur, text: txt });
     }
@@ -119,7 +117,6 @@ document.addEventListener('DOMContentLoaded', function () {
     cues.forEach((cue) => {
       const li = document.createElement('li');
       transcriptEl.appendChild(li);
-      // Schedule typing according to cue.start (seconds)
       setTimeout(() => {
         typeText(li, cue.text);
       }, cue.start * 1000);
@@ -128,7 +125,9 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // ---------- Copy transcript ----------
   copyBtn.addEventListener('click', function () {
-    const items = Array.from(transcriptEl.querySelectorAll('li')).map(li => li.textContent.trim()).filter(t => t);
+    const items = Array.from(transcriptEl.querySelectorAll('li'))
+      .map(li => li.textContent.trim())
+      .filter(t => t);
     if (!items.length) {
       alert('Nothing to copy yet.');
       return;
