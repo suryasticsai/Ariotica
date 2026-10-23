@@ -1,91 +1,12 @@
 {
-  "runId": "39919191969",
-  "started": "2026-10-23T07:39:22.744Z",
-  "updated": "2026-10-23T07:39:47.567Z",
-  "status": "done",
+  "runId": "39920009785",
+  "started": "2026-10-23T07:46:29.145Z",
+  "updated": "2026-10-23T07:46:29.147Z",
+  "status": "running",
   "issue": 44,
-  "statusCommentId": 6359989631,
-  "steps": [
-    {
-      "name": "Parse request",
-      "status": "done",
-      "at": "2026-10-23T07:39:24.265Z",
-      "sec": 0
-    },
-    {
-      "name": "Build RAG context",
-      "status": "done",
-      "at": "2026-10-23T07:39:26.805Z",
-      "sec": 1
-    },
-    {
-      "name": "Generate with AI (model race)",
-      "status": "done",
-      "at": "2026-10-23T07:39:33.804Z",
-      "promptChars": 6385,
-      "ragRefs": "none",
-      "sec": 7
-    },
-    {
-      "name": "Groq · racing",
-      "status": "done",
-      "at": "2026-10-23T07:39:33.138Z",
-      "sec": 6,
-      "chars": 6924,
-      "model": "openai/gpt-oss-120b"
-    },
-    {
-      "name": "OpenRouter · racing",
-      "status": "cancelled",
-      "at": "2026-10-23T07:39:33.804Z",
-      "sec": 7,
-      "note": "lost the race"
-    },
-    {
-      "name": "Smoke test",
-      "status": "done",
-      "at": "2026-10-23T07:39:33.804Z",
-      "note": "ran during the model race"
-    },
-    {
-      "name": "Security scan",
-      "status": "done",
-      "at": "2026-10-23T07:39:33.949Z",
-      "sec": 0
-    },
-    {
-      "name": "Commit files to projects/youtubeplay/",
-      "status": "done",
-      "at": "2026-10-23T07:39:38.591Z",
-      "sec": 5
-    },
-    {
-      "name": "Write build receipt",
-      "status": "done",
-      "at": "2026-10-23T07:39:40.632Z",
-      "sec": 1
-    },
-    {
-      "name": "Update knowledge index",
-      "status": "done",
-      "at": "2026-10-23T07:39:44.072Z",
-      "sec": 2
-    }
-  ],
+  "statusCommentId": null,
+  "steps": [],
   "draft": "",
   "draftSize": 0,
-  "error": null,
-  "securitySummary": {
-    "total": 1,
-    "high": 0,
-    "medium": 1,
-    "low": 0,
-    "byTool": {
-      "custom": 0,
-      "eslint": 1,
-      "sparrow": 0
-    }
-  },
-  "smoke": "pass",
-  "sha256": "facafabf7be4e57fc3155c8db3c4fbca3a4d2736693d7a55620a733d0be0a5e1"
+  "error": null
 }
