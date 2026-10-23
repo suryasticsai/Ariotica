@@ -1,0 +1,53 @@
+{
+  "schema": 1,
+  "app": "youtubeplay",
+  "files": {
+    "index.html": "7376dec55d51185fb3e6f1eef35250bb8801299733a342196ef24b0c998c2467",
+    "style.css": "77cceae5b9c352434002dffe6228072d953536156801a94c10c9203ffc09c121",
+    "script.js": "aca9a230d1c81d085b1c2312cfda51cce23de9e86e91ef77d4a80bae626849bf",
+    "meta.json": "5c4dee3f7ef8ddc9de77ece58fccb3fb05e679d3c7feb0098818a5fab535c8bb"
+  },
+  "bytes": 5303,
+  "builtAt": "2026-10-23T07:21:53.011Z",
+  "mode": "create",
+  "repo": "suryasticsai/Ariotica",
+  "runId": "39917171373",
+  "commit": "3115a8ee708766018e2ce1645c6690b8bf8e74ff",
+  "model": {
+    "provider": "Groq",
+    "name": "openai/gpt-oss-120b"
+  },
+  "race": [
+    {
+      "provider": "Groq",
+      "model": "openai/gpt-oss-120b",
+      "sec": 6,
+      "ok": true,
+      "score": 100,
+      "reason": ""
+    }
+  ],
+  "sha256": "7376dec55d51185fb3e6f1eef35250bb8801299733a342196ef24b0c998c2467",
+  "checks": {
+    "complete": true,
+    "vanilla": true,
+    "externalRefs": [],
+    "zeroDeps": true,
+    "smoke": "pass",
+    "smokeErrors": [],
+    "scan": {
+      "total": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 0,
+      "byTool": {
+        "custom": 0,
+        "eslint": 0,
+        "sparrow": 0
+      }
+    }
+  },
+  "promptSha256": "91db4f6c295292cd6ef09c5737308a18fd7338e1aa55075da42b5790c7e3e1c1",
+  "prompt": "Create simple youtube embedded player within cool UI with all play pause search options",
+  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js youtubeplay"
+}
