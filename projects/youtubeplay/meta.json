@@ -1,24 +1,22 @@
 {
-  "version": "1.0.0",
+  "version": "1.1.0",
   "features": [
-    "Responsive layout using Flexbox and CSS variables",
-    "Accessible semantic markup with ARIA labels",
-    "Empty state placeholder when no video is loaded",
-    "Input field to enter YouTube video ID and load dynamically",
-    "Smooth transition effects on hover and focus"
+    "Accepts full YouTube URLs, shortened links, embed links, and plain video IDs",
+    "Robust video ID extraction with fallback handling"
   ],
   "fixes": [
-    "Ensured no console errors on load or button clicks",
-    "Handled empty input gracefully by restoring empty state"
+    "Added extractVideoID function to parse various YouTube URL formats",
+    "Updated input placeholder and aria-label for clarity",
+    "Ensured empty state displays when input is invalid"
   ],
   "suggestions": [
-    "Integrate YouTube Iframe API for programmatic play/pause controls",
-    "Add a thumbnail preview list for recent videos",
-    "Implement keyboard shortcuts for accessibility"
+    "Add keyboard shortcut (Enter) to trigger loading",
+    "Persist last loaded video in localStorage",
+    "Include a thumbnail preview before loading"
   ],
   "grade": "A",
   "percentile": "Top 5%",
-  "humanInvolvement": "Open the project folder, place the three files (index.html, style.css, script.js) together, and open index.html in a browser. No further setup is required.",
+  "humanInvolvement": "Open index.html in a browser, test loading videos using different URL formats to verify correct behavior. No further code changes required.",
   "libraries": [
     "None"
   ],
