@@ -1,11 +1,65 @@
 {
   "runId": "39920563934",
   "started": "2026-10-23T07:51:28.246Z",
-  "updated": "2026-10-23T07:51:28.247Z",
+  "updated": "2026-10-23T07:51:48.797Z",
   "status": "running",
   "issue": 44,
-  "statusCommentId": null,
-  "steps": [],
+  "statusCommentId": 6360182404,
+  "steps": [
+    {
+      "name": "Parse request",
+      "status": "done",
+      "at": "2026-10-23T07:51:29.597Z",
+      "sec": 0
+    },
+    {
+      "name": "Build RAG context",
+      "status": "done",
+      "at": "2026-10-23T07:51:32.278Z",
+      "sec": 1
+    },
+    {
+      "name": "Generate with AI (model race)",
+      "status": "done",
+      "at": "2026-10-23T07:51:42.691Z",
+      "promptChars": 11849,
+      "ragRefs": "none",
+      "sec": 10
+    },
+    {
+      "name": "Groq · racing",
+      "status": "done",
+      "at": "2026-10-23T07:51:41.799Z",
+      "sec": 10,
+      "chars": 11305,
+      "model": "openai/gpt-oss-120b"
+    },
+    {
+      "name": "OpenRouter · racing",
+      "status": "cancelled",
+      "at": "2026-10-23T07:51:42.691Z",
+      "sec": 10,
+      "note": "lost the race"
+    },
+    {
+      "name": "Smoke test",
+      "status": "done",
+      "at": "2026-10-23T07:51:42.691Z",
+      "note": "ran during the model race"
+    },
+    {
+      "name": "Security scan",
+      "status": "done",
+      "at": "2026-10-23T07:51:42.807Z",
+      "sec": 0
+    },
+    {
+      "name": "Commit files to projects/youtubeplay/",
+      "status": "done",
+      "at": "2026-10-23T07:51:48.128Z",
+      "sec": 5
+    }
+  ],
   "draft": "",
   "draftSize": 0,
   "error": null
