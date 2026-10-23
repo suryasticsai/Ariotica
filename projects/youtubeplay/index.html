@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>YouTube Player</title>
+  <title>YouTube Player with Transcript</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -18,11 +18,18 @@
     <section id="player-container" class="player-container" aria-live="polite">
       <p class="empty-state">No video loaded, add one!</p>
     </section>
+    <section class="transcript-section" aria-label="Video transcript">
+      <div class="transcript-header">
+        <h2>Transcript</h2>
+        <button id="copy-transcript" class="copy-btn" aria-label="Copy transcript">Copy</button>
+      </div>
+      <ul id="transcript" class="transcript-list"></ul>
+      <p id="transcript-message" class="transcript-message"></p>
+    </section>
   </main>
   <script src="script.js"></script>
-
-<!-- Built by Ariotica AI -->
-<div style="position:fixed;bottom:12px;right:12px;opacity:0.35;font-size:11px;font-family:monospace;color:white;pointer-events:none;z-index:9999;">⚡ Ariotica</div>
+  <!-- Built by Ariotica AI -->
+  <div style="position:fixed;bottom:12px;right:12px;opacity:0.35;font-size:11px;font-family:monospace;color:white;pointer-events:none;z-index:9999;">⚡ Ariotica</div>
 
 <!-- Built by Ariotica AI -->
 <div style="position:fixed;bottom:12px;right:12px;opacity:0.35;font-size:11px;font-family:monospace;color:white;pointer-events:none;z-index:9999;">⚡ Ariotica</div>
