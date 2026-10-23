@@ -24,7 +24,9 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   function clearTranscript() {
-    transcriptEl.innerHTML = '';
+    while (transcriptEl.firstChild) {
+      transcriptEl.removeChild(transcriptEl.firstChild);
+    }
     transcriptMsg.textContent = '';
   }
 
@@ -61,7 +63,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
   // ---------- Subtitle fetching ----------
   async function fetchSubtitles(videoId) {
-    const url = `https://www.youtube.com/api/timedtext?lang=en&v=${videoId}`;
+    // Using video.google.com endpoint which is more permissive for CORS in most browsers.
+    const url = `https://video.google.com/timedtext?lang=en&v=${videoId}`;
     try {
       const response = await fetch(url);
       if (!response.ok) throw new Error('Network response was not ok');
