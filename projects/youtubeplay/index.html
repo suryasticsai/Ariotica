@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube Player</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="header">
+    <h1>YouTube Player</h1>
+  </header>
+  <main class="main">
+    <section class="controls" aria-label="Video controls">
+      <input type="text" id="video-id" placeholder="Enter YouTube video ID" aria-label="YouTube video ID">
+      <button id="load-btn" aria-label="Load video">Load Video</button>
+    </section>
+    <section id="player-container" class="player-container" aria-live="polite">
+      <p class="empty-state">No video loaded, add one!</p>
+    </section>
+  </main>
+  <script src="script.js"></script>
+
+<!-- Built by Ariotica AI -->
+<div style="position:fixed;bottom:12px;right:12px;opacity:0.35;font-size:11px;font-family:monospace;color:white;pointer-events:none;z-index:9999;">⚡ Ariotica</div>
+</body>
+</html>
