@@ -152,7 +152,7 @@ Reply with ONLY the raw markdown text. No JSON. No conversational filler.`;
 
 const GEN_SYSTEM = 'You reply with a single valid JSON object only. No markdown fences, no other text.';
 const genMessages = (userText) => [{ role: 'system', content: GEN_SYSTEM }, { role: 'user', content: userText }];
-const HINT = '\n\n💬 Reply with `[improve] …`, `[fix] …`, `[audit]`, `[delete]`, `[ask] …`, or `[skill] …` to ask/teach me anything.';
+const HINT = '\n\n💬 Reply with `[improve] …`, `[fix] …`, `[audit]`, `[delete]`, `[ask] …`, `[skill] …`, or `[inspire] …`.';
 
 async function gradeHtml(text) {
   const meta = T.parseMultiFileResponse(text);
@@ -224,6 +224,37 @@ async function atomicCommit(files, deletedPaths, message) {
   }
 }
 
+async function searchGitHubForInspiration(query) {
+  try {
+    const { data } = await octokit.search.repos({
+      q: `${query} language:html stars:>100`,
+      sort: 'stars',
+      order: 'desc',
+      per_page: 3
+    });
+
+    let inspiration = '';
+    for (const repo of data.items) {
+      try {
+        const { data: fileData } = await octokit.repos.getContent({
+          owner: repo.owner.login,
+          repo: repo.name,
+          path: 'index.html'
+        });
+        if (fileData && fileData.content) {
+          const content = Buffer.from(fileData.content, 'base64').toString('utf8');
+          inspiration += `\n--- INSPIRATION FROM: ${repo.full_name} (⭐ ${repo.stargazers_count}) ---\n`;
+          inspiration += content.slice(0, 2500) + '\n\n';
+        }
+      } catch (e) { }
+    }
+    return { inspiration, count: data.items.length };
+  } catch (e) {
+    console.log('Search failed:', e.message);
+    return { inspiration: '', count: 0 };
+  }
+}
+
 function resolveInputs() {
   const dProj = (process.env.DISPATCH_PROJECT || '').trim();
   if (dProj) return { project: dProj, prompt: (process.env.DISPATCH_PROMPT || '').trim(), mode: (process.env.DISPATCH_MODE || 'create').toLowerCase(), issue: null, commentId: null };
@@ -241,69 +272,6 @@ function resolveInputs() {
   const mode = tm.mode || 'create';
   if (mode === 'create' && !prompt) throw new Error('Describe the app in the issue body.');
   return { project: tm.project, prompt, mode, issue: num, commentId: null };
-}
-
-function similarity(a, b) {
-  const ta = new Set(Rag.tokenize(a)), tb = new Set(Rag.tokenize(b));
-  let inter = 0; for (const t of ta) if (tb.has(t)) inter++;
-  const u = ta.size + tb.size - inter; return u === 0 ? 0 : inter / u;
-}
-
-async function buildRagContext(prompt, manifest, currentSlug) {
-  if (!manifest || manifest.length < 2) return { ctx: '', refs: [] };
-  const scored = manifest.filter((e) => e.project !== currentSlug)
-    .map((e) => ({ ...e, score: similarity(prompt, e.prompt || '') }))
-    .sort((a, b) => b.score - a.score).slice(0, 2).filter((e) => e.score > 0.15);
-  if (!scored.length) return { ctx: '', refs: [] };
-
-  let ctx = '\n\nREFERENCE APPS (style hints only):\n'; const refs = [];
-  for (const e of scored) { 
-    refs.push(e.project); 
-    ctx += `\n--- ${e.project} ---\n`; 
-    const dir = `${PROJECTS_DIR}/${e.project}`;
-    try {
-      const { data } = await octokit.repos.getContent({ owner: OWNER, repo: REPO, path: dir, ref: BRANCH });
-      if (Array.isArray(data)) {
-        for (const file of data) {
-          if (file.type === 'file' && (file.name.endsWith('.html') || file.name.endsWith('.css') || file.name.endsWith('.js'))) {
-            const content = await readFile(file.path);
-            if (content) ctx += `[${file.name}]:\n${content.slice(0, 1500)}\n`;
-          }
-        }
-      }
-    } catch (err) { }
-  }
-  return { ctx, refs };
-}
-
-async function threadHistory(issue, skipIds) {
-  try {
-    const { data } = await octokit.issues.listComments({ owner: OWNER, repo: REPO, issue_number: issue, per_page: 40 });
-    return data.filter((c) => !skipIds.includes(c.id)).slice(-8)
-      .map((c) => ({ role: c.user && c.user.type === 'Bot' ? 'assistant' : 'user', content: K.cleanComment(c.body).slice(0, 1200) }))
-      .filter((m) => m.content && !m.content.startsWith('⏳'));
-  } catch { return []; }
-}
-
-async function runAsk({ issue, prompt, commentId }) {
-  if (!prompt) throw new Error('Add your question after [ask]');
-  const chunks = await step('Index repo', async () => K.collectRepoChunks(process.cwd()).concat(await K.collectIssueChunks(octokit, OWNER, REPO)));
-  const hits = Rag.createIndex(chunks).search(prompt, 6, { perFile: 2 });
-  const history = await threadHistory(issue, [statusCommentId, commentId].filter(Boolean));
-
-  const system = `You are Ariotica, the assistant for ${OWNER}/${REPO}. Answer using ONLY the CONTEXT. Cite sources like [path:start-end]. `;
-  const messages = [{ role: 'system', content: system }, ...history,
-    { role: 'user', content: `CONTEXT:\n${hits.length ? Rag.formatContext(hits, 9000) : '(nothing)'}\n\nQUESTION: ${prompt}` }];
-
-  let body;
-  try {
-    const r = await step('Answer', () => askAI(messages, { maxTokens: 1200, onEvent: aiEvents() }));
-    body = `${r.text.trim()}\n\n**Sources** (via ${r.provider})\n${hits.map((h) => `- [\`${Rag.ref(h.chunk)}\`]`).join('\n')}`;
-  } catch (e) {
-    body = `⚠️ No AI provider answered.`;
-  }
-  await finishStatus(issue, body + HINT, false);
-  await pushProgress({ status: 'done' });
 }
 
 async function main() {
@@ -330,7 +298,6 @@ async function main() {
 
   if (mode === 'ask') return runAsk(inputs);
 
-  // NEW: SKILL MODE
   if (mode === 'skill') {
     const skillName = prompt.slice(0, 30).replace(/[^a-z0-9]/gi, '-').toLowerCase();
     const r = await step('Generate Skill Cheatsheet', () => askAI([{ role: 'system', content: SKILL_RULES }, { role: 'user', content: prompt }]));
@@ -357,7 +324,7 @@ async function main() {
     manifest = manifest.filter((e) => e.project !== slug);
     const manifestJson = JSON.stringify(manifest, null, 2) + '\n';
     await atomicCommit({ [MANIFEST_PATH]: manifestJson }, [], `chore: delete ${slug}`);
-    await finishStatus(issue, existed ? `🗑 Deleted \`${slug}\`.` : `\`${slug}\` did not exist.`, true);
+    await finishStatus(issue, existed ? `🗑 Deleted \`${slug}\`.`, true);
     await pushProgress({ status: 'done' }); return;
   }
 
@@ -382,8 +349,18 @@ async function main() {
     ask = `Fix the security issues.\n\nFINDINGS:\n${report}\n\nEXTRA: ${prompt || 'none'}`;
   }
 
-  const { ctx: ragCtx, refs } = await step('Build RAG context', () => (mode === 'create' || mode === 'improve') ? buildRagContext(prompt, manifest, slug) : Promise.resolve({ ctx: '', refs: [] }));
-  let fullPrompt = RULES + ask + ragCtx;
+  let inspirationCtx = '';
+  if (mode === 'inspire') {
+    const searchRes = await step(`Searching GitHub for "${prompt}"`, () => searchGitHubForInspiration(prompt));
+    if (searchRes.inspiration) {
+      inspirationCtx = `\n\nHere are some highly successful open-source apps for inspiration. Extract their best UI/UX patterns and logic, but write the code entirely from scratch:\n${searchRes.inspiration}`;
+      ask = `Build a brand new app based on this idea: ${prompt}. Use the provided inspiration code as a style and feature guide, but DO NOT copy it verbatim. Make it better.`;
+    } else {
+      ask = prompt;
+    }
+  }
+
+  let fullPrompt = RULES + ask + inspirationCtx;
   if (existingHtml) {
     if (existingHtml.length > EXISTING_LIMIT) existingHtml = existingHtml.slice(0, EXISTING_LIMIT);
     if (existingCss.length > CSS_JS_LIMIT) existingCss = existingCss.slice(0, CSS_JS_LIMIT);
@@ -391,7 +368,7 @@ async function main() {
     fullPrompt += `\n\nCURRENT FILES:\n[index.html]:\n${existingHtml}\n\n[style.css]:\n${existingCss}\n\n[script.js]:\n${existingJs}`;
   }
 
-  let cand = await step('Generate with AI (model race)', () => generate(fullPrompt), { promptChars: fullPrompt.length, ragRefs: refs.join(', ') || 'none' });
+  let cand = await step('Generate with AI (model race)', () => generate(fullPrompt), { promptChars: fullPrompt.length });
   let raceReport = cand.race.slice();
 
   if (structurallyBad(cand)) {
@@ -435,7 +412,6 @@ async function main() {
 
   const security = await step('Security scan', () => runAllScanners(testHtml));
 
-  // PUBLISH GATE: If score is too low, abort
   let score = 100;
   if (!smoke.ok) score -= 30;
   if (smoke.errors.length > 0) score -= Math.min(smoke.errors.length * 5, 20);
@@ -452,30 +428,23 @@ async function main() {
     process.exit(1);
   }
 
-  // POST-PROCESSING: PWA, Watermark, CSP
   let currentHtml = files['index.html'];
-  let currentCss = files['style.css'];
-  let currentJs = files['script.js'];
-
-  // 1. Inject Watermark (Idempotent)
   if (!currentHtml.includes('Built by Ariotica')) {
     const watermark = `\n<!-- Built by Ariotica AI -->\n<div style="position:fixed;bottom:12px;right:12px;opacity:0.35;font-size:11px;font-family:monospace;color:white;pointer-events:none;z-index:9999;">⚡ Ariotica</div>`;
     currentHtml = currentHtml.replace(/<\/body>/i, `${watermark}\n</body>`);
   }
 
-  // 2. Inject CSP
   const cspTag = `<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; connect-src 'none'; img-src 'self' data:;">`;
   if (!currentHtml.includes('Content-Security-Policy')) {
     currentHtml = currentHtml.replace('<head>', `<head>\n  ${cspTag}`);
   }
 
-  // 3. Generate PWA
   let hash = 0;
   for (let i = 0; i < slug.length; i++) hash = slug.charCodeAt(i) + ((hash << 5) - hash);
   const color = `hsl(${Math.abs(hash % 360)}, 70%, 50%)`;
   const letter = slug.charAt(0).toUpperCase();
 
-  const manifest = {
+  const manifestPwa = {
     name: slug.replace(/-/g, ' ').toUpperCase(),
     short_name: slug,
     start_url: ".",
@@ -488,7 +457,7 @@ async function main() {
       type: "image/svg+xml"
     }]
   };
-  files['manifest.json'] = JSON.stringify(manifest, null, 2);
+  files['manifest.json'] = JSON.stringify(manifestPwa, null, 2);
   files['sw.js'] = `const CACHE='ariotica-v1';self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./','./index.html','./style.css','./script.js']))));self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request))));`;
 
   if (!currentHtml.includes('manifest.json')) {
@@ -500,7 +469,6 @@ async function main() {
 
   files['index.html'] = currentHtml;
 
-  // GRADE
   let grade = 'F';
   if (score >= 90) grade = 'A+';
   else if (score >= 80) grade = 'A';
@@ -553,9 +521,15 @@ async function main() {
   files[receiptPath] = JSON.stringify(receipt, null, 2) + '\n';
   await atomicCommit({ [receiptPath]: files[receiptPath] }, [], `chore: receipt ${slug}`);
 
+  // NEW: Include folder link in the final status reply
   const url = `https://${OWNER}.github.io/${REPO}/${baseDir}/`;
-  let body = `✅ **${mode}** complete: \`${baseDir}/\` via **${provider}**${model ? ` (${model})` : ''}\n\nLive in ~1 min: ${url}`;
-  const rl = raceLine(raceReport); if (rl) body += `\n\n🏁 Model race: ${rl}`;
+  const folderUrl = `https://github.com/${OWNER}/${REPO}/tree/${BRANCH}/${baseDir}`;
+  
+  let body = `✅ **${mode}** complete: \`${baseDir}/\` via **${provider}**${model ? ` (${model})` : ''}\n\n`;
+  body += `🌐 **Live App:** ${url}\n`;
+  body += `📁 **Source Code:** ${folderUrl}\n`;
+
+  const rl = raceLine(raceReport); if (rl) body += `\n🏁 Model race: ${rl}`;
   if (!smoke.skipped) body += smoke.ok ? '\n\n🧪 Smoke test: passed' : `\n\n🧪 Smoke test: ⚠️ ${smoke.errors.length} runtime issue(s) remain\n${smoke.errors.slice(0, 3).map((e) => '- ' + e).join('\n')}`;
   body += `\n\n🧾 Receipt: [\`sha256:${receipt.sha256.slice(0, 12)}…\`](https://github.com/${OWNER}/${REPO}/blob/${BRANCH}/${receiptPath}) · zero-deps ${receipt.checks.zeroDeps ? '✅' : '⚠️'} · verify with \`node verify-receipt.js ${slug}\``;
 
