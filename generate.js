@@ -46,6 +46,28 @@ function raceLine(report) {
   return rows.length > 1 ? rows.join(' · ') : '';
 }
 
+// NEW: Polls the GitHub API until the Pages deployment finishes
+async function waitForPagesBuild(commitTime) {
+  console.log('[pages] waiting for deployment...');
+  for (let i = 0; i < 30; i++) { // up to 2.5 minutes
+    try {
+      const { data } = await octokit.repos.getPagesBuild({ owner: OWNER, repo: REPO });
+      if (data.status === 'built' && new Date(data.updated_at).getTime() >= commitTime) {
+        console.log('[pages] deployment successful');
+        return true;
+      }
+    } catch (e) {
+      if (e.status === 404) {
+        console.log('[pages] GitHub Pages not configured, skipping wait.');
+        return false;
+      }
+    }
+    await new Promise(r => setTimeout(r, 5000));
+  }
+  console.log('[pages] timeout waiting for deployment');
+  return false;
+}
+
 async function updateStatusComment(force) {
   if (!statusCommentId || statusDone) return;
   if (!force && Date.now() - lastStatus < STATUS_EVERY) return;
@@ -569,16 +591,16 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
   if (idx === -1) manifest.push(entry); else manifest[idx] = Object.assign({}, manifest[idx], entry);
   files[MANIFEST_PATH] = JSON.stringify(manifest, null, 2) + '\n';
 
-  // THE FIX: Prefix all files with the baseDir (project folder)
   const fullFiles = {};
   for (const [filename, content] of Object.entries(files)) {
     if (filename === MANIFEST_PATH || filename === receiptPath) {
-      fullFiles[filename] = content; // Keep these at root
+      fullFiles[filename] = content;
     } else {
-      fullFiles[`${baseDir}/${filename}`] = content; // Push app files into the folder
+      fullFiles[`${baseDir}/${filename}`] = content;
     }
   }
 
+  const startTime = Date.now();
   const commitSha = await step(`Commit files to ${baseDir}/`, () => atomicCommit(fullFiles, [], `feat: ${slug} v${version} (${mode})`));
 
   receipt.commit = commitSha;
@@ -588,12 +610,10 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
   const url = `https://${OWNER}.github.io/${REPO}/${baseDir}/`;
   const folderUrl = `https://github.com/${OWNER}/${REPO}/tree/${BRANCH}/${baseDir}`;
   
-  const screenshotUrl = `https://image.thum.io/get/width/800/crop/600/${url}`;
-
+  // 1. Post the initial success message with links (no screenshot yet)
   let body = `✅ **${mode}** complete: \`${baseDir}/\` via **${provider}**${model ? ` (${model})` : ''}\n\n`;
   body += `🌐 **Live App:** ${url}\n`;
   body += `📁 **Source Code:** ${folderUrl}\n`;
-  body += `\n### 📸 Preview\n![App Screenshot](${screenshotUrl})\n`;
 
   const rl = raceLine(raceReport); if (rl) body += `\n🏁 Model race: ${rl}`;
   if (!smoke.skipped) body += smoke.ok ? '\n\n🧪 Smoke test: passed' : `\n\n🧪 Smoke test: ⚠️ ${smoke.errors.length} runtime issue(s) remain\n${smoke.errors.slice(0, 3).map((e) => '- ' + e).join('\n')}`;
@@ -604,7 +624,28 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
   if (metaJson.fixes.length) body += `\n\n**🔧 Bugs Fixed:**\n${metaJson.fixes.map(f => `- ${f}`).join('\n')}`;
   if (security.findings.length) body += `\n\n**Scanner findings (${security.findings.length}):**\n` + security.findings.slice(0, 5).map((f) => `- [${f.sev}] ${f.msg}`).join('\n');
 
-  await finishStatus(issue, body + HINT, true);
+  await finishStatus(issue, body + HINT, false);
+
+  // 2. Wait for GitHub Pages to build the new files
+  const isDeployed = await waitForPagesBuild(startTime);
+
+  // 3. Post the screenshot once live
+  if (isDeployed && issue) {
+    const screenshotUrl = `https://image.thum.io/get/width/800/crop/600/${url}?t=${Date.now()}`;
+    try {
+      await octokit.issues.createComment({
+        owner: OWNER, repo: REPO, issue_number: issue,
+        body: `### 📸 Live Preview\n![App Screenshot](${screenshotUrl})`
+      });
+    } catch (e) {
+      console.log('Failed to post screenshot comment:', e.message);
+    }
+  }
+
+  if (issue) {
+    try { await octokit.issues.update({ owner: OWNER, repo: REPO, issue_number: issue, state: 'closed' }); } catch {}
+  }
+
   await pushProgress({ status: 'done', securitySummary: security.counts, smoke: smoke.ok ? 'pass' : 'fail', sha256: receipt.sha256 });
 }
 
