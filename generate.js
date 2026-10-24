@@ -318,6 +318,75 @@ async function searchGitHubForInspiration(query) {
   }
 }
 
+// ============================================================
+// [ask] MODE — semantic search over repo + issue history
+// ============================================================
+function searchChunks(chunks, query, k) {
+  // Try every plausible Rag API shape so this keeps working
+  // whichever BM25 surface lib/rag.js exposes.
+  if (typeof Rag.search === 'function') {
+    try { return Rag.search(chunks, query, k); } catch {}
+  }
+  if (typeof Rag.buildIndex === 'function') {
+    try {
+      const idx = Rag.buildIndex(chunks);
+      const hits = typeof idx.search === 'function' ? idx.search(query, k) : null;
+      if (hits) return hits;
+    } catch {}
+  }
+  if (typeof Rag.Index === 'function') {
+    try {
+      const idx = new Rag.Index(chunks);
+      return idx.search(query, k);
+    } catch {}
+  }
+  // Last-resort fallback: naive substring score
+  const q = query.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  if (!q) return [];
+  return chunks
+    .map((chunk) => {
+      const matches = chunk.text.toLowerCase().match(new RegExp(q, 'g')) || [];
+      return { chunk, score: matches.length };
+    })
+    .filter((h) => h.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .slice(0, k);
+}
+
+async function runAsk(inputs) {
+  const { prompt, issue } = inputs;
+  const query = (prompt || '').trim();
+  if (!query) throw new Error('Usage: `[ask] <question>` — e.g. `[ask] how does the receipt hash work?`');
+
+  const result = await step('Search repo + issues', async () => {
+    const repoChunks = K.collectRepoChunks(process.cwd(), {});
+    const issueChunks = await K.collectIssueChunks(octokit, OWNER, REPO, 40);
+    const chunks = repoChunks.concat(issueChunks);
+    if (!chunks.length) throw new Error('No knowledge chunks available — is knowledge/index.json built?');
+    const hits = searchChunks(chunks, query, 6);
+    return { chunks, hits };
+  });
+
+  const lines = [`🔎 **Answer for:** ${query}`, ''];
+  if (!result.hits.length) {
+    lines.push('_No matches found in repo or issue history._');
+  } else {
+    result.hits.forEach((h, i) => {
+      const snippet = h.chunk.text.slice(0, 400).replace(/\n+/g, ' ').trim();
+      lines.push(`**${i + 1}. \`${h.chunk.path}\`** · score ${Number(h.score).toFixed(2)}`);
+      lines.push(`> ${snippet}${h.chunk.text.length > 400 ? '…' : ''}`);
+      lines.push('');
+    });
+    lines.push(`_${result.hits.length} of ${result.chunks.length} chunks shown._`);
+  }
+
+  await finishStatus(issue, lines.join('\n'), true);
+  await pushProgress({ status: 'done' });
+}
+
+// ============================================================
+// Input resolution
+// ============================================================
 function resolveInputs() {
   const dProj = (process.env.DISPATCH_PROJECT || '').trim();
   if (dProj) return { project: dProj, prompt: (process.env.DISPATCH_PROMPT || '').trim(), mode: (process.env.DISPATCH_MODE || 'create').toLowerCase(), issue: null, commentId: null };
