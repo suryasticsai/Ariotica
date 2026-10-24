@@ -117,6 +117,13 @@ function aiEvents() {
   };
 }
 
+// THE MISSING FUNCTION
+function raceLine(report) {
+  const rows = (report || []).filter((r) => r.provider).slice(-6)
+    .map((r) => `${r.provider}${r.sec != null ? ` ${r.sec}s` : ''} ${r.reason === 'lost the race' ? '⏹️' : r.ok ? '✅' : '❌'}`);
+  return rows.length > 1 ? rows.join(' · ') : '';
+}
+
 const RULES = `You are a Senior UI/UX Engineer building a PURE VANILLA JAVASCRIPT web app using multiple files.
 STRICT RULES:
 - Create separate files: index.html, style.css, script.js.
