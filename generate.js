@@ -40,6 +40,12 @@ const icon = (s) => (s.status === 'done' ? '✅' : s.status === 'error' ? '❌' 
 const stepLine = (s) => `${icon(s)} ${s.name}${s.sec != null ? ` — ${s.sec}s` : ''}${s.model ? ` (${s.model})` : ''}${s.note ? ` — ${s.note}` : ''}${s.error ? ` — ${String(s.error).slice(0, 100)}` : ''}`;
 const elapsed = () => Math.round((Date.now() - T0) / 1000);
 
+function raceLine(report) {
+  const rows = (report || []).filter((r) => r.provider).slice(-6)
+    .map((r) => `${r.provider}${r.sec != null ? ` ${r.sec}s` : ''} ${r.reason === 'lost the race' ? '⏹️' : r.ok ? '✅' : '❌'}`);
+  return rows.length > 1 ? rows.join(' · ') : '';
+}
+
 async function updateStatusComment(force) {
   if (!statusCommentId || statusDone) return;
   if (!force && Date.now() - lastStatus < STATUS_EVERY) return;
@@ -116,12 +122,6 @@ function aiEvents() {
     }
     await pushProgress();
   };
-}
-
-function raceLine(report) {
-  const rows = (report || []).filter((r) => r.provider).slice(-6)
-    .map((r) => `${r.provider}${r.sec != null ? ` ${r.sec}s` : ''} ${r.reason === 'lost the race' ? '⏹️' : r.ok ? '✅' : '❌'}`);
-  return rows.length > 1 ? rows.join(' · ') : '';
 }
 
 const RULES = `You are a Senior UI/UX Engineer building a PURE VANILLA JAVASCRIPT web app using multiple files.
@@ -569,22 +569,31 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
   if (idx === -1) manifest.push(entry); else manifest[idx] = Object.assign({}, manifest[idx], entry);
   files[MANIFEST_PATH] = JSON.stringify(manifest, null, 2) + '\n';
 
-  const commitSha = await step(`Commit files to ${baseDir}/`, () => atomicCommit(files, [], `feat: ${slug} v${version} (${mode})`));
+  // THE FIX: Prefix all files with the baseDir (project folder)
+  const fullFiles = {};
+  for (const [filename, content] of Object.entries(files)) {
+    if (filename === MANIFEST_PATH || filename === receiptPath) {
+      fullFiles[filename] = content; // Keep these at root
+    } else {
+      fullFiles[`${baseDir}/${filename}`] = content; // Push app files into the folder
+    }
+  }
+
+  const commitSha = await step(`Commit files to ${baseDir}/`, () => atomicCommit(fullFiles, [], `feat: ${slug} v${version} (${mode})`));
 
   receipt.commit = commitSha;
   files[receiptPath] = JSON.stringify(receipt, null, 2) + '\n';
   await atomicCommit({ [receiptPath]: files[receiptPath] }, [], `chore: receipt ${slug}`);
 
   const url = `https://${OWNER}.github.io/${REPO}/${baseDir}/`;
-const folderUrl = `https://github.com/${OWNER}/${REPO}/tree/${BRANCH}/${baseDir}`;
+  const folderUrl = `https://github.com/${OWNER}/${REPO}/tree/${BRANCH}/${baseDir}`;
+  
+  const screenshotUrl = `https://image.thum.io/get/width/800/crop/600/${url}`;
 
-// NEW: Generate a screenshot URL using the free Thum.io API
-const screenshotUrl = `https://image.thum.io/get/width/800/crop/600/${url}`;
-
-let body = `✅ **${mode}** complete: \`${baseDir}/\` via **${provider}**${model ? ` (${model})` : ''}\n\n`;
-body += `🌐 **Live App:** ${url}\n`;
-body += `📁 **Source Code:** ${folderUrl}\n`;
-body += `\n### 📸 Preview\n![App Screenshot](${screenshotUrl})\n`;
+  let body = `✅ **${mode}** complete: \`${baseDir}/\` via **${provider}**${model ? ` (${model})` : ''}\n\n`;
+  body += `🌐 **Live App:** ${url}\n`;
+  body += `📁 **Source Code:** ${folderUrl}\n`;
+  body += `\n### 📸 Preview\n![App Screenshot](${screenshotUrl})\n`;
 
   const rl = raceLine(raceReport); if (rl) body += `\n🏁 Model race: ${rl}`;
   if (!smoke.skipped) body += smoke.ok ? '\n\n🧪 Smoke test: passed' : `\n\n🧪 Smoke test: ⚠️ ${smoke.errors.length} runtime issue(s) remain\n${smoke.errors.slice(0, 3).map((e) => '- ' + e).join('\n')}`;
