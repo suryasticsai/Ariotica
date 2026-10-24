@@ -521,7 +521,6 @@ async function main() {
   files[receiptPath] = JSON.stringify(receipt, null, 2) + '\n';
   await atomicCommit({ [receiptPath]: files[receiptPath] }, [], `chore: receipt ${slug}`);
 
-  // NEW: Include folder link in the final status reply
   const url = `https://${OWNER}.github.io/${REPO}/${baseDir}/`;
   const folderUrl = `https://github.com/${OWNER}/${REPO}/tree/${BRANCH}/${baseDir}`;
   
