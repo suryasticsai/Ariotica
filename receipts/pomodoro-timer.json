@@ -1,0 +1,83 @@
+{
+  "schema": 1,
+  "app": "pomodoro-timer",
+  "files": {
+    "index.html": "042681f53901930c434c9e8cd60c4ed029e78574c6cd4a93497bf8e898a26750",
+    "style.css": "4fafae6ee6dd41865e1a675f324a1c0c74c19da1f91c15b56e43f8d6c4ad71b4",
+    "script.js": "6641c7036086a3882b2e9b610dc7fb9005816a2ac20104111b61d83bf3731a60",
+    "manifest.json": "e413387506bc0145d3e6cab2ea57e6007f5cbb4bb7ecfd9882c5feece7143fb6",
+    "sw.js": "a780b2f2d26dace9bce90b819225d6b5239d1fadfbebe783f24db80972b12a4d",
+    "meta.json": "487174e10a07027df4ed05e1352a6c46f2a1328a877ca242f906a8dc538327d1"
+  },
+  "bytes": 8527,
+  "builtAt": "2026-10-24T04:38:48.411Z",
+  "mode": "inspire",
+  "repo": "suryasticsai/Ariotica",
+  "runId": "40063038388",
+  "commit": null,
+  "model": {
+    "provider": "Groq",
+    "name": "openai/gpt-oss-120b"
+  },
+  "race": [
+    {
+      "provider": "Groq",
+      "model": "openai/gpt-oss-120b",
+      "sec": 9,
+      "ok": false,
+      "score": 80,
+      "reason": "2 runtime error(s)"
+    },
+    {
+      "provider": "OpenRouter",
+      "model": "recursive/flint-v1.0:free",
+      "sec": 55,
+      "ok": false,
+      "score": 0,
+      "reason": "invalid JSON or missing index.html"
+    },
+    {
+      "provider": "Pollinations",
+      "sec": 27,
+      "ok": false,
+      "reason": "empty or very short response"
+    },
+    {
+      "provider": "HuggingFace",
+      "sec": 0,
+      "ok": false,
+      "reason": "HTTP 402: {\"error\":\"You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.\"}"
+    },
+    {
+      "provider": "Groq",
+      "model": "openai/gpt-oss-120b",
+      "sec": 9,
+      "ok": true,
+      "score": 100,
+      "reason": ""
+    }
+  ],
+  "sha256": "042681f53901930c434c9e8cd60c4ed029e78574c6cd4a93497bf8e898a26750",
+  "checks": {
+    "complete": true,
+    "vanilla": true,
+    "externalRefs": [],
+    "zeroDeps": true,
+    "smoke": "pass",
+    "smokeErrors": [],
+    "scan": {
+      "total": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 0,
+      "byTool": {
+        "custom": 0,
+        "eslint": 0,
+        "sparrow": 0
+      }
+    }
+  },
+  "promptSha256": "e5d4399099a9ab5462fb971ec81f6d06aaaa648290176b3386ebe8fc1e634b72",
+  "prompt": "a beautiful pomodoro timer with glassmorphism, start/pause/reset buttons, and a session counter.",
+  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js pomodoro-timer"
+}
