@@ -576,11 +576,15 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
   await atomicCommit({ [receiptPath]: files[receiptPath] }, [], `chore: receipt ${slug}`);
 
   const url = `https://${OWNER}.github.io/${REPO}/${baseDir}/`;
-  const folderUrl = `https://github.com/${OWNER}/${REPO}/tree/${BRANCH}/${baseDir}`;
-  
-  let body = `✅ **${mode}** complete: \`${baseDir}/\` via **${provider}**${model ? ` (${model})` : ''}\n\n`;
-  body += `🌐 **Live App:** ${url}\n`;
-  body += `📁 **Source Code:** ${folderUrl}\n`;
+const folderUrl = `https://github.com/${OWNER}/${REPO}/tree/${BRANCH}/${baseDir}`;
+
+// NEW: Generate a screenshot URL using the free Thum.io API
+const screenshotUrl = `https://image.thum.io/get/width/800/crop/600/${url}`;
+
+let body = `✅ **${mode}** complete: \`${baseDir}/\` via **${provider}**${model ? ` (${model})` : ''}\n\n`;
+body += `🌐 **Live App:** ${url}\n`;
+body += `📁 **Source Code:** ${folderUrl}\n`;
+body += `\n### 📸 Preview\n![App Screenshot](${screenshotUrl})\n`;
 
   const rl = raceLine(raceReport); if (rl) body += `\n🏁 Model race: ${rl}`;
   if (!smoke.skipped) body += smoke.ok ? '\n\n🧪 Smoke test: passed' : `\n\n🧪 Smoke test: ⚠️ ${smoke.errors.length} runtime issue(s) remain\n${smoke.errors.slice(0, 3).map((e) => '- ' + e).join('\n')}`;
