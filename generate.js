@@ -20,7 +20,6 @@ const EXISTING_LIMIT = 30000;
 const CSS_JS_LIMIT = 15000;
 const STATUS_EVERY   = 5000;
 
-// Binary files that must be base64-encoded when sent to the Git Trees API
 const BINARY_EXT = /\.(png|jpe?g|gif|webp|ico|woff2?|ttf|otf)$/i;
 
 const [OWNER, REPO] = (process.env.GITHUB_REPOSITORY || '').split('/');
@@ -104,10 +103,7 @@ function makeIconPNG(size, hsl) {
     raw[y * rowLen] = 0;
     for (let x = 0; x < size; x++) {
       const i = y * rowLen + 1 + x * 4;
-      // Background: theme color
       raw[i] = R; raw[i + 1] = G; raw[i + 2] = B; raw[i + 3] = 255;
-
-      // Centered mark: ring + inner dot in contrast color
       const dx = x - cx + 0.5, dy = y - cy + 0.5;
       const d2 = dx * dx + dy * dy;
       if (d2 < rOuter && d2 > rInner) {
@@ -122,11 +118,7 @@ function makeIconPNG(size, hsl) {
   const ihdr = Buffer.alloc(13);
   ihdr.writeUInt32BE(size, 0);
   ihdr.writeUInt32BE(size, 4);
-  ihdr[8] = 8;   // bit depth
-  ihdr[9] = 6;   // color type RGBA
-  ihdr[10] = 0;  // compression
-  ihdr[11] = 0;  // filter
-  ihdr[12] = 0;  // interlace
+  ihdr[8] = 8; ihdr[9] = 6; ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0;
   return Buffer.concat([
     Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
     pngChunk('IHDR', ihdr),
@@ -141,10 +133,9 @@ function raceLine(report) {
   return rows.length > 1 ? rows.join(' · ') : '';
 }
 
-// Polls the GitHub API until the Pages deployment finishes
 async function waitForPagesBuild(commitTime) {
   console.log('[pages] waiting for deployment...');
-  for (let i = 0; i < 30; i++) { // up to 2.5 minutes
+  for (let i = 0; i < 30; i++) {
     try {
       const { data } = await octokit.repos.getPagesBuild({ owner: OWNER, repo: REPO });
       if (data.status === 'built' && new Date(data.updated_at).getTime() >= commitTime) {
@@ -152,10 +143,7 @@ async function waitForPagesBuild(commitTime) {
         return true;
       }
     } catch (e) {
-      if (e.status === 404) {
-        console.log('[pages] GitHub Pages not configured, skipping wait.');
-        return false;
-      }
+      if (e.status === 404) { console.log('[pages] Pages not configured, skipping wait.'); return false; }
     }
     await new Promise(r => setTimeout(r, 5000));
   }
@@ -276,23 +264,18 @@ Reply with ONLY the raw markdown text. No JSON. No conversational filler.`;
 
 const GEN_SYSTEM = 'You reply with a single valid JSON object only. No markdown fences, no other text.';
 const genMessages = (userText) => [{ role: 'system', content: GEN_SYSTEM }, { role: 'user', content: userText }];
-const HINT = '\n\n💬 Reply with `[improve] …`, `[fix] …`, `[audit]`, `[delete]`, `[ask] …`, `[skill] …`, `[inspire] …`, or `[evolve] <file> …`.';
+const HINT = '\n\n💬 Reply with `[improve] …`, `[fix] …`, `[audit]`, `[delete]`, `[revert] …`, `[ask] …`, `[skill] …`, `[inspire] …`, or `[evolve] <file> …`.';
 
 // ============================================================
-// PATCH 1: array normalization lives at the top of gradeHtml
+// PATCH 1: array normalization at the top of gradeHtml
 // ============================================================
 async function gradeHtml(text) {
   const meta = T.parseMultiFileResponse(text);
   if (!meta || !meta.files || !meta.files['index.html']) {
     return { ok: false, score: 0, html: text, reason: 'invalid JSON or missing index.html' };
   }
-
-  // Defensive: models occasionally emit arrays instead of strings for file bodies.
-  // Coerce to strings before anything downstream touches them.
   for (const [k, v] of Object.entries(meta.files)) {
-    if (typeof v !== 'string') {
-      meta.files[k] = Array.isArray(v) ? v.join('\n') : String(v);
-    }
+    if (typeof v !== 'string') meta.files[k] = Array.isArray(v) ? v.join('\n') : String(v);
   }
 
   let testHtml = meta.files['index.html'];
@@ -327,8 +310,74 @@ async function readFile(path) {
 }
 
 // ============================================================
-// T3: atomicCommit now handles binary files (base64) based on extension
+// Revert helpers — read files/receipts at a specific commit
 // ============================================================
+async function readFileAtRef(path, ref) {
+  try {
+    const { data } = await octokit.repos.getContent({ owner: OWNER, repo: REPO, path, ref });
+    if (Array.isArray(data)) return null;
+    let content = data.content;
+    if (data.encoding === 'none' || !content) {
+      // Large file: fall back to blob API
+      const { data: blob } = await octokit.git.getBlob({ owner: OWNER, repo: REPO, file_sha: data.sha });
+      content = blob.content;
+    }
+    if (BINARY_EXT.test(path)) return content; // base64 passthrough
+    return Buffer.from(content, 'base64').toString('utf8');
+  } catch (e) {
+    if (e.status === 404) return null;
+    throw e;
+  }
+}
+
+function formatDate(iso) {
+  try { return new Date(iso).toISOString().replace('T', ' ').slice(0, 16); }
+  catch { return iso; }
+}
+
+function bumpVersion(v) {
+  const parts = String(v || '1.0.0').split('.').map(Number);
+  parts[2] = (parts[2] || 0) + 1;
+  return parts.join('.');
+}
+
+// Walk commit history once, parse our own commit messages.
+// We control the format:
+//   feat: <slug> v<version> (<mode>)
+//   revert: <slug> to v<target> (as v<new>)
+// Much cheaper than per-commit getContent calls.
+async function listVersions(slug) {
+  const escaped = slug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const featRe   = new RegExp(`^feat: ${escaped} v(\\S+) \\((\\w+)\\)$`);
+  const revertRe = new RegExp(`^revert: ${escaped} to v(\\S+) \\(as v(\\S+)\\)$`);
+
+  const commits = await octokit.paginate(octokit.repos.listCommits, {
+    owner: OWNER, repo: REPO, sha: BRANCH, per_page: 100,
+  });
+
+  const versions = [];
+  for (const c of commits) {
+    const msg = c.commit.message.split('\n')[0];
+    const m1 = msg.match(featRe);
+    const m2 = msg.match(revertRe);
+    if (m1) {
+      versions.push({ version: m1[1], mode: m1[2], commit: c.sha.slice(0, 7), commitSha: c.sha, when: c.commit.author.date, message: msg });
+    } else if (m2) {
+      versions.push({ version: m2[2], mode: 'revert', revertedFrom: m2[1], commit: c.sha.slice(0, 7), commitSha: c.sha, when: c.commit.author.date, message: msg });
+    }
+  }
+  return versions;
+}
+
+async function findVersion(slug, targetVersion) {
+  const versions = await listVersions(slug);
+  const hit = versions.find(v => v.version === targetVersion);
+  if (!hit) return null;
+  const receiptRaw = await readFileAtRef(`${RECEIPTS_DIR}/${slug}.json`, hit.commitSha);
+  const receipt = receiptRaw ? JSON.parse(receiptRaw) : null;
+  return { ...hit, receipt };
+}
+
 async function atomicCommit(files, deletedPaths, message) {
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
@@ -341,12 +390,11 @@ async function atomicCommit(files, deletedPaths, message) {
         const isBinary = BINARY_EXT.test(path);
         const { data: blob } = await octokit.git.createBlob({
           owner: OWNER, repo: REPO,
-          content: isBinary ? content : content,
+          content,
           encoding: isBinary ? 'base64' : 'utf-8',
         });
         treeItems.push({ path, mode: '100644', type: 'blob', sha: blob.sha });
       }
-      // Deletions: sha: null removes the path from the resulting tree
       for (const path of (deletedPaths || [])) {
         treeItems.push({ path, mode: '100644', type: 'blob', sha: null });
       }
@@ -371,8 +419,6 @@ async function atomicCommit(files, deletedPaths, message) {
   }
 }
 
-// Refresh the runner's working tree so downstream steps (build-index.js,
-// artifact upload, `git rev-parse HEAD`) see what generate.js just pushed.
 async function syncCheckout() {
   try {
     execSync(`git fetch origin ${BRANCH} --quiet`, { stdio: 'pipe' });
@@ -387,24 +433,18 @@ async function syncCheckout() {
 // PATCH 3: GitHub search q must be ≤ 256 chars
 // ============================================================
 async function searchGitHubForInspiration(query) {
-  // GitHub search rejects q > 256 chars; keep a little headroom
   const safeQuery = String(query).slice(0, 180).replace(/["\\\r\n]/g, ' ').trim();
   if (!safeQuery) return { inspiration: '', count: 0 };
   try {
     const { data } = await octokit.search.repos({
       q: `${safeQuery} language:html stars:>100`,
-      sort: 'stars',
-      order: 'desc',
-      per_page: 3
+      sort: 'stars', order: 'desc', per_page: 3
     });
-
     let inspiration = '';
     for (const repo of data.items) {
       try {
         const { data: fileData } = await octokit.repos.getContent({
-          owner: repo.owner.login,
-          repo: repo.name,
-          path: 'index.html'
+          owner: repo.owner.login, repo: repo.name, path: 'index.html'
         });
         if (fileData && fileData.content) {
           const content = Buffer.from(fileData.content, 'base64').toString('utf8');
@@ -421,17 +461,13 @@ async function searchGitHubForInspiration(query) {
 }
 
 // ============================================================
-// [ask] MODE — BM25 over repo + issue history (via lib/rag.js)
+// [ask] MODE — BM25 over repo + issue history
 // ============================================================
 function searchChunks(chunks, query, k) {
-  // lib/rag.js exposes createIndex(chunks) -> { size, search(query, k, opts) }
-  // search() returns [{ chunk, score }] — exactly what runAsk renders.
   try {
     const idx = Rag.createIndex(chunks);
     return idx.search(query, k || 6);
   } catch (e) {
-    // If the indexer ever throws (malformed chunk), degrade to substring
-    // rather than failing the whole [ask] command.
     console.log('[ask] BM25 index failed, falling back to substring:', e.message);
     const q = query.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     if (!q) return [];
@@ -456,8 +492,7 @@ async function runAsk(inputs) {
     const issueChunks = await K.collectIssueChunks(octokit, OWNER, REPO, 40);
     const chunks = repoChunks.concat(issueChunks);
     if (!chunks.length) throw new Error('No knowledge chunks available — is knowledge/index.json built?');
-    const hits = searchChunks(chunks, query, 6);
-    return { chunks, hits };
+    return { chunks, hits: searchChunks(chunks, query, 6) };
   });
 
   const lines = [`🔎 **Answer for:** ${query}`, ''];
@@ -486,7 +521,7 @@ function resolveInputs() {
 
   const num = parseInt(process.env.ISSUE_NUMBER || '0', 10) || null;
   const tm = T.parseTitle(process.env.ISSUE_TITLE || '');
-  if (!tm) throw new Error('Title must be: [BUILD] name [improve|fix|audit|delete]');
+  if (!tm) throw new Error('Title must be: [BUILD] name [improve|fix|audit|delete|revert]');
 
   if ((process.env.EVENT_NAME || '') === 'issue_comment') {
     const c = T.parseComment(process.env.COMMENT_BODY || '');
@@ -519,7 +554,12 @@ async function main() {
     if (mode !== 'ask' && mode !== 'skill' && mode !== 'evolve') { try { await octokit.issues.update({ owner: OWNER, repo: REPO, issue_number: issue, state: 'open' }); } catch { } }
   }
   const quoted = prompt ? `\n> ${prompt.slice(0, 200).replace(/\n/g, ' ')}` : '';
-  await startStatusComment(issue, mode === 'ask' ? `🔎 **Searching the repo…**${quoted}` : `⏳ **Working on it** — \`${mode}\` on \`${slug || 'system'}\`${quoted}`);
+  const header = mode === 'ask'
+    ? `🔎 **Searching the repo…**${quoted}`
+    : mode === 'revert'
+      ? `↩️ **Handling revert for \`${slug || '?'}\`**${quoted}`
+      : `⏳ **Working on it** — \`${mode}\` on \`${slug || 'system'}\`${quoted}`;
+  await startStatusComment(issue, header);
 
   if (mode === 'ask') return runAsk(inputs);
 
@@ -529,7 +569,7 @@ async function main() {
     const filePath = `knowledge/skills/${skillName}.md`;
     await atomicCommit({ [filePath]: r.text }, [], `docs: add skill ${skillName}`);
     await syncCheckout();
-    await finishStatus(issue, `🧠 **Skill Learned:** I have written a cheatsheet for **${skillName}** and saved it to \`${filePath}\`. I will automatically use this knowledge in future builds!`, true);
+    await finishStatus(issue, `🧠 **Skill Learned:** \`${filePath}\``, true);
     await pushProgress({ status: 'done' });
     return;
   }
@@ -541,11 +581,11 @@ async function main() {
     const instructions = parts.slice(1).join(' ');
 
     if (!targetFile || !targetFile.includes('.')) {
-      throw new Error('Usage: [evolve] <filename> <instructions>. e.g. [evolve] lib/providers.js Add a cache.');
+      throw new Error('Usage: [evolve] <filename> <instructions>.');
     }
 
     const original = await readFile(targetFile);
-    if (!original) throw new Error(`Target file not found in repo: ${targetFile}`);
+    if (!original) throw new Error(`Target file not found: ${targetFile}`);
 
     const evolvePrompt = `You are modifying the source code of an autonomous AI agent (Ariotica).
 Here is the current content of '${targetFile}':
@@ -562,31 +602,122 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
     let newCode = r.text.trim();
     newCode = newCode.replace(/^```(?:javascript|js)?\s*\n?/, '').replace(/\n?```\s*$/, '');
 
-    // CRITICAL SAFETY: Syntax Validation
     await step('Validate JavaScript Syntax', async () => {
       const tempFile = `/tmp/evolve-${Date.now()}.js`;
       fs.writeFileSync(tempFile, newCode);
-      try {
-        execSync(`node -c ${tempFile}`);
-      } catch (e) {
-        throw new Error(`AI generated invalid JavaScript syntax. Blocked commit. Error: ${e.stderr.toString().slice(0, 500)}`);
-      }
+      try { execSync(`node -c ${tempFile}`); }
+      catch (e) { throw new Error(`Invalid JS. Blocked. ${e.stderr.toString().slice(0, 500)}`); }
     });
 
     await step(`Commit ${targetFile}`, () => atomicCommit({ [targetFile]: newCode }, [], `feat(evolve): modify ${targetFile}`));
     await syncCheckout();
 
-    await finishStatus(issue, `🧬 **Evolution Successful.**\n\nI have modified \`${targetFile}\` based on your instructions. The new syntax was validated, and the changes have been committed to \`main\`.\n\n**Next step:** The next time you run a build, the agent will use its new capabilities.`, true);
+    await finishStatus(issue, `🧬 **Evolution Successful.** \`${targetFile}\` updated.`, true);
     await pushProgress({ status: 'done' });
     return;
   }
-  // ------------------------------------
 
   let manifest = [];
   try { const raw = await readFile(MANIFEST_PATH); if (raw) manifest = JSON.parse(raw); if (!Array.isArray(manifest)) manifest = []; } catch { manifest = []; }
 
+  // ============================================================
+  // REVERT MODE
+  //   [revert]              → show version history
+  //   [revert] 1.0.1        → revert to v1.0.1 as a new forward commit
+  // ============================================================
+  if (mode === 'revert') {
+    const targetVersion = (prompt || '').trim().replace(/^v/i, '');
+
+    // Show history
+    if (!targetVersion) {
+      const versions = await step('Reading version history', () => listVersions(slug));
+      if (!versions.length) {
+        await finishStatus(issue, `📜 No history for \`${slug}\`. Has it been built yet?`, true);
+        await pushProgress({ status: 'done' });
+        return;
+      }
+      const rows = versions.slice(0, 10).map(v =>
+        `| v${v.version} | ${formatDate(v.when)} | \`${v.commit}\` | ${v.mode}${v.revertedFrom ? ` (from v${v.revertedFrom})` : ''} |`
+      ).join('\n');
+      const hintTarget = versions[1]?.version || versions[0].version;
+      const body = `📜 **\`${slug}\` — version history**\n\n| Version | When (UTC) | Commit | Mode |\n|---|---|---|---|\n${rows}\n\nReply with \`[revert] <version>\` to roll back, e.g. \`[revert] ${hintTarget}\`.`;
+      await finishStatus(issue, body + HINT, false); // don't close on history view
+      await pushProgress({ status: 'done' });
+      return;
+    }
+
+    // Revert to version
+    const currentMeta = JSON.parse(await readFile(`${baseDir}/meta.json`) || '{}');
+    if (!currentMeta.version) throw new Error(`Cannot revert: \`${slug}\` has no meta.json — has it been built?`);
+    if (currentMeta.version === targetVersion) {
+      throw new Error(`Already at v${targetVersion} — nothing to revert.`);
+    }
+
+    const target = await step(`Locating v${targetVersion}`, () => findVersion(slug, targetVersion));
+    if (!target) throw new Error(`Version v${targetVersion} not found in history for \`${slug}\`.`);
+    if (!target.receipt || !target.receipt.files) {
+      throw new Error(`Receipt for v${targetVersion} (${target.commit}) is missing or malformed.`);
+    }
+
+    const revertedFiles = await step(`Fetching ${Object.keys(target.receipt.files).length} files from v${targetVersion}`, async () => {
+      const files = {};
+      for (const name of Object.keys(target.receipt.files)) {
+        const content = await readFileAtRef(`${baseDir}/${name}`, target.commitSha);
+        if (content !== null) files[name] = content;
+      }
+      return files;
+    });
+    if (!revertedFiles['index.html']) {
+      throw new Error(`v${targetVersion} has no index.html at commit ${target.commit}.`);
+    }
+
+    // Bump version forward (monotonic; never reuse an old number)
+    const newVersion = bumpVersion(currentMeta.version);
+    const oldMeta = JSON.parse(revertedFiles['meta.json'] || '{}');
+    oldMeta.version = newVersion;
+    oldMeta.revertedFrom = targetVersion;
+    oldMeta.revertedAt = new Date().toISOString();
+    revertedFiles['meta.json'] = JSON.stringify(oldMeta, null, 2);
+
+    // Fresh receipt describing the revert
+    const receipt = R.buildReceipt({
+      repo: `${OWNER}/${REPO}`, slug, files: revertedFiles, mode: 'revert',
+      runId: RUN_ID, commit: null, provider: 'revert', model: `from-v${targetVersion}`,
+      race: [], smoke: { ok: true, errors: [], skipped: true },
+      security: { total: 0, high: 0, medium: 0, low: 0, byTool: {} },
+      prompt: `revert to v${targetVersion}`, vanilla: true,
+    });
+    revertedFiles[receiptPath] = JSON.stringify(receipt, null, 2) + '\n';
+
+    const fullFiles = {};
+    for (const [name, content] of Object.entries(revertedFiles)) {
+      if (name === receiptPath) fullFiles[name] = content;
+      else fullFiles[`${baseDir}/${name}`] = content;
+    }
+
+    const commitSha = await step(`Commit revert v${currentMeta.version} → v${newVersion}`, () =>
+      atomicCommit(fullFiles, [], `revert: ${slug} to v${targetVersion} (as v${newVersion})`));
+
+    receipt.commit = commitSha;
+    revertedFiles[receiptPath] = JSON.stringify(receipt, null, 2) + '\n';
+    await atomicCommit({ [receiptPath]: revertedFiles[receiptPath] }, [], `chore: receipt ${slug}`);
+
+    await syncCheckout();
+
+    const url = `https://${OWNER}.github.io/${REPO}/${baseDir}/`;
+    const body = `↩️ **Reverted \`${slug}\`**\n\n` +
+      `- **From:** v${currentMeta.version}\n` +
+      `- **To (content):** v${targetVersion} (\`${target.commit}\` · ${formatDate(target.when)})\n` +
+      `- **New version:** **v${newVersion}**\n\n` +
+      `🌐 **Live App:** ${url}\n\n` +
+      `_${Object.keys(revertedFiles).length - 1} files restored. Original history is intact — you can \`[revert]\` again or \`[improve]\` from here._`;
+
+    await finishStatus(issue, body + HINT, true);
+    await pushProgress({ status: 'done' });
+    return;
+  }
+
   if (mode === 'delete') {
-    // Collect every file we own for this project (including PWA assets and icons)
     const filesToDelete = [];
     for (const f of ['index.html', 'style.css', 'script.js', 'manifest.json', 'sw.js', 'icon-192.png', 'icon-512.png', 'meta.json']) {
       const p = `${baseDir}/${f}`;
@@ -598,7 +729,6 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
     manifest = manifest.filter((e) => e.project !== slug);
     const manifestJson = JSON.stringify(manifest, null, 2) + '\n';
 
-    // Single atomic commit: update manifest + remove all files together
     await atomicCommit({ [MANIFEST_PATH]: manifestJson }, filesToDelete, `chore: delete ${slug}`);
     await syncCheckout();
 
@@ -657,14 +787,10 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
       : `it used a forbidden library (matched ${v.hit}). Use ONLY vanilla JavaScript.`;
     cand = await step('Retry (rejected output)', () => generate(`Previous attempt was rejected: ${why}\n\n` + fullPrompt));
     raceReport = raceReport.concat(cand.race);
-    if (structurallyBad(cand)) throw new Error(`Still rejected after retry (${cand.grade.reason || 'invalid output'}) from ${cand.provider}`);
+    if (structurallyBad(cand)) throw new Error(`Still rejected after retry (${cand.grade.reason || 'invalid output'})`);
   }
 
-  // ============================================================
-  // PATCH 2: re-normalize right after assigning files
-  // ============================================================
   let files = cand.grade.files;
-  // Defensive re-normalization (in case a lib mutated files)
   for (const [k, v] of Object.entries(files)) {
     if (typeof v !== 'string') files[k] = Array.isArray(v) ? v.join('\n') : String(v);
   }
@@ -680,16 +806,14 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
   while (!smoke.ok && attempt <= 3 && testHtml.length <= EXISTING_LIMIT) {
     const repairPrompt = `${RULES}Fix the runtime errors in this app. Keep everything else exactly as it is.\n\nRUNTIME ERRORS:\n${smoke.errors.map((e) => '- ' + e).join('\n')}\n\nCURRENT HTML:\n${testHtml}`;
     const baseline = cand.grade.score;
-
     const fixed = await softStep(`Repair attempt ${attempt}`, async () => {
       const r = await generate(repairPrompt);
       raceReport = raceReport.concat(r.race);
-      if (structurallyBad(r) || r.grade.score <= baseline) throw new Error('repair did not improve the app; keeping the original');
+      if (structurallyBad(r) || r.grade.score <= baseline) throw new Error('repair did not improve; keeping original');
       return r;
     });
-
-    if (fixed) { 
-      cand = fixed; files = fixed.grade.files; testHtml = fixed.grade.html; smoke = fixed.grade.smoke; meta = fixed.grade.meta; provider = fixed.provider; model = fixed.model; 
+    if (fixed) {
+      cand = fixed; files = fixed.grade.files; testHtml = fixed.grade.html; smoke = fixed.grade.smoke; meta = fixed.grade.meta; provider = fixed.provider; model = fixed.model;
       if (smoke.ok) break;
     }
     attempt++;
@@ -705,7 +829,7 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
   if (testHtml.length > 50000) score -= 5;
 
   if (score < 50) {
-    const report = `❌ **Build Failed: Score too low (${score}/100)**\n\n`;
+    const report = `❌ **Build Failed: Score too low (${score}/100)**`;
     const errors = smoke.errors.length ? `\n**Runtime Errors:**\n${smoke.errors.map(e => `- ${e}`).join('\n')}` : '';
     const secs = security.findings.length ? `\n**Security Issues:**\n${security.findings.map(f => `- [${f.sev}] ${f.msg}`).join('\n')}` : '';
     await finishStatus(issue, report + errors + secs + '\n\nThe broken code was **not** committed.', false);
@@ -718,30 +842,21 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
     const watermark = `\n<!-- Built by Ariotica AI -->\n<div style="position:fixed;bottom:12px;right:12px;opacity:0.35;font-size:11px;font-family:monospace;color:white;pointer-events:none;z-index:9999;">⚡ Ariotica</div>`;
     currentHtml = currentHtml.replace(/<\/body>/i, `${watermark}\n</body>`);
   }
-
   const cspTag = `<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; connect-src 'none'; img-src 'self' data:;">`;
-  if (!currentHtml.includes('Content-Security-Policy')) {
-    currentHtml = currentHtml.replace('<head>', `<head>\n  ${cspTag}`);
-  }
+  if (!currentHtml.includes('Content-Security-Policy')) currentHtml = currentHtml.replace('<head>', `<head>\n  ${cspTag}`);
 
-  // ---- Theme color (deterministic from slug) ----
   let hash = 0;
   for (let i = 0; i < slug.length; i++) hash = slug.charCodeAt(i) + ((hash << 5) - hash);
   const hue = Math.abs(hash % 360);
   const color = `hsl(${hue}, 70%, 50%)`;
   const letter = slug.charAt(0).toUpperCase();
 
-  // ============================================================
-  // T3: generate real PNG icons (192 and 512)
-  // ============================================================
   const hsl = { h: hue, s: 0.70, l: 0.50 };
   const png192 = makeIconPNG(192, hsl);
   const png512 = makeIconPNG(512, hsl);
   files['icon-192.png'] = png192.toString('base64');
   files['icon-512.png'] = png512.toString('base64');
-  console.log(`[icons] generated 192×192 (${png192.length}B) + 512×512 (${png512.length}B)`);
 
-  // ---- PWA manifest (PNG icons primary, SVG fallback) ----
   const manifestPwa = {
     name: slug.replace(/-/g, ' ').toUpperCase(),
     short_name: slug,
@@ -754,14 +869,12 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
       { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
       {
         src: `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230b1410'/><text x='50%' y='55%' font-size='60' fill='${encodeURIComponent(color)}' font-family='system-ui' font-weight='bold' text-anchor='middle' dominant-baseline='middle'>${letter}</text></svg>`,
-        sizes: 'any',
-        type: 'image/svg+xml'
+        sizes: 'any', type: 'image/svg+xml'
       }
     ]
   };
   files['manifest.json'] = JSON.stringify(manifestPwa, null, 2);
 
-  // ---- Inject manifest link + SW registration into HTML BEFORE hashing ----
   if (!currentHtml.includes('rel="manifest"')) {
     currentHtml = currentHtml.replace('</head>', `  <link rel="manifest" href="manifest.json">\n  <link rel="icon" type="image/png" href="icon-192.png">\n  <link rel="apple-touch-icon" href="icon-192.png">\n  <meta name="theme-color" content="${color}">\n</head>`);
   }
@@ -770,18 +883,15 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
   }
   files['index.html'] = currentHtml;
 
-  // ---- T2: content-hashed service worker ----
   const staticHash = (() => {
     const h = crypto.createHash('sha256');
     for (const name of ['index.html', 'style.css', 'script.js', 'manifest.json'].sort()) {
       if (!files[name]) continue;
-      h.update(name); h.update('\0');
-      h.update(files[name]); h.update('\0');
+      h.update(name); h.update('\0'); h.update(files[name]); h.update('\0');
     }
     return h.digest('hex');
   })();
 
-  // T3: precache icons too
   const precache = ['./', './index.html'];
   if (files['style.css']) precache.push('./style.css');
   if (files['script.js']) precache.push('./script.js');
@@ -793,51 +903,15 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
   files['sw.js'] = `/* Ariotica SW · ${cacheName} */
 const CACHE = ${JSON.stringify(cacheName)};
 const PRECACHE = ${JSON.stringify(precache)};
-
-self.addEventListener('install', (e) => {
-  e.waitUntil(
-    caches.open(CACHE)
-      .then((c) => Promise.all(PRECACHE.map((u) => c.add(u).catch(() => {}))))
-      .then(() => self.skipWaiting())
-  );
-});
-
-self.addEventListener('activate', (e) => {
-  e.waitUntil(
-    caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
-      .then(() => self.clients.claim())
-  );
-});
-
+self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => Promise.all(PRECACHE.map((u) => c.add(u).catch(() => {})))).then(() => self.skipWaiting())); });
+self.addEventListener('activate', (e) => { e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });
 self.addEventListener('fetch', (e) => {
-  const req = e.request;
-  if (req.method !== 'GET') return;
-  const url = new URL(req.url);
-  if (url.origin !== self.location.origin) return;
-
-  // Network-first for navigations so updates land immediately
+  const req = e.request; if (req.method !== 'GET') return;
+  const url = new URL(req.url); if (url.origin !== self.location.origin) return;
   if (req.mode === 'navigate' || (req.headers.get('accept') || '').includes('text/html')) {
-    e.respondWith(
-      fetch(req).then((res) => {
-        const copy = res.clone();
-        caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
-        return res;
-      }).catch(() => caches.match(req).then((r) => r || caches.match('./index.html')))
-    );
-    return;
+    e.respondWith(fetch(req).then((res) => { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {}); return res; }).catch(() => caches.match(req).then((r) => r || caches.match('./index.html')))); return;
   }
-
-  // Stale-while-revalidate for static assets
-  e.respondWith(
-    caches.match(req).then((cached) => {
-      const network = fetch(req).then((res) => {
-        if (res.ok) caches.open(CACHE).then((c) => c.put(req, res.clone())).catch(() => {});
-        return res;
-      }).catch(() => cached);
-      return cached || network;
-    })
-  );
+  e.respondWith(caches.match(req).then((cached) => { const network = fetch(req).then((res) => { if (res.ok) caches.open(CACHE).then((c) => c.put(req, res.clone())).catch(() => {}); return res; }).catch(() => cached); return cached || network; }));
 });
 `;
 
@@ -861,14 +935,10 @@ self.addEventListener('fetch', (e) => {
   }
 
   const metaJson = {
-    version: version,
-    features: Array.isArray(meta.features) ? meta.features : [],
-    fixes: Array.isArray(meta.fixes) ? meta.fixes : [],
-    suggestions: Array.isArray(meta.suggestions) ? meta.suggestions : [],
-    grade: grade,
-    percentile: score >= 90 ? 'Top 5%' : score >= 80 ? 'Top 20%' : 'Top 50%',
-    humanInvolvement: meta.humanInvolvement || 'None',
-    libraries: Array.isArray(meta.libraries) ? meta.libraries : ['None'],
+    version, features: Array.isArray(meta.features) ? meta.features : [],
+    fixes: Array.isArray(meta.fixes) ? meta.fixes : [], suggestions: Array.isArray(meta.suggestions) ? meta.suggestions : [],
+    grade, percentile: score >= 90 ? 'Top 5%' : score >= 80 ? 'Top 20%' : 'Top 50%',
+    humanInvolvement: meta.humanInvolvement || 'None', libraries: Array.isArray(meta.libraries) ? meta.libraries : ['None'],
     _watermark: "⚡ Built by Ariotica AI"
   };
   files['meta.json'] = JSON.stringify(metaJson, null, 2);
@@ -877,48 +947,40 @@ self.addEventListener('fetch', (e) => {
   files[receiptPath] = JSON.stringify(receipt, null, 2) + '\n';
 
   const idx = manifest.findIndex((e) => e.project === slug);
-  const entry = { 
-    project: slug, file: mainFile, prompt: prompt.slice(0, 240), created: new Date().toISOString().slice(0, 19), mode, provider, model, 
+  const entry = {
+    project: slug, file: mainFile, prompt: prompt.slice(0, 240), created: new Date().toISOString().slice(0, 19), mode, provider, model,
     findings: security.counts.total, smoke: smoke.ok ? 'pass' : `fail:${smoke.errors.length}`, size: Object.values(files).reduce((a, b) => a + b.length, 0),
-    version: version, features: metaJson.features, fixes: metaJson.fixes, suggestions: metaJson.suggestions,
-    grade: grade, percentile: metaJson.percentile, humanInvolvement: metaJson.humanInvolvement, libraries: metaJson.libraries,
-    sha256: receipt.sha256, receipt: receiptPath 
+    version, features: metaJson.features, fixes: metaJson.fixes, suggestions: metaJson.suggestions,
+    grade, percentile: metaJson.percentile, humanInvolvement: metaJson.humanInvolvement, libraries: metaJson.libraries,
+    sha256: receipt.sha256, receipt: receiptPath
   };
   if (idx === -1) manifest.push(entry); else manifest[idx] = Object.assign({}, manifest[idx], entry);
   files[MANIFEST_PATH] = JSON.stringify(manifest, null, 2) + '\n';
 
   const fullFiles = {};
   for (const [filename, content] of Object.entries(files)) {
-    if (filename === MANIFEST_PATH || filename === receiptPath) {
-      fullFiles[filename] = content;
-    } else {
-      fullFiles[`${baseDir}/${filename}`] = content;
-    }
+    if (filename === MANIFEST_PATH || filename === receiptPath) fullFiles[filename] = content;
+    else fullFiles[`${baseDir}/${filename}`] = content;
   }
 
   const startTime = Date.now();
   const commitSha = await step(`Commit files to ${baseDir}/`, () => atomicCommit(fullFiles, [], `feat: ${slug} v${version} (${mode})`));
 
-  // Second commit back-fills the real commit SHA into the receipt.
   receipt.commit = commitSha;
   files[receiptPath] = JSON.stringify(receipt, null, 2) + '\n';
   await atomicCommit({ [receiptPath]: files[receiptPath] }, [], `chore: receipt ${slug}`);
 
-  // Refresh the runner's checkout so build-index.js / artifact upload / NEW_COMMIT see the push
   await syncCheckout();
 
   const url = `https://${OWNER}.github.io/${REPO}/${baseDir}/`;
   const folderUrl = `https://github.com/${OWNER}/${REPO}/tree/${BRANCH}/${baseDir}`;
 
-  // 1. First comment: build summary
   let body = `✅ **${mode}** complete: \`${baseDir}/\` via **${provider}**${model ? ` (${model})` : ''}\n\n`;
   body += `🌐 **Live App:** ${url}\n`;
   body += `📁 **Source Code:** ${folderUrl}\n`;
-
   const rl = raceLine(raceReport); if (rl) body += `\n🏁 Model race: ${rl}`;
-  if (!smoke.skipped) body += smoke.ok ? '\n\n🧪 Smoke test: passed' : `\n\n🧪 Smoke test: ⚠️ ${smoke.errors.length} runtime issue(s) remain\n${smoke.errors.slice(0, 3).map((e) => '- ' + e).join('\n')}`;
-  body += `\n\n🧾 Receipt: [\`sha256:${receipt.sha256.slice(0, 12)}…\`](https://github.com/${OWNER}/${REPO}/blob/${BRANCH}/${receiptPath}) · zero-deps ${receipt.checks.zeroDeps ? '✅' : '⚠️'} · verify with \`node verify-receipt.js ${slug}\``;
-
+  if (!smoke.skipped) body += smoke.ok ? '\n\n🧪 Smoke test: passed' : `\n\n🧪 Smoke test: ⚠️ ${smoke.errors.length} runtime issue(s) remain`;
+  body += `\n\n🧾 Receipt: [\`sha256:${receipt.sha256.slice(0, 12)}…\`](https://github.com/${OWNER}/${REPO}/blob/${BRANCH}/${receiptPath})`;
   if (version) body += `\n\n**🏷️ Version:** \`v${version}\``;
   if (metaJson.features.length) body += `\n\n**✨ New Features:**\n${metaJson.features.map(f => `- ${f}`).join('\n')}`;
   if (metaJson.fixes.length) body += `\n\n**🔧 Bugs Fixed:**\n${metaJson.fixes.map(f => `- ${f}`).join('\n')}`;
@@ -926,10 +988,8 @@ self.addEventListener('fetch', (e) => {
 
   await finishStatus(issue, body + HINT, false);
 
-  // 2. Wait for GitHub Pages to build the new files
   const isDeployed = await waitForPagesBuild(startTime);
 
-  // 3. Second comment: clickable screenshot + links
   if (isDeployed && issue) {
     const screenshotUrl = `https://image.thum.io/get/width/1200/crop/900/${url}?t=${Date.now()}`;
     try {
@@ -943,14 +1003,8 @@ self.addEventListener('fetch', (e) => {
         '',
         `_Screenshot refreshes on each build · click to open_`,
       ].join('\n');
-
-      await octokit.issues.createComment({
-        owner: OWNER, repo: REPO, issue_number: issue,
-        body: previewBody,
-      });
-    } catch (e) {
-      console.log('Failed to post screenshot comment:', e.message);
-    }
+      await octokit.issues.createComment({ owner: OWNER, repo: REPO, issue_number: issue, body: previewBody });
+    } catch (e) { console.log('Failed to post screenshot comment:', e.message); }
   }
 
   if (issue) {
