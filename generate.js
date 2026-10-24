@@ -318,11 +318,10 @@ async function readFileAtRef(path, ref) {
     if (Array.isArray(data)) return null;
     let content = data.content;
     if (data.encoding === 'none' || !content) {
-      // Large file: fall back to blob API
       const { data: blob } = await octokit.git.getBlob({ owner: OWNER, repo: REPO, file_sha: data.sha });
       content = blob.content;
     }
-    if (BINARY_EXT.test(path)) return content; // base64 passthrough
+    if (BINARY_EXT.test(path)) return content;
     return Buffer.from(content, 'base64').toString('utf8');
   } catch (e) {
     if (e.status === 404) return null;
@@ -341,11 +340,6 @@ function bumpVersion(v) {
   return parts.join('.');
 }
 
-// Walk commit history once, parse our own commit messages.
-// We control the format:
-//   feat: <slug> v<version> (<mode>)
-//   revert: <slug> to v<target> (as v<new>)
-// Much cheaper than per-commit getContent calls.
 async function listVersions(slug) {
   const escaped = slug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const featRe   = new RegExp(`^feat: ${escaped} v(\\S+) \\((\\w+)\\)$`);
@@ -639,8 +633,13 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
       const rows = versions.slice(0, 10).map(v =>
         `| v${v.version} | ${formatDate(v.when)} | \`${v.commit}\` | ${v.mode}${v.revertedFrom ? ` (from v${v.revertedFrom})` : ''} |`
       ).join('\n');
-      const hintTarget = versions[1]?.version || versions[0].version;
-      const body = `📜 **\`${slug}\` — version history**\n\n| Version | When (UTC) | Commit | Mode |\n|---|---|---|---|\n${rows}\n\nReply with \`[revert] <version>\` to roll back, e.g. \`[revert] ${hintTarget}\`.`;
+      // Suggest the *previous* version — the one a revert would actually land on.
+      // If there's only ever been one build, no valid target exists yet.
+      const previousVersion = versions[1] ? versions[1].version : null;
+      const hintLine = previousVersion
+        ? `Reply with \`[revert] <version>\` to roll back, e.g. \`[revert] ${previousVersion}\`.`
+        : `_Only one version exists so far — nothing to revert to yet. Run an \`[improve]\` first._`;
+      const body = `📜 **\`${slug}\` — version history**\n\n| Version | When (UTC) | Commit | Mode |\n|---|---|---|---|\n${rows}\n\n${hintLine}`;
       await finishStatus(issue, body + HINT, false); // don't close on history view
       await pushProgress({ status: 'done' });
       return;
