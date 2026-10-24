@@ -705,7 +705,8 @@ self.addEventListener('fetch', (e) => {
 
   const url = `https://${OWNER}.github.io/${REPO}/${baseDir}/`;
   const folderUrl = `https://github.com/${OWNER}/${REPO}/tree/${BRANCH}/${baseDir}`;
-  
+
+  // 1. First comment: build summary
   let body = `✅ **${mode}** complete: \`${baseDir}/\` via **${provider}**${model ? ` (${model})` : ''}\n\n`;
   body += `🌐 **Live App:** ${url}\n`;
   body += `📁 **Source Code:** ${folderUrl}\n`;
@@ -721,14 +722,27 @@ self.addEventListener('fetch', (e) => {
 
   await finishStatus(issue, body + HINT, false);
 
+  // 2. Wait for GitHub Pages to build the new files
   const isDeployed = await waitForPagesBuild(startTime);
 
+  // 3. Second comment: clickable screenshot + links
   if (isDeployed && issue) {
-    const screenshotUrl = `https://image.thum.io/get/width/800/crop/600/${url}?t=${Date.now()}`;
+    const screenshotUrl = `https://image.thum.io/get/width/1200/crop/900/${url}?t=${Date.now()}`;
     try {
+      const previewBody = [
+        `### 📸 Live Preview — \`${slug}\``,
+        '',
+        `🌐 **Open app:** ${url}`,
+        `📁 **Source:** ${folderUrl}`,
+        '',
+        `[![${slug} screenshot](${screenshotUrl})](${url})`,
+        '',
+        `_Screenshot refreshes on each build · click to open_`,
+      ].join('\n');
+
       await octokit.issues.createComment({
         owner: OWNER, repo: REPO, issue_number: issue,
-        body: `### 📸 Live Preview\n![App Screenshot](${screenshotUrl})`
+        body: previewBody,
       });
     } catch (e) {
       console.log('Failed to post screenshot comment:', e.message);
