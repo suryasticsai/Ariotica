@@ -1,5 +1,6 @@
 'use strict';
 const fs = require('fs');
+const { execSync } = require('child_process');
 const { Octokit } = require('@octokit/rest');
 const T = require('./lib/text');
 const Rag = require('./lib/rag');
@@ -117,7 +118,6 @@ function aiEvents() {
   };
 }
 
-// THE MISSING FUNCTION
 function raceLine(report) {
   const rows = (report || []).filter((r) => r.provider).slice(-6)
     .map((r) => `${r.provider}${r.sec != null ? ` ${r.sec}s` : ''} ${r.reason === 'lost the race' ? '⏹️' : r.ok ? '✅' : '❌'}`);
@@ -159,7 +159,7 @@ Reply with ONLY the raw markdown text. No JSON. No conversational filler.`;
 
 const GEN_SYSTEM = 'You reply with a single valid JSON object only. No markdown fences, no other text.';
 const genMessages = (userText) => [{ role: 'system', content: GEN_SYSTEM }, { role: 'user', content: userText }];
-const HINT = '\n\n💬 Reply with `[improve] …`, `[fix] …`, `[audit]`, `[delete]`, `[ask] …`, `[skill] …`, or `[inspire] …`.';
+const HINT = '\n\n💬 Reply with `[improve] …`, `[fix] …`, `[audit]`, `[delete]`, `[ask] …`, `[skill] …`, `[inspire] …`, or `[evolve] <file> …`.';
 
 async function gradeHtml(text) {
   const meta = T.parseMultiFileResponse(text);
@@ -290,7 +290,7 @@ async function main() {
   await pushProgress({ status: 'running' });
   await step('Parse request', async () => inputs);
   const slug = T.slugify(project);
-  if (!slug) throw new Error('Project name needs at least one letter or digit');
+  if (!slug && mode !== 'evolve') throw new Error('Project name needs at least one letter or digit');
 
   const baseDir = `${PROJECTS_DIR}/${slug}`;
   const mainFile = `${baseDir}/index.html`;
@@ -298,10 +298,10 @@ async function main() {
 
   if (commentId) {
     try { await octokit.reactions.createForIssueComment({ owner: OWNER, repo: REPO, comment_id: commentId, content: 'eyes' }); } catch (e) { }
-    if (mode !== 'ask' && mode !== 'skill') { try { await octokit.issues.update({ owner: OWNER, repo: REPO, issue_number: issue, state: 'open' }); } catch { } }
+    if (mode !== 'ask' && mode !== 'skill' && mode !== 'evolve') { try { await octokit.issues.update({ owner: OWNER, repo: REPO, issue_number: issue, state: 'open' }); } catch { } }
   }
   const quoted = prompt ? `\n> ${prompt.slice(0, 200).replace(/\n/g, ' ')}` : '';
-  await startStatusComment(issue, mode === 'ask' ? `🔎 **Searching the repo…**${quoted}` : `⏳ **Working on it** — \`${mode}\` on \`${slug}\`${quoted}`);
+  await startStatusComment(issue, mode === 'ask' ? `🔎 **Searching the repo…**${quoted}` : `⏳ **Working on it** — \`${mode}\` on \`${slug || 'system'}\`${quoted}`);
 
   if (mode === 'ask') return runAsk(inputs);
 
@@ -314,6 +314,53 @@ async function main() {
     await pushProgress({ status: 'done' });
     return;
   }
+
+  // --- THE DARWIN PROTOCOL (EVOLVE) ---
+  if (mode === 'evolve') {
+    const parts = prompt.split(' ');
+    const targetFile = parts[0];
+    const instructions = parts.slice(1).join(' ');
+
+    if (!targetFile || !targetFile.includes('.')) {
+      throw new Error('Usage: [evolve] <filename> <instructions>. e.g. [evolve] lib/providers.js Add a cache.');
+    }
+
+    const original = await readFile(targetFile);
+    if (!original) throw new Error(`Target file not found in repo: ${targetFile}`);
+
+    const evolvePrompt = `You are modifying the source code of an autonomous AI agent (Ariotica).
+Here is the current content of '${targetFile}':
+\`\`\`javascript
+${original}
+\`\`\`
+
+INSTRUCTIONS:
+${instructions}
+
+Return ONLY the complete, modified file content. No markdown formatting, no conversational text. Keep all existing functionality intact.`;
+
+    const r = await step(`Evolve ${targetFile}`, () => askAI([{ role: 'user', content: evolvePrompt }], { maxTokens: 8000 }));
+    let newCode = r.text.trim();
+    newCode = newCode.replace(/^```(?:javascript|js)?\s*\n?/, '').replace(/\n?```\s*$/, '');
+
+    // CRITICAL SAFETY: Syntax Validation
+    await step('Validate JavaScript Syntax', async () => {
+      const tempFile = `/tmp/evolve-${Date.now()}.js`;
+      fs.writeFileSync(tempFile, newCode);
+      try {
+        execSync(`node -c ${tempFile}`);
+      } catch (e) {
+        throw new Error(`AI generated invalid JavaScript syntax. Blocked commit. Error: ${e.stderr.toString().slice(0, 500)}`);
+      }
+    });
+
+    await step(`Commit ${targetFile}`, () => atomicCommit({ [targetFile]: newCode }, [], `feat(evolve): modify ${targetFile}`));
+
+    await finishStatus(issue, `🧬 **Evolution Successful.**\n\nI have modified \`${targetFile}\` based on your instructions. The new syntax was validated, and the changes have been committed to \`main\`.\n\n**Next step:** The next time you run a build, the agent will use its new capabilities.`, true);
+    await pushProgress({ status: 'done' });
+    return;
+  }
+  // ------------------------------------
 
   let manifest = [];
   try { const raw = await readFile(MANIFEST_PATH); if (raw) manifest = JSON.parse(raw); if (!Array.isArray(manifest)) manifest = []; } catch { manifest = []; }
