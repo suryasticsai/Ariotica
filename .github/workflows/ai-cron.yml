@@ -74,6 +74,8 @@ jobs:
         run: node --check generate.js
 
       # 3. Run the agent
+      #    generate.js commits atomically via the Git Trees API and then
+      #    `git reset --hard origin/main`, so HEAD here reflects the push.
       - name: Generate App with AI
         id: run_agent
         env:
@@ -81,6 +83,9 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          # Optional: pin a Groq model via repo variable (Settings → Variables).
+          # Falls back to the default in lib/providers.js if unset.
+          GROQ_MODEL: ${{ vars.GROQ_MODEL }}
           EVENT_NAME: ${{ github.event_name }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
           ISSUE_BODY: ${{ github.event.issue.body }}
@@ -127,4 +132,8 @@ jobs:
           echo "| :--- | :--- | :--- |" >> $GITHUB_STEP_SUMMARY
           echo "| ${{ job.status == 'success' && '✅ Success' || '❌ Failed' }} | \`${{ inputs.project }}\` | \`${{ inputs.mode }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "[📂 View the Live App](https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/projects/${{ inputs.project }}/)" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ inputs.mode }}" = "ask" ] || [ "${{ inputs.mode }}" = "skill" ] || [ "${{ inputs.mode }}" = "evolve" ]; then
+            echo "🔎 **Mode:** \`${{ inputs.mode }}\` — see the issue thread for the result." >> $GITHUB_STEP_SUMMARY
+          else
+            echo "[📂 View the Live App](https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/projects/${{ inputs.project }}/)" >> $GITHUB_STEP_SUMMARY
+          fi
