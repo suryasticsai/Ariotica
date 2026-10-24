@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; connect-src 'none'; img-src 'self' data:;">
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pomodoro Timer</title>
+    <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="hsl(329, 70%, 50%)">
+</head>
+<body>
+    <main class="app" role="main">
+        <section class="timer-card" aria-label="Pomodoro timer">
+            <svg class="timer-svg" viewBox="0 0 120 120" aria-hidden="true">
+                <circle class="timer-bg" cx="60" cy="60" r="54" fill="none" stroke-width="12"/>
+                <circle class="timer-progress" cx="60" cy="60" r="54" fill="none" stroke-width="12" stroke-dasharray="339.292" stroke-dashoffset="339.292"/>
+            </svg>
+            <div class="time-display" aria-live="polite" aria-atomic="true">25:00</div>
+            <div class="mode-display" id="modeLabel">Focus</div>
+            <div class="controls">
+                <button id="startBtn" class="control-btn" aria-label="Start timer">Start</button>
+                <button id="pauseBtn" class="control-btn" aria-label="Pause timer" disabled>Pause</button>
+                <button id="resetBtn" class="control-btn" aria-label="Reset timer" disabled>Reset</button>
+            </div>
+            <div class="session-counter" aria-label="Completed focus sessions">
+                Completed Sessions: <span id="sessionCount">0</span>
+            </div>
+        </section>
+    </main>
+    <script src="script.js"></script>
+
+<!-- Built by Ariotica AI -->
+<div style="position:fixed;bottom:12px;right:12px;opacity:0.35;font-size:11px;font-family:monospace;color:white;pointer-events:none;z-index:9999;">⚡ Ariotica</div>
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(err=>console.log(err))})}</script>
+</body>
+</html>

@@ -1,0 +1,120 @@
+:root {
+  --bg-color: #0d0d0d;
+  --card-bg: rgba(255, 255, 255, 0.08);
+  --primary: #00bfa5;
+  --secondary: #ffab00;
+  --text-color: #e0e0e0;
+  --accent: #ff4081;
+  --transition: 0.3s ease;
+  --font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg-color);
+  color: var(--text-color);
+  font-family: var(--font-family);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app {
+  width: 100%;
+  max-width: 420px;
+  padding: 1rem;
+  display: flex;
+  justify-content: center;
+}
+
+.timer-card {
+  width: 100%;
+  padding: 2rem;
+  background: var(--card-bg);
+  border-radius: 1.5rem;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.timer-svg {
+  width: 180px;
+  height: 180px;
+}
+
+.timer-bg {
+  stroke: rgba(255, 255, 255, 0.1);
+}
+
+.timer-progress {
+  stroke: var(--primary);
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+  transition: stroke-dashoffset var(--transition);
+}
+
+.time-display {
+  font-size: 3rem;
+  font-weight: 300;
+}
+
+.mode-display {
+  font-size: 1.2rem;
+  color: var(--secondary);
+}
+
+.controls {
+  display: flex;
+  gap: 0.8rem;
+}
+
+.control-btn {
+  flex: 1;
+  padding: 0.6rem 0;
+  border: none;
+  border-radius: 0.5rem;
+  background: var(--primary);
+  color: var(--bg-color);
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background var(--transition), transform var(--transition);
+}
+
+.control-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.control-btn:hover:not(:disabled) {
+  background: var(--accent);
+  transform: translateY(-2px);
+}
+
+.session-counter {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--secondary);
+}
+
+@media (max-width: 400px) {
+  .timer-card {
+    padding: 1.5rem;
+  }
+  .time-display {
+    font-size: 2.5rem;
+  }
+  .timer-svg {
+    width: 150px;
+    height: 150px;
+  }
+}

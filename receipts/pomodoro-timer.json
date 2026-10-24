@@ -1,0 +1,55 @@
+{
+  "schema": 1,
+  "app": "pomodoro-timer",
+  "files": {
+    "index.html": "7725e2a4c43678d88978d117f218733d3e275f38ba276a064a5ffbdcbe9d5014",
+    "style.css": "3d368ba4cfa6caf79d0f61bfbb89825a1ad01878dc929f54ee90876cb4875a62",
+    "script.js": "8e43ed713e6abc48c2866b4b9a5b5cc3d18d8d9ed6ee95e68e22654dda129814",
+    "manifest.json": "e413387506bc0145d3e6cab2ea57e6007f5cbb4bb7ecfd9882c5feece7143fb6",
+    "sw.js": "a780b2f2d26dace9bce90b819225d6b5239d1fadfbebe783f24db80972b12a4d",
+    "meta.json": "c4511f11d8b0ae9865e463ee1af7a35083b6cffe41a82db07167574bd67ed11d"
+  },
+  "bytes": 10132,
+  "builtAt": "2026-10-24T10:55:05.252Z",
+  "mode": "inspire",
+  "repo": "suryasticsai/Ariotica",
+  "runId": "40087654491",
+  "commit": null,
+  "model": {
+    "provider": "Groq",
+    "name": "openai/gpt-oss-120b"
+  },
+  "race": [
+    {
+      "provider": "Groq",
+      "model": "openai/gpt-oss-120b",
+      "sec": 9,
+      "ok": true,
+      "score": 100,
+      "reason": ""
+    }
+  ],
+  "sha256": "7725e2a4c43678d88978d117f218733d3e275f38ba276a064a5ffbdcbe9d5014",
+  "checks": {
+    "complete": true,
+    "vanilla": true,
+    "externalRefs": [],
+    "zeroDeps": true,
+    "smoke": "pass",
+    "smokeErrors": [],
+    "scan": {
+      "total": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 0,
+      "byTool": {
+        "custom": 0,
+        "eslint": 0,
+        "sparrow": 0
+      }
+    }
+  },
+  "promptSha256": "2a1d2bbdb5de64ed27da2fdd04ca14d819b75f5b6ca9e507722e5693b2d72b48",
+  "prompt": "Build a beautiful, modern Pomodoro timer app. \nRequirements:\n- A large circular display showing the countdown (25:00).\n- Start, Pause, and Reset buttons.\n- State management: Toggle between \"Focus\" (25 mins) and \"Break\" (5 mins).\n- When the ",
+  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js pomodoro-timer"
+}
