@@ -11,7 +11,7 @@ on:
         required: true
       mode:
         type: choice
-        options: [create, improve, fix, audit, delete, skill]
+        options: [create, improve, fix, audit, delete, skill, inspire]
         default: create
   issues:
     types: [opened]
@@ -46,7 +46,8 @@ jobs:
         contains(github.event.comment.body, '[audit]') ||
         contains(github.event.comment.body, '[delete]') ||
         contains(github.event.comment.body, '[ask]') ||
-        contains(github.event.comment.body, '[skill]')))
+        contains(github.event.comment.body, '[skill]') ||
+        contains(github.event.comment.body, '[inspire]')))
 
     steps:
       - name: Checkout
