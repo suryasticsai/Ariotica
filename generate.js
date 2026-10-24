@@ -324,7 +324,7 @@ async function main() {
     manifest = manifest.filter((e) => e.project !== slug);
     const manifestJson = JSON.stringify(manifest, null, 2) + '\n';
     await atomicCommit({ [MANIFEST_PATH]: manifestJson }, [], `chore: delete ${slug}`);
-    await finishStatus(issue, existed ? `🗑 Deleted \`${slug}\`.`, true);
+    await finishStatus(issue, existed ? `🗑 Deleted \`${slug}\`.` : `\`${slug}\` did not exist.`, true);
     await pushProgress({ status: 'done' }); return;
   }
 
