@@ -1,6 +1,7 @@
 'use strict';
 const fs = require('fs');
 const crypto = require('crypto');
+const zlib = require('zlib');
 const { execSync } = require('child_process');
 const { Octokit } = require('@octokit/rest');
 const T = require('./lib/text');
@@ -18,6 +19,9 @@ const MANIFEST_PATH = 'projects.json';
 const EXISTING_LIMIT = 30000;
 const CSS_JS_LIMIT = 15000;
 const STATUS_EVERY   = 5000;
+
+// Binary files that must be base64-encoded when sent to the Git Trees API
+const BINARY_EXT = /\.(png|jpe?g|gif|webp|ico|woff2?|ttf|otf)$/i;
 
 const [OWNER, REPO] = (process.env.GITHUB_REPOSITORY || '').split('/');
 const BRANCH = process.env.GITHUB_REF_NAME || 'main';
@@ -40,6 +44,96 @@ const started = new Date().toISOString();
 const icon = (s) => (s.status === 'done' ? '✅' : s.status === 'error' ? '❌' : s.status === 'cancelled' ? '⏹️' : '⏳');
 const stepLine = (s) => `${icon(s)} ${s.name}${s.sec != null ? ` — ${s.sec}s` : ''}${s.model ? ` (${s.model})` : ''}${s.note ? ` — ${s.note}` : ''}${s.error ? ` — ${String(s.error).slice(0, 100)}` : ''}`;
 const elapsed = () => Math.round((Date.now() - T0) / 1000);
+
+// ============================================================
+// T3: zero-dependency PNG encoder + icon generator
+// ============================================================
+let _crcTable = null;
+function crc32(buf) {
+  if (!_crcTable) {
+    _crcTable = new Uint32Array(256);
+    for (let n = 0; n < 256; n++) {
+      let c = n;
+      for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      _crcTable[n] = c >>> 0;
+    }
+  }
+  let crc = 0xFFFFFFFF;
+  for (let i = 0; i < buf.length; i++) crc = _crcTable[(crc ^ buf[i]) & 0xFF] ^ (crc >>> 8);
+  return (crc ^ 0xFFFFFFFF) >>> 0;
+}
+
+function pngChunk(type, data) {
+  const len = Buffer.alloc(4); len.writeUInt32BE(data.length, 0);
+  const typeBuf = Buffer.from(type, 'ascii');
+  const crcBuf = Buffer.alloc(4);
+  crcBuf.writeUInt32BE(crc32(Buffer.concat([typeBuf, data])), 0);
+  return Buffer.concat([len, typeBuf, data, crcBuf]);
+}
+
+function hslToRgb(h, s, l) {
+  const c = (1 - Math.abs(2 * l - 1)) * s;
+  const hp = h / 60;
+  const x = c * (1 - Math.abs((hp % 2) - 1));
+  let r = 0, g = 0, b = 0;
+  if (hp < 1) { r = c; g = x; }
+  else if (hp < 2) { r = x; g = c; }
+  else if (hp < 3) { g = c; b = x; }
+  else if (hp < 4) { g = x; b = c; }
+  else if (hp < 5) { r = x; b = c; }
+  else { r = c; b = x; }
+  const m = l - c / 2;
+  return [
+    Math.round((r + m) * 255),
+    Math.round((g + m) * 255),
+    Math.round((b + m) * 255),
+  ];
+}
+
+function makeIconPNG(size, hsl) {
+  const [R, G, B] = hslToRgb(hsl.h, hsl.s, hsl.l);
+  const lum = (0.299 * R + 0.587 * G + 0.114 * B) / 255;
+  const mark = lum > 0.6 ? [15, 18, 32] : [255, 255, 255];
+  const rowLen = size * 4 + 1;
+  const raw = Buffer.alloc(size * rowLen);
+  const cx = size / 2, cy = size / 2;
+  const rOuter = (size * 0.32) ** 2;
+  const rInner = (size * 0.14) ** 2;
+
+  for (let y = 0; y < size; y++) {
+    raw[y * rowLen] = 0;
+    for (let x = 0; x < size; x++) {
+      const i = y * rowLen + 1 + x * 4;
+      // Background: theme color
+      raw[i] = R; raw[i + 1] = G; raw[i + 2] = B; raw[i + 3] = 255;
+
+      // Centered mark: ring + inner dot in contrast color
+      const dx = x - cx + 0.5, dy = y - cy + 0.5;
+      const d2 = dx * dx + dy * dy;
+      if (d2 < rOuter && d2 > rInner) {
+        raw[i] = mark[0]; raw[i + 1] = mark[1]; raw[i + 2] = mark[2];
+      } else if (d2 < rInner * 0.5) {
+        raw[i] = mark[0]; raw[i + 1] = mark[1]; raw[i + 2] = mark[2];
+      }
+    }
+  }
+
+  const idat = zlib.deflateSync(raw);
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(size, 0);
+  ihdr.writeUInt32BE(size, 4);
+  ihdr[8] = 8;   // bit depth
+  ihdr[9] = 6;   // color type RGBA
+  ihdr[10] = 0;  // compression
+  ihdr[11] = 0;  // filter
+  ihdr[12] = 0;  // interlace
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    pngChunk('IHDR', ihdr),
+    pngChunk('IDAT', idat),
+    pngChunk('IEND', Buffer.alloc(0)),
+  ]);
+}
 
 function raceLine(report) {
   const rows = (report || []).filter((r) => r.provider).slice(-6)
@@ -232,6 +326,9 @@ async function readFile(path) {
   catch (e) { if (e.status === 404) return null; throw e; }
 }
 
+// ============================================================
+// T3: atomicCommit now handles binary files (base64) based on extension
+// ============================================================
 async function atomicCommit(files, deletedPaths, message) {
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
@@ -241,7 +338,12 @@ async function atomicCommit(files, deletedPaths, message) {
 
       const treeItems = [];
       for (const [path, content] of Object.entries(files)) {
-        const { data: blob } = await octokit.git.createBlob({ owner: OWNER, repo: REPO, content, encoding: 'utf-8' });
+        const isBinary = BINARY_EXT.test(path);
+        const { data: blob } = await octokit.git.createBlob({
+          owner: OWNER, repo: REPO,
+          content: isBinary ? content : content,
+          encoding: isBinary ? 'base64' : 'utf-8',
+        });
         treeItems.push({ path, mode: '100644', type: 'blob', sha: blob.sha });
       }
       // Deletions: sha: null removes the path from the resulting tree
@@ -319,38 +421,29 @@ async function searchGitHubForInspiration(query) {
 }
 
 // ============================================================
-// [ask] MODE — semantic search over repo + issue history
+// [ask] MODE — BM25 over repo + issue history (via lib/rag.js)
 // ============================================================
 function searchChunks(chunks, query, k) {
-  // Try every plausible Rag API shape so this keeps working
-  // whichever BM25 surface lib/rag.js exposes.
-  if (typeof Rag.search === 'function') {
-    try { return Rag.search(chunks, query, k); } catch {}
+  // lib/rag.js exposes createIndex(chunks) -> { size, search(query, k, opts) }
+  // search() returns [{ chunk, score }] — exactly what runAsk renders.
+  try {
+    const idx = Rag.createIndex(chunks);
+    return idx.search(query, k || 6);
+  } catch (e) {
+    // If the indexer ever throws (malformed chunk), degrade to substring
+    // rather than failing the whole [ask] command.
+    console.log('[ask] BM25 index failed, falling back to substring:', e.message);
+    const q = query.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    if (!q) return [];
+    return chunks
+      .map((chunk) => {
+        const matches = chunk.text.toLowerCase().match(new RegExp(q, 'g')) || [];
+        return { chunk, score: matches.length };
+      })
+      .filter((h) => h.score > 0)
+      .sort((a, b) => b.score - a.score)
+      .slice(0, k || 6);
   }
-  if (typeof Rag.buildIndex === 'function') {
-    try {
-      const idx = Rag.buildIndex(chunks);
-      const hits = typeof idx.search === 'function' ? idx.search(query, k) : null;
-      if (hits) return hits;
-    } catch {}
-  }
-  if (typeof Rag.Index === 'function') {
-    try {
-      const idx = new Rag.Index(chunks);
-      return idx.search(query, k);
-    } catch {}
-  }
-  // Last-resort fallback: naive substring score
-  const q = query.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  if (!q) return [];
-  return chunks
-    .map((chunk) => {
-      const matches = chunk.text.toLowerCase().match(new RegExp(q, 'g')) || [];
-      return { chunk, score: matches.length };
-    })
-    .filter((h) => h.score > 0)
-    .sort((a, b) => b.score - a.score)
-    .slice(0, k);
 }
 
 async function runAsk(inputs) {
@@ -358,7 +451,7 @@ async function runAsk(inputs) {
   const query = (prompt || '').trim();
   if (!query) throw new Error('Usage: `[ask] <question>` — e.g. `[ask] how does the receipt hash work?`');
 
-  const result = await step('Search repo + issues', async () => {
+  const result = await step('Search repo + issues (BM25)', async () => {
     const repoChunks = K.collectRepoChunks(process.cwd(), {});
     const issueChunks = await K.collectIssueChunks(octokit, OWNER, REPO, 40);
     const chunks = repoChunks.concat(issueChunks);
@@ -493,9 +586,9 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
   try { const raw = await readFile(MANIFEST_PATH); if (raw) manifest = JSON.parse(raw); if (!Array.isArray(manifest)) manifest = []; } catch { manifest = []; }
 
   if (mode === 'delete') {
-    // Collect every file we own for this project (including PWA assets)
+    // Collect every file we own for this project (including PWA assets and icons)
     const filesToDelete = [];
-    for (const f of ['index.html', 'style.css', 'script.js', 'manifest.json', 'sw.js', 'meta.json']) {
+    for (const f of ['index.html', 'style.css', 'script.js', 'manifest.json', 'sw.js', 'icon-192.png', 'icon-512.png', 'meta.json']) {
       const p = `${baseDir}/${f}`;
       if ((await readFile(p)) !== null) filesToDelete.push(p);
     }
@@ -634,10 +727,21 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
   // ---- Theme color (deterministic from slug) ----
   let hash = 0;
   for (let i = 0; i < slug.length; i++) hash = slug.charCodeAt(i) + ((hash << 5) - hash);
-  const color = `hsl(${Math.abs(hash % 360)}, 70%, 50%)`;
+  const hue = Math.abs(hash % 360);
+  const color = `hsl(${hue}, 70%, 50%)`;
   const letter = slug.charAt(0).toUpperCase();
 
-  // ---- PWA manifest ----
+  // ============================================================
+  // T3: generate real PNG icons (192 and 512)
+  // ============================================================
+  const hsl = { h: hue, s: 0.70, l: 0.50 };
+  const png192 = makeIconPNG(192, hsl);
+  const png512 = makeIconPNG(512, hsl);
+  files['icon-192.png'] = png192.toString('base64');
+  files['icon-512.png'] = png512.toString('base64');
+  console.log(`[icons] generated 192×192 (${png192.length}B) + 512×512 (${png512.length}B)`);
+
+  // ---- PWA manifest (PNG icons primary, SVG fallback) ----
   const manifestPwa = {
     name: slug.replace(/-/g, ' ').toUpperCase(),
     short_name: slug,
@@ -645,17 +749,21 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
     display: "standalone",
     background_color: "#0b1410",
     theme_color: color,
-    icons: [{
-      src: `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230b1410'/><text x='50%' y='55%' font-size='60' fill='${encodeURIComponent(color)}' font-family='system-ui' font-weight='bold' text-anchor='middle' dominant-baseline='middle'>${letter}</text></svg>`,
-      sizes: "512x512",
-      type: "image/svg+xml"
-    }]
+    icons: [
+      { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
+      { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
+      {
+        src: `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230b1410'/><text x='50%' y='55%' font-size='60' fill='${encodeURIComponent(color)}' font-family='system-ui' font-weight='bold' text-anchor='middle' dominant-baseline='middle'>${letter}</text></svg>`,
+        sizes: 'any',
+        type: 'image/svg+xml'
+      }
+    ]
   };
   files['manifest.json'] = JSON.stringify(manifestPwa, null, 2);
 
   // ---- Inject manifest link + SW registration into HTML BEFORE hashing ----
   if (!currentHtml.includes('rel="manifest"')) {
-    currentHtml = currentHtml.replace('</head>', `  <link rel="manifest" href="manifest.json">\n  <meta name="theme-color" content="${color}">\n</head>`);
+    currentHtml = currentHtml.replace('</head>', `  <link rel="manifest" href="manifest.json">\n  <link rel="icon" type="image/png" href="icon-192.png">\n  <link rel="apple-touch-icon" href="icon-192.png">\n  <meta name="theme-color" content="${color}">\n</head>`);
   }
   if (!currentHtml.includes('serviceWorker.register')) {
     currentHtml = currentHtml.replace('</body>', `<script>if('serviceWorker' in navigator){addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}</script>\n</body>`);
@@ -673,10 +781,13 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
     return h.digest('hex');
   })();
 
+  // T3: precache icons too
   const precache = ['./', './index.html'];
   if (files['style.css']) precache.push('./style.css');
   if (files['script.js']) precache.push('./script.js');
   if (files['manifest.json']) precache.push('./manifest.json');
+  if (files['icon-192.png']) precache.push('./icon-192.png');
+  if (files['icon-512.png']) precache.push('./icon-512.png');
 
   const cacheName = `app-${slug}-${staticHash.slice(0, 8)}`;
   files['sw.js'] = `/* Ariotica SW · ${cacheName} */
