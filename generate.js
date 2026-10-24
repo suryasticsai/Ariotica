@@ -46,7 +46,7 @@ function raceLine(report) {
   return rows.length > 1 ? rows.join(' · ') : '';
 }
 
-// NEW: Polls the GitHub API until the Pages deployment finishes
+// Polls the GitHub API until the Pages deployment finishes
 async function waitForPagesBuild(commitTime) {
   console.log('[pages] waiting for deployment...');
   for (let i = 0; i < 30; i++) { // up to 2.5 minutes
@@ -226,22 +226,26 @@ async function atomicCommit(files, deletedPaths, message) {
       const { data: refData } = await octokit.git.getRef({ owner: OWNER, repo: REPO, ref: `heads/${BRANCH}` });
       const latestCommitSha = refData.object.sha;
       const { data: commitData } = await octokit.git.getCommit({ owner: OWNER, repo: REPO, commit_sha: latestCommitSha });
-      
+
       const treeItems = [];
       for (const [path, content] of Object.entries(files)) {
         const { data: blob } = await octokit.git.createBlob({ owner: OWNER, repo: REPO, content, encoding: 'utf-8' });
         treeItems.push({ path, mode: '100644', type: 'blob', sha: blob.sha });
       }
+      // Deletions: sha: null removes the path from the resulting tree
+      for (const path of (deletedPaths || [])) {
+        treeItems.push({ path, mode: '100644', type: 'blob', sha: null });
+      }
 
-      const { data: newTree } = await octokit.git.createTree({ 
-        owner: OWNER, repo: REPO, 
-        base_tree: commitData.tree.sha, 
-        tree: treeItems 
+      const { data: newTree } = await octokit.git.createTree({
+        owner: OWNER, repo: REPO,
+        base_tree: commitData.tree.sha,
+        tree: treeItems,
       });
 
       const { data: newCommit } = await octokit.git.createCommit({
         owner: OWNER, repo: REPO, message,
-        tree: newTree.sha, parents: [latestCommitSha]
+        tree: newTree.sha, parents: [latestCommitSha],
       });
 
       await octokit.git.updateRef({ owner: OWNER, repo: REPO, ref: `heads/${BRANCH}`, sha: newCommit.sha });
@@ -250,6 +254,18 @@ async function atomicCommit(files, deletedPaths, message) {
       if (attempt === 3) throw e;
       await new Promise(r => setTimeout(r, 2000));
     }
+  }
+}
+
+// Refresh the runner's working tree so downstream steps (build-index.js,
+// artifact upload, `git rev-parse HEAD`) see what generate.js just pushed.
+async function syncCheckout() {
+  try {
+    execSync(`git fetch origin ${BRANCH} --quiet`, { stdio: 'pipe' });
+    execSync(`git reset --hard -q origin/${BRANCH}`, { stdio: 'pipe' });
+    console.log(`[sync] checkout → origin/${BRANCH}`);
+  } catch (e) {
+    console.log('[sync] non-fatal:', e.message);
   }
 }
 
@@ -332,6 +348,7 @@ async function main() {
     const r = await step('Generate Skill Cheatsheet', () => askAI([{ role: 'system', content: SKILL_RULES }, { role: 'user', content: prompt }]));
     const filePath = `knowledge/skills/${skillName}.md`;
     await atomicCommit({ [filePath]: r.text }, [], `docs: add skill ${skillName}`);
+    await syncCheckout();
     await finishStatus(issue, `🧠 **Skill Learned:** I have written a cheatsheet for **${skillName}** and saved it to \`${filePath}\`. I will automatically use this knowledge in future builds!`, true);
     await pushProgress({ status: 'done' });
     return;
@@ -377,6 +394,7 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
     });
 
     await step(`Commit ${targetFile}`, () => atomicCommit({ [targetFile]: newCode }, [], `feat(evolve): modify ${targetFile}`));
+    await syncCheckout();
 
     await finishStatus(issue, `🧬 **Evolution Successful.**\n\nI have modified \`${targetFile}\` based on your instructions. The new syntax was validated, and the changes have been committed to \`main\`.\n\n**Next step:** The next time you run a build, the agent will use its new capabilities.`, true);
     await pushProgress({ status: 'done' });
@@ -388,19 +406,23 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
   try { const raw = await readFile(MANIFEST_PATH); if (raw) manifest = JSON.parse(raw); if (!Array.isArray(manifest)) manifest = []; } catch { manifest = []; }
 
   if (mode === 'delete') {
-    let existed = false;
-    for (const f of ['index.html', 'style.css', 'script.js', 'meta.json', 'receipt.json']) {
+    // Collect every file we own for this project (including PWA assets)
+    const filesToDelete = [];
+    for (const f of ['index.html', 'style.css', 'script.js', 'manifest.json', 'sw.js', 'meta.json']) {
       const p = `${baseDir}/${f}`;
-      const content = await readFile(p);
-      if (content !== null) {
-        try { await octokit.repos.deleteFile({ owner: OWNER, repo: REPO, path: p, message: `chore: delete ${slug}`, sha: (await octokit.repos.getContent({owner: OWNER, repo: REPO, path: p})).data.sha, branch: BRANCH }); existed = true; } catch {}
-      }
+      if ((await readFile(p)) !== null) filesToDelete.push(p);
     }
-    try { await octokit.repos.deleteFile({ owner: OWNER, repo: REPO, path: receiptPath, message: `chore: remove receipt ${slug}`, sha: (await octokit.repos.getContent({owner: OWNER, repo: REPO, path: receiptPath})).data.sha, branch: BRANCH }); } catch { }
+    if ((await readFile(receiptPath)) !== null) filesToDelete.push(receiptPath);
+
+    const existed = filesToDelete.length > 0;
     manifest = manifest.filter((e) => e.project !== slug);
     const manifestJson = JSON.stringify(manifest, null, 2) + '\n';
-    await atomicCommit({ [MANIFEST_PATH]: manifestJson }, [], `chore: delete ${slug}`);
-    await finishStatus(issue, existed ? `🗑 Deleted \`${slug}\`.` : `\`${slug}\` did not exist.`, true);
+
+    // Single atomic commit: update manifest + remove all files together
+    await atomicCommit({ [MANIFEST_PATH]: manifestJson }, filesToDelete, `chore: delete ${slug}`);
+    await syncCheckout();
+
+    await finishStatus(issue, existed ? `🗑 Deleted \`${slug}\` (${filesToDelete.length} files).` : `\`${slug}\` did not exist.`, true);
     await pushProgress({ status: 'done' }); return;
   }
 
@@ -603,9 +625,14 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
   const startTime = Date.now();
   const commitSha = await step(`Commit files to ${baseDir}/`, () => atomicCommit(fullFiles, [], `feat: ${slug} v${version} (${mode})`));
 
+  // Second commit back-fills the real commit SHA into the receipt.
+  // If you prefer a single commit, set receipt.commit = null above and delete this block.
   receipt.commit = commitSha;
   files[receiptPath] = JSON.stringify(receipt, null, 2) + '\n';
   await atomicCommit({ [receiptPath]: files[receiptPath] }, [], `chore: receipt ${slug}`);
+
+  // Refresh the runner's checkout so build-index.js / artifact upload / NEW_COMMIT see the push
+  await syncCheckout();
 
   const url = `https://${OWNER}.github.io/${REPO}/${baseDir}/`;
   const folderUrl = `https://github.com/${OWNER}/${REPO}/tree/${BRANCH}/${baseDir}`;
