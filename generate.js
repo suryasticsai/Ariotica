@@ -1,5 +1,6 @@
 'use strict';
 const fs = require('fs');
+const crypto = require('crypto');
 const { execSync } = require('child_process');
 const { Octokit } = require('@octokit/rest');
 const T = require('./lib/text');
@@ -537,11 +538,13 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
     currentHtml = currentHtml.replace('<head>', `<head>\n  ${cspTag}`);
   }
 
+  // ---- Theme color (deterministic from slug) ----
   let hash = 0;
   for (let i = 0; i < slug.length; i++) hash = slug.charCodeAt(i) + ((hash << 5) - hash);
   const color = `hsl(${Math.abs(hash % 360)}, 70%, 50%)`;
   const letter = slug.charAt(0).toUpperCase();
 
+  // ---- PWA manifest ----
   const manifestPwa = {
     name: slug.replace(/-/g, ' ').toUpperCase(),
     short_name: slug,
@@ -556,16 +559,83 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
     }]
   };
   files['manifest.json'] = JSON.stringify(manifestPwa, null, 2);
-  files['sw.js'] = `const CACHE='ariotica-v1';self.addEventListener('install',e=>e.waitUntil(caches.open(CACHE).then(c=>c.addAll(['./','./index.html','./style.css','./script.js']))));self.addEventListener('fetch',e=>e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request))));`;
 
-  if (!currentHtml.includes('manifest.json')) {
+  // ---- Inject manifest link + SW registration into HTML BEFORE hashing ----
+  if (!currentHtml.includes('rel="manifest"')) {
     currentHtml = currentHtml.replace('</head>', `  <link rel="manifest" href="manifest.json">\n  <meta name="theme-color" content="${color}">\n</head>`);
   }
-  if (!currentHtml.includes('sw.js')) {
-    currentHtml = currentHtml.replace('</body>', `<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(err=>console.log(err))})}</script>\n</body>`);
+  if (!currentHtml.includes('serviceWorker.register')) {
+    currentHtml = currentHtml.replace('</body>', `<script>if('serviceWorker' in navigator){addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}</script>\n</body>`);
+  }
+  files['index.html'] = currentHtml;
+
+  // ---- T2: content-hashed service worker ----
+  const staticHash = (() => {
+    const h = crypto.createHash('sha256');
+    for (const name of ['index.html', 'style.css', 'script.js', 'manifest.json'].sort()) {
+      if (!files[name]) continue;
+      h.update(name); h.update('\0');
+      h.update(files[name]); h.update('\0');
+    }
+    return h.digest('hex');
+  })();
+
+  const precache = ['./', './index.html'];
+  if (files['style.css']) precache.push('./style.css');
+  if (files['script.js']) precache.push('./script.js');
+  if (files['manifest.json']) precache.push('./manifest.json');
+
+  const cacheName = `app-${slug}-${staticHash.slice(0, 8)}`;
+  files['sw.js'] = `/* Ariotica SW · ${cacheName} */
+const CACHE = ${JSON.stringify(cacheName)};
+const PRECACHE = ${JSON.stringify(precache)};
+
+self.addEventListener('install', (e) => {
+  e.waitUntil(
+    caches.open(CACHE)
+      .then((c) => Promise.all(PRECACHE.map((u) => c.add(u).catch(() => {}))))
+      .then(() => self.skipWaiting())
+  );
+});
+
+self.addEventListener('activate', (e) => {
+  e.waitUntil(
+    caches.keys()
+      .then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+      .then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', (e) => {
+  const req = e.request;
+  if (req.method !== 'GET') return;
+  const url = new URL(req.url);
+  if (url.origin !== self.location.origin) return;
+
+  // Network-first for navigations so updates land immediately
+  if (req.mode === 'navigate' || (req.headers.get('accept') || '').includes('text/html')) {
+    e.respondWith(
+      fetch(req).then((res) => {
+        const copy = res.clone();
+        caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {});
+        return res;
+      }).catch(() => caches.match(req).then((r) => r || caches.match('./index.html')))
+    );
+    return;
   }
 
-  files['index.html'] = currentHtml;
+  // Stale-while-revalidate for static assets
+  e.respondWith(
+    caches.match(req).then((cached) => {
+      const network = fetch(req).then((res) => {
+        if (res.ok) caches.open(CACHE).then((c) => c.put(req, res.clone())).catch(() => {});
+        return res;
+      }).catch(() => cached);
+      return cached || network;
+    })
+  );
+});
+`;
 
   let grade = 'F';
   if (score >= 90) grade = 'A+';
@@ -626,7 +696,6 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
   const commitSha = await step(`Commit files to ${baseDir}/`, () => atomicCommit(fullFiles, [], `feat: ${slug} v${version} (${mode})`));
 
   // Second commit back-fills the real commit SHA into the receipt.
-  // If you prefer a single commit, set receipt.commit = null above and delete this block.
   receipt.commit = commitSha;
   files[receiptPath] = JSON.stringify(receipt, null, 2) + '\n';
   await atomicCommit({ [receiptPath]: files[receiptPath] }, [], `chore: receipt ${slug}`);
@@ -637,7 +706,6 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
   const url = `https://${OWNER}.github.io/${REPO}/${baseDir}/`;
   const folderUrl = `https://github.com/${OWNER}/${REPO}/tree/${BRANCH}/${baseDir}`;
   
-  // 1. Post the initial success message with links (no screenshot yet)
   let body = `✅ **${mode}** complete: \`${baseDir}/\` via **${provider}**${model ? ` (${model})` : ''}\n\n`;
   body += `🌐 **Live App:** ${url}\n`;
   body += `📁 **Source Code:** ${folderUrl}\n`;
@@ -653,10 +721,8 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
 
   await finishStatus(issue, body + HINT, false);
 
-  // 2. Wait for GitHub Pages to build the new files
   const isDeployed = await waitForPagesBuild(startTime);
 
-  // 3. Post the screenshot once live
   if (isDeployed && issue) {
     const screenshotUrl = `https://image.thum.io/get/width/800/crop/600/${url}?t=${Date.now()}`;
     try {
