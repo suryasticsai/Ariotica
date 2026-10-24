@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; connect-src 'none'; img-src 'self' data:;">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MiniJira Board</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="hsl(155, 70%, 50%)">
+</head>
+<body>
+  <main class="app">
+    <header>
+      <h1>MiniJira Board</h1>
+    </header>
+
+    <section class="new-task" aria-label="Add new task">
+      <input type="text" id="taskInput" placeholder="Task title" aria-label="Task title">
+      <select id="statusSelect" aria-label="Task status">
+        <option value="todo">To Do</option>
+        <option value="inprogress">In Progress</option>
+        <option value="done">Done</option>
+      </select>
+      <button id="addTaskBtn" aria-label="Add task">Add Task</button>
+    </section>
+
+    <section id="emptyState" class="empty-state" hidden>
+      No tasks yet, add one!
+    </section>
+
+    <section id="board" class="board" aria-label="Kanban board">
+      <div class="column" data-status="todo" aria-labelledby="col-todo">
+        <h2 id="col-todo">To Do</h2>
+        <div class="card-container" data-status="todo"></div>
+      </div>
+      <div class="column" data-status="inprogress" aria-labelledby="col-inprogress">
+        <h2 id="col-inprogress">In Progress</h2>
+        <div class="card-container" data-status="inprogress"></div>
+      </div>
+      <div class="column" data-status="done" aria-labelledby="col-done">
+        <h2 id="col-done">Done</h2>
+        <div class="card-container" data-status="done"></div>
+      </div>
+    </section>
+  </main>
+  <script src="script.js"></script>
+
+<!-- Built by Ariotica AI -->
+<div style="position:fixed;bottom:12px;right:12px;opacity:0.35;font-size:11px;font-family:monospace;color:white;pointer-events:none;z-index:9999;">⚡ Ariotica</div>
+<script>if('serviceWorker' in navigator){window.addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(err=>console.log(err))})}</script>
+</body>
+</html>

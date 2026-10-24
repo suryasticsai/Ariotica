@@ -1,0 +1,55 @@
+{
+  "schema": 1,
+  "app": "minijira",
+  "files": {
+    "index.html": "214eabe1f46c05c3feb15cffba3da86427afc4d4e5853e629d13b465711c21bb",
+    "style.css": "44a45c4954c8d315417f030e61a6f6a79de3a6f1f168c673a886052014a7aefe",
+    "script.js": "dbed4c2e07f1606bf5a2619d55c1e66df7fdd4fbc0f7ee29ab89af6062e8e701",
+    "manifest.json": "e7da506c1867e4d23b78c20a4468a586887a45afb5fc4e240d6be2e4974241e7",
+    "sw.js": "a780b2f2d26dace9bce90b819225d6b5239d1fadfbebe783f24db80972b12a4d",
+    "meta.json": "35aeffa7aeba1d9921450b5a0484f380983c45c0ef9d08ec2a448ec43cb4a0c0"
+  },
+  "bytes": 11456,
+  "builtAt": "2026-10-24T14:52:50.336Z",
+  "mode": "inspire",
+  "repo": "suryasticsai/Ariotica",
+  "runId": "40104309440",
+  "commit": null,
+  "model": {
+    "provider": "Groq",
+    "name": "openai/gpt-oss-120b"
+  },
+  "race": [
+    {
+      "provider": "Groq",
+      "model": "openai/gpt-oss-120b",
+      "sec": 11,
+      "ok": true,
+      "score": 100,
+      "reason": ""
+    }
+  ],
+  "sha256": "214eabe1f46c05c3feb15cffba3da86427afc4d4e5853e629d13b465711c21bb",
+  "checks": {
+    "complete": true,
+    "vanilla": true,
+    "externalRefs": [],
+    "zeroDeps": true,
+    "smoke": "pass",
+    "smokeErrors": [],
+    "scan": {
+      "total": 1,
+      "high": 1,
+      "medium": 0,
+      "low": 0,
+      "byTool": {
+        "custom": 1,
+        "eslint": 0,
+        "sparrow": 0
+      }
+    }
+  },
+  "promptSha256": "06a4b91a8d38735668d6b05394fe15bd8d66db39d585abdd5290e1b4618590fc",
+  "prompt": "Create a MiniJira Board, add ticket change status and show as card and kanban board draggable delete and update using Bootstrapui and cool tech",
+  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js minijira"
+}
