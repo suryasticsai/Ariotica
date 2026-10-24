@@ -184,10 +184,21 @@ const GEN_SYSTEM = 'You reply with a single valid JSON object only. No markdown 
 const genMessages = (userText) => [{ role: 'system', content: GEN_SYSTEM }, { role: 'user', content: userText }];
 const HINT = '\n\n💬 Reply with `[improve] …`, `[fix] …`, `[audit]`, `[delete]`, `[ask] …`, `[skill] …`, `[inspire] …`, or `[evolve] <file> …`.';
 
+// ============================================================
+// PATCH 1: array normalization lives at the top of gradeHtml
+// ============================================================
 async function gradeHtml(text) {
   const meta = T.parseMultiFileResponse(text);
   if (!meta || !meta.files || !meta.files['index.html']) {
     return { ok: false, score: 0, html: text, reason: 'invalid JSON or missing index.html' };
+  }
+
+  // Defensive: models occasionally emit arrays instead of strings for file bodies.
+  // Coerce to strings before anything downstream touches them.
+  for (const [k, v] of Object.entries(meta.files)) {
+    if (typeof v !== 'string') {
+      meta.files[k] = Array.isArray(v) ? v.join('\n') : String(v);
+    }
   }
 
   let testHtml = meta.files['index.html'];
@@ -270,10 +281,16 @@ async function syncCheckout() {
   }
 }
 
+// ============================================================
+// PATCH 3: GitHub search q must be ≤ 256 chars
+// ============================================================
 async function searchGitHubForInspiration(query) {
+  // GitHub search rejects q > 256 chars; keep a little headroom
+  const safeQuery = String(query).slice(0, 180).replace(/["\\\r\n]/g, ' ').trim();
+  if (!safeQuery) return { inspiration: '', count: 0 };
   try {
     const { data } = await octokit.search.repos({
-      q: `${query} language:html stars:>100`,
+      q: `${safeQuery} language:html stars:>100`,
       sort: 'stars',
       order: 'desc',
       per_page: 3
@@ -450,7 +467,7 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
 
   let inspirationCtx = '';
   if (mode === 'inspire') {
-    const searchRes = await step(`Searching GitHub for "${prompt}"`, () => searchGitHubForInspiration(prompt));
+    const searchRes = await step(`Searching GitHub for "${prompt.slice(0, 60)}…"`, () => searchGitHubForInspiration(prompt));
     if (searchRes.inspiration) {
       inspirationCtx = `\n\nHere are some highly successful open-source apps for inspiration. Extract their best UI/UX patterns and logic, but write the code entirely from scratch:\n${searchRes.inspiration}`;
       ask = `Build a brand new app based on this idea: ${prompt}. Use the provided inspiration code as a style and feature guide, but DO NOT copy it verbatim. Make it better.`;
@@ -481,7 +498,14 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
     if (structurallyBad(cand)) throw new Error(`Still rejected after retry (${cand.grade.reason || 'invalid output'}) from ${cand.provider}`);
   }
 
+  // ============================================================
+  // PATCH 2: re-normalize right after assigning files
+  // ============================================================
   let files = cand.grade.files;
+  // Defensive re-normalization (in case a lib mutated files)
+  for (const [k, v] of Object.entries(files)) {
+    if (typeof v !== 'string') files[k] = Array.isArray(v) ? v.join('\n') : String(v);
+  }
   let testHtml = cand.grade.html;
   let smoke = cand.grade.smoke;
   let meta = cand.grade.meta;
