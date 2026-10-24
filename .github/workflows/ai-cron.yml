@@ -60,8 +60,6 @@ jobs:
 
       - name: Checkout
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0 # Needed for the rollback safety net
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -75,7 +73,7 @@ jobs:
       - name: Validate Agent Code
         run: node --check generate.js
 
-      # 3. Run the agent and save the commit SHA in case we need to rollback
+      # 3. Run the agent
       - name: Generate App with AI
         id: run_agent
         env:
@@ -120,15 +118,7 @@ jobs:
             receipts/
           retention-days: 7
 
-      # 5. Auto-Rollback Safety Net (Only if the agent crashed AFTER committing)
-      - name: Auto-Rollback on Failure
-        if: failure() && steps.run_agent.outputs.NEW_COMMIT != ''
-        run: |
-          echo "Build failed after commit. Rolling back to previous state..."
-          git reset --hard HEAD~1
-          git push origin main --force
-
-      # 6. Beautiful Job Summary
+      # 5. Beautiful Job Summary
       - name: Generate Job Summary
         if: always()
         run: |
