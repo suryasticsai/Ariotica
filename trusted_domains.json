@@ -1,0 +1,8 @@
+{
+  "domains": [
+    "cdn.jsdelivr.net",
+    "unpkg.com",
+    "cdnjs.cloudflare.com",
+    "esm.sh"
+  ]
+}
