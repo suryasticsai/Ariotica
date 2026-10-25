@@ -23,7 +23,11 @@
 
 ---
 
-  **The 100% Free, Self-Healing AI Engineering Pipeline.**
+  <p><b>A live AI developer that lives in your GitHub repo. Issues in, working apps out.</b></p>
+
+  [![Tests](https://github.com/suryasticsai/Ariotica/actions/workflows/test.yml/badge.svg)](https://github.com/suryasticsai/Ariotica/actions/workflows/test.yml)
+  [![Generate Project](https://github.com/suryasticsai/Ariotica/actions/workflows/ai-cron.yml/badge.svg)](https://github.com/suryasticsai/Ariotica/actions/workflows/ai-cron.yml)
+</div>
 
   An autonomous agent that turns GitHub Issues into fully functional, single-file vanilla JS apps. It writes code, tests it in a headless browser, scans it for vulnerabilities, and fixes its own bugs.
 
@@ -38,8 +42,101 @@
 
 ## 🚀 What is Ariotica?
 
-Ariotica is an **agentic AI orchestrator** built entirely on GitHub Actions. Unlike simple prompt-to-code wrappers, Ariotica is a closed-loop system. It doesn't just write code; it **tests it, secures it, and iterates on it** until it works perfectly.
+Ariotica turns a GitHub Issue into a tested, installable, and deployed web app. It uses multiple LLMs (Groq, OpenRouter, HuggingFace) in a **Model Race**, tests the output in a headless browser (**Self-Healing**), and commits the winning code to GitHub Pages.
 
+It's not just a code generator; it's an autonomous software engineer that manages its own deployments, tracks its own API costs, maintains a version history, and learns from its own skills.
+
+## ✨ Core Features
+
+*   **🏁 Model Race:** Multiple AI models answer at once. The first one to pass the tests wins.
+*   **🩺 Self-Healing:** Generated apps are loaded into a headless DOM. Runtime errors are fed back to the AI to fix before committing.
+*   **📦 Library Allowlist:** Automatically injects SRI hashes and updates Content Security Policy (CSP) when the AI uses approved CDNs (Vue, Bootstrap, PeerJS, Chart.js).
+*   **🧠 RAG Skill System:** Teach Ariotica new tricks (like WebRTC). It automatically searches its skill library and injects the relevant cheatsheet into the prompt.
+*   **📊 Analytics & Leaderboard:** Tracks token usage, API costs, and model win rates over time.
+*   **🔄 Undo Button:** Revert any app to a previous version ID (`v1.0.1`) with a single command.
+*   **📸 Live Previews:** Automatically waits for GitHub Pages to deploy and posts a clickable screenshot.
+*   **🛠️ The Darwin Protocol:** The agent can modify its own source code (`generate.js`, etc.) via the `[evolve]` command.
+
+---
+
+## 🎮 How to Use (Commands)
+
+Ariotica is controlled entirely through **GitHub Issues**.
+
+### 1. Create a New App
+Open a new issue:
+*   **Title:** `[BUILD] my-app-name [create]`
+*   **Body:** `Create a simple todo app with a dark theme and local storage.`
+
+### 2. Upgrade or Modify
+On the closed issue, leave a comment:
+*   `[improve] Add a reset button and change the background to a gradient.`
+*   `[fix] The reset button is throwing a ReferenceError.`
+
+### 3. Manage Versions
+*   `[revert]` (Shows version history)
+*   `[revert] 1.0.2` (Rolls back to v1.0.2 as a new forward commit)
+
+### 4. Search the Repo
+*   `[ask] what changed in my-app-name last week?`
+*   `[ask] how does the model race work?`
+
+### 5. Teach the AI (Skills)
+*   `[BUILD] skill-name [skill] how to build a WebRTC peer-to-peer video call`
+*   *(This saves a `.md` cheatsheet to `knowledge/skills/`. The next time you build a relevant app, the AI will automatically read this file!)*
+
+### 6. View Analytics
+*   `[leaderboard]` (Shows top models, win rates, and total API spend)
+
+### 7. Evolve the Agent
+*   `[evolve] lib/providers.js add a new fallback provider for Cohere`
+*   *(Includes safety checks for JavaScript syntax and module resolution).*
+
+---
+
+## 🏗️ Architecture
+
+Ariotica operates in a 5-step pipeline triggered by GitHub Actions:
+
+1.  **Parse & Route:** Reads the issue title (`[BUILD] name [mode]`) and passes it to `generate.js`.
+2.  **Generate:** Sends the prompt, the library rules, and any retrieved RAG skills to the model race.
+3.  **Test & Heal:** Merges CSS/JS into a single HTML file, runs a `jsdom` smoke test, scans for vulnerabilities (ESLint/Sparrow), and calculates a grade.
+4.  **Library Resolution:** Validates external scripts against `trusted_domains.json`, computes SRI hashes, and builds the CSP.
+5.  **Commit & Deploy:** Commits the app, the receipt (SHA256 hashes), the changelog, and the analytics to `main`. GitHub Pages takes over from there.
+
+---
+
+## 📂 Repository Structure
+
+*   `projects/` — All generated apps (each has its own `index.html`, `CHANGELOG.md`, etc.)
+*   `receipts/` — Cryptographic proof of every build (hashes, model used, security scores)
+*   `analytics/` — `costs.json` and `leaderboard.json`
+*   `knowledge/skills/` — Markdown cheatsheets the AI reads via RAG
+*   `lib/` — The core engine (`providers.js`, `libraries.js`, `rag.js`, `smoke.js`)
+*   `libraries_catalog.json` — Approved CDN libraries and their usage instructions
+*   `trusted_domains.json` — The security gate for external scripts
+
+---
+
+## 🖥️ The Dashboard
+
+Ariotica comes with a built-in **Mission Control** dashboard. 
+Visit `https://<your-username>.github.io/<repo-name>/` to see:
+*   All deployed apps and their grades.
+*   The model leaderboard.
+*   Token and cost charts.
+*   A built-in RAG search bar to query your repo without GitHub issues.
+
+---
+
+## 🛡️ Security
+
+*   **Zero External Code:** Apps cannot use `eval`, `innerHTML` (unless sanitized), or unapproved CDNs.
+*   **SRI Pinned:** Every external library is verified via SHA-384 hashes. If the CDN is compromised, the app refuses to load.
+*   **CSP Lockdown:** Content-Security-Policy headers are dynamically generated per app based on what it actually uses.
+*   **Repository Write Lock:** GitHub Actions are the only entities allowed to commit to `main`.
+
+---
 By leveraging a multi-provider free API fallback (Groq → Gemini → OpenRouter → Pollinations), it runs **100% free forever** without needing a credit card.
 
 ## ✨ Key Superpowers
