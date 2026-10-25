@@ -261,5 +261,42 @@
     ],
     "sha256": "214eabe1f46c05c3feb15cffba3da86427afc4d4e5853e629d13b465711c21bb",
     "receipt": "receipts/minijira.json"
+  },
+  {
+    "project": "difftest",
+    "file": "projects/difftest/index.html",
+    "prompt": "A simple counter app with a button that increments a number",
+    "created": "2026-10-25T09:47:06",
+    "mode": "create",
+    "provider": "Groq",
+    "model": "openai/gpt-oss-120b",
+    "findings": 0,
+    "smoke": "pass",
+    "size": 18179,
+    "version": "1.0.0",
+    "features": [
+      "Pure vanilla JavaScript without build step",
+      "Responsive design using Flexbox and media queries",
+      "Design system based on CSS variables for colors and spacing",
+      "Smooth 0.3s ease transitions on hover and focus states",
+      "LocalStorage persistence with namespaced key \"counter_app_count\"",
+      "Semantic HTML with ARIA labels and live region for empty state",
+      "Clear empty state message when count is zero"
+    ],
+    "fixes": [
+      "Ensured count is initialized to 0 if localStorage value is missing or invalid",
+      "Added focus outline for keyboard accessibility"
+    ],
+    "suggestions": [
+      "Add a decrement button or reset functionality",
+      "Introduce configurable step size or multiple counters",
+      "Provide a dark‑mode variant using additional CSS variables"
+    ],
+    "grade": "A+",
+    "percentile": "Top 5%",
+    "humanInvolvement": "All UI layout, styling, and JavaScript logic were crafted manually to meet accessibility, responsiveness, and design system requirements.",
+    "libraries": [],
+    "sha256": "92bb5759443942ec885d9b2177ab13f3dcb699e917da2ac8c8385d166d8fb554",
+    "receipt": "receipts/difftest.json"
   }
 ]

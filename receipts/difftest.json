@@ -1,0 +1,62 @@
+{
+  "schema": 1,
+  "app": "difftest",
+  "files": {
+    "index.html": "92bb5759443942ec885d9b2177ab13f3dcb699e917da2ac8c8385d166d8fb554",
+    "style.css": "ffa34fc3d1b82e527d434b788908ac62ed626063354513c5138ea91612ee4cb2",
+    "script.js": "d263cc405743d2ec9798738173ca280ff7e85f02bf5dc535d9a24a09f50a78ee",
+    "icon-192.png": "38830c024482b9fc4832d293cc22e357223fb4574e1d6cb8499f28f95e594cbb",
+    "icon-512.png": "2a7491be9766a41f3a0100f883aecf203a3b2617ebf7f76af51f6e66350fd124",
+    "manifest.json": "29554f2c81f18b60182fdd7a4032e13b8fa391c7da3aabf144b77ef9dde5c9c1",
+    "sw.js": "f407a26abfa1aaa9f68be57fac51e1e8161cda78f71071e915aa081ba83e132b",
+    "meta.json": "4d8c704592e75165814ba122c9897590cee031e82be4a03d1d9d198b0d81b4fc",
+    "CHANGELOG.md": "8196e4ce3b8a4468b57f381d33433b977ee77ae1c8dabac1950eadfb89437768"
+  },
+  "bytes": 16206,
+  "builtAt": "2026-10-25T09:47:06.843Z",
+  "mode": "create",
+  "repo": "suryasticsai/Ariotica",
+  "runId": "40181926536",
+  "commit": null,
+  "model": {
+    "provider": "Groq",
+    "name": "openai/gpt-oss-120b"
+  },
+  "race": [
+    {
+      "provider": "Groq",
+      "model": "openai/gpt-oss-120b",
+      "sec": 6,
+      "ok": true,
+      "score": 100,
+      "reason": "",
+      "cost": 0.0021236999999999996,
+      "tokensIn": 1928,
+      "tokensOut": 2446
+    }
+  ],
+  "sha256": "92bb5759443942ec885d9b2177ab13f3dcb699e917da2ac8c8385d166d8fb554",
+  "checks": {
+    "complete": true,
+    "vanilla": false,
+    "externalRefs": [],
+    "zeroDeps": false,
+    "smoke": "pass",
+    "smokeErrors": [],
+    "scan": {
+      "total": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 0,
+      "byTool": {
+        "custom": 0,
+        "eslint": 0,
+        "sparrow": 0,
+        "externals": 0
+      }
+    }
+  },
+  "promptSha256": "f134101357168bd8c5011de0f2b15f4e706492410eb9faa6dfa5f699f4b7dc9f",
+  "prompt": "A simple counter app with a button that increments a number",
+  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js difftest"
+}
