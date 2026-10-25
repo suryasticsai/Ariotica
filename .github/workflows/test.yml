@@ -3,19 +3,26 @@ name: Tests
 on:
   push:
     branches: [main]
-    paths: 
+    paths:
       - 'lib/**'
+      - 'scripts/**'
       - 'test/**'
       - 'generate.js'
       - 'verify-receipt.js'
       - 'package.json'
+      - 'libraries_catalog.json'
+      - 'trusted_domains.json'
   pull_request:
-    paths: 
+    paths:
       - 'lib/**'
+      - 'scripts/**'
       - 'test/**'
       - 'generate.js'
       - 'verify-receipt.js'
       - 'package.json'
+      - 'libraries_catalog.json'
+      - 'trusted_domains.json'
+  workflow_dispatch:   # ← lets you run it manually from the phone
 
 permissions:
   contents: read
@@ -27,11 +34,16 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      
+
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
-          
+
       - run: npm install
-      
-      - run: npm test
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Static tests (diff, report, libraries)
+        if: always()
+        run: node scripts/test-static.js
