@@ -10,6 +10,7 @@ const Rag = require('./lib/rag');
 const K = require('./lib/knowledge');
 const R = require('./lib/receipt');
 const Lib = require('./lib/libraries');
+const Rep = require('./lib/report');
 const { runAllScanners } = require('./lib/scan');
 const { smokeTest } = require('./lib/smoke');
 const { askAI } = require('./lib/providers');
@@ -51,7 +52,7 @@ const stepLine = (s) => `${icon(s)} ${s.name}${s.sec != null ? ` — ${s.sec}s` 
 const elapsed = () => Math.round((Date.now() - T0) / 1000);
 
 // ============================================================
-// T3: PNG encoder + icon generator
+// PNG encoder + icon generator (unchanged)
 // ============================================================
 let _crcTable = null;
 function crc32(buf) {
@@ -126,7 +127,7 @@ function raceLine(report) {
 
 async function waitForPagesBuild(commitTime) {
   console.log('[pages] waiting for deployment...');
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < 60; i++) { // bumped to 5 min for slower deploys
     try {
       const { data } = await octokit.repos.getPagesBuild({ owner: OWNER, repo: REPO });
       if (data.status === 'built' && new Date(data.updated_at).getTime() >= commitTime) {
@@ -138,6 +139,7 @@ async function waitForPagesBuild(commitTime) {
     }
     await new Promise(r => setTimeout(r, 5000));
   }
+  console.log('[pages] timeout waiting for deployment');
   return false;
 }
 
@@ -177,6 +179,22 @@ async function finishStatus(issue, body, close) {
     if (close) await octokit.issues.update({ owner: OWNER, repo: REPO, issue_number: issue, state: 'closed' });
   } catch (e) { console.log('[status] finish failed:', e.message); }
 }
+
+// Prepend a block to the existing status comment (used for the screenshot).
+// Works even after finishStatus marked the comment done.
+async function appendToStatus(issue, addition) {
+  if (!issue) return;
+  try {
+    if (!statusCommentId) {
+      await octokit.issues.createComment({ owner: OWNER, repo: REPO, issue_number: issue, body: addition });
+      return;
+    }
+    const { data } = await octokit.issues.getComment({ owner: OWNER, repo: REPO, comment_id: statusCommentId });
+    const body = `${addition}\n\n${data.body}`;
+    await octokit.issues.updateComment({ owner: OWNER, repo: REPO, comment_id: statusCommentId, body });
+  } catch (e) { console.log('[status] append failed:', e.message); }
+}
+
 async function pushProgress(update = {}, force = false) { await updateStatusComment(force || !!update.status); }
 
 async function step(name, fn, meta = {}) {
@@ -212,9 +230,6 @@ function aiEvents() {
   };
 }
 
-// ============================================================
-// RULES — library policy is injected via LIB_PROMPT
-// ============================================================
 const RULES = `You are a Senior UI/UX Engineer building a PURE VANILLA JAVASCRIPT web app using multiple files.
 STRICT RULES:
 - Create separate files: index.html, style.css, script.js.
@@ -244,18 +259,12 @@ const GEN_SYSTEM = 'You reply with a single valid JSON object only. No markdown 
 const genMessages = (userText) => [{ role: 'system', content: GEN_SYSTEM }, { role: 'user', content: userText }];
 const HINT = '\n\n💬 Reply with `[improve] …`, `[fix] …`, `[audit]`, `[delete]`, `[revert] …`, `[ask] …`, `[leaderboard]`, `[skill] …`, `[inspire] …`, or `[evolve] <file> …`.';
 
-// ============================================================
-// Library system — load catalog once, build prompt section once
-// ============================================================
 const LIB_PROMPT = Lib.buildPromptSection();
 const TRUSTED_DOMAINS = Lib.loadTrusted();
 const CATALOG_GLOBALS = Object.values(Lib.loadCatalog())
   .filter(e => e && !e._meta && e.global)
   .map(e => e.global);
 
-// ============================================================
-// gradeHtml — domain-aware isVanilla + library-aware smoke filter
-// ============================================================
 async function gradeHtml(text) {
   const meta = T.parseMultiFileResponse(text);
   if (!meta || !meta.files || !meta.files['index.html']) {
@@ -284,9 +293,6 @@ async function gradeHtml(text) {
   const v = T.isVanilla(testHtml, TRUSTED_DOMAINS);
   if (!v.ok) return { ok: false, score: 10, html: testHtml, reason: `forbidden pattern ${v.hit}` };
 
-  // Smoke test on HTML with external scripts stripped (jsdom can't fetch them).
-  // Then filter "X is not defined" errors for known catalog globals — they
-  // exist in the browser via CDN but not in the jsdom sandbox.
   const smoke = await smokeTest(Lib.stripExternalForTests(testHtml));
   smoke.errors = (smoke.errors || []).filter((e) => {
     for (const g of CATALOG_GLOBALS) {
@@ -308,9 +314,6 @@ async function readFile(p) {
   catch (e) { if (e.status === 404) return null; throw e; }
 }
 
-// ============================================================
-// [COST] analytics
-// ============================================================
 function rebuildLeaderboard(costs) {
   const models = {};
   const providers = {};
@@ -325,10 +328,7 @@ function rebuildLeaderboard(costs) {
       if (isCancel) { m.cancels++; p.cancels++; }
       if (isWin) { m.wins++; p.wins++; }
       if (isLoss) { m.losses++; p.losses++; }
-      if (!isCancel) {
-        m.totalScore += (r.score || 0); m.scoredCount++;
-        p.totalScore += (r.score || 0); p.scoredCount++;
-      }
+      if (!isCancel) { m.totalScore += (r.score || 0); m.scoredCount++; p.totalScore += (r.score || 0); p.scoredCount++; }
       if (r.sec && !isCancel) { m.totalSec += r.sec; m.timedCount++; p.totalSec += r.sec; p.timedCount++; }
       m.totalCost += (r.cost || 0); m.totalIn += (r.tokensIn || 0); m.totalOut += (r.tokensOut || 0);
       p.totalCost += (r.cost || 0); p.totalIn += (r.tokensIn || 0); p.totalOut += (r.tokensOut || 0);
@@ -337,22 +337,11 @@ function rebuildLeaderboard(costs) {
       providers[r.provider] = p;
     }
   }
-  for (const m of Object.values(models)) {
-    m.avgScore = m.scoredCount ? m.totalScore / m.scoredCount : 0;
-    m.avgSec = m.timedCount ? m.totalSec / m.timedCount : 0;
-    m.winRate = (m.wins + m.losses) ? m.wins / (m.wins + m.losses) : 0;
-  }
-  for (const p of Object.values(providers)) {
-    p.avgScore = p.scoredCount ? p.totalScore / p.scoredCount : 0;
-    p.avgSec = p.timedCount ? p.totalSec / p.timedCount : 0;
-    p.winRate = (p.wins + p.losses) ? p.wins / (p.wins + p.losses) : 0;
-  }
+  for (const m of Object.values(models)) { m.avgScore = m.scoredCount ? m.totalScore / m.scoredCount : 0; m.avgSec = m.timedCount ? m.totalSec / m.timedCount : 0; m.winRate = (m.wins + m.losses) ? m.wins / (m.wins + m.losses) : 0; }
+  for (const p of Object.values(providers)) { p.avgScore = p.scoredCount ? p.totalScore / p.scoredCount : 0; p.avgSec = p.timedCount ? p.totalSec / p.timedCount : 0; p.winRate = (p.wins + p.losses) ? p.wins / (p.wins + p.losses) : 0; }
   return { updatedAt: new Date().toISOString(), totalBuilds: costs.length, models, providers };
 }
 
-// ============================================================
-// Revert helpers
-// ============================================================
 async function readFileAtRef(p, ref) {
   try {
     const { data } = await octokit.repos.getContent({ owner: OWNER, repo: REPO, path: p, ref });
@@ -493,9 +482,7 @@ async function runLeaderboard(issue) {
     lines.push('', '### 🏆 Top Models (min 2 races)');
     lines.push('| Model | Wins | Losses | Win Rate | Avg Score | Avg Sec | Cost |');
     lines.push('|---|---|---|---|---|---|---|');
-    for (const m of topModels) {
-      lines.push(`| \`${m.model}\` | ${m.wins} | ${m.losses} | ${(m.winRate * 100).toFixed(0)}% | ${m.avgScore.toFixed(1)} | ${m.avgSec.toFixed(1)}s | $${(m.totalCost || 0).toFixed(4)} |`);
-    }
+    for (const m of topModels) lines.push(`| \`${m.model}\` | ${m.wins} | ${m.losses} | ${(m.winRate * 100).toFixed(0)}% | ${m.avgScore.toFixed(1)} | ${m.avgSec.toFixed(1)}s | $${(m.totalCost || 0).toFixed(4)} |`);
   }
 
   const days = {};
@@ -503,20 +490,14 @@ async function runLeaderboard(issue) {
     const day = (c.ts || '').slice(0, 10);
     if (!day) continue;
     days[day] = days[day] || { cost: 0, builds: 0, tin: 0, tout: 0 };
-    days[day].cost += c.cost || 0;
-    days[day].builds++;
-    days[day].tin += c.tokensIn || 0;
-    days[day].tout += c.tokensOut || 0;
+    days[day].cost += c.cost || 0; days[day].builds++; days[day].tin += c.tokensIn || 0; days[day].tout += c.tokensOut || 0;
   }
   const dayKeys = Object.keys(days).sort().slice(-7);
   if (dayKeys.length) {
     lines.push('', '### 💰 Cost by Day (last 7)');
     lines.push('| Date | Builds | Cost | Tokens In | Tokens Out |');
     lines.push('|---|---|---|---|---|');
-    for (const d of dayKeys) {
-      const x = days[d];
-      lines.push(`| ${d} | ${x.builds} | $${x.cost.toFixed(4)} | ${x.tin.toLocaleString()} | ${x.tout.toLocaleString()} |`);
-    }
+    for (const d of dayKeys) { const x = days[d]; lines.push(`| ${d} | ${x.builds} | $${x.cost.toFixed(4)} | ${x.tin.toLocaleString()} | ${x.tout.toLocaleString()} |`); }
   }
 
   const recent = costs.slice(-10).reverse();
@@ -524,9 +505,7 @@ async function runLeaderboard(issue) {
     lines.push('', '### 📜 Recent Builds');
     lines.push('| When | Slug | Mode | Winner | Cost |');
     lines.push('|---|---|---|---|---|');
-    for (const c of recent) {
-      lines.push(`| ${(c.ts || '').slice(0, 16).replace('T', ' ')} | \`${c.slug}\` | ${c.mode} | ${c.provider}/${c.model || '?'} | $${(c.cost || 0).toFixed(4)} |`);
-    }
+    for (const c of recent) lines.push(`| ${(c.ts || '').slice(0, 16).replace('T', ' ')} | \`${c.slug}\` | ${c.mode} | ${c.provider}/${c.model || '?'} | $${(c.cost || 0).toFixed(4)} |`);
   }
 
   await finishStatus(issue, lines.join('\n') + HINT, false);
@@ -550,6 +529,16 @@ function resolveInputs() {
   return { project: tm.project, prompt, mode, issue: num, commentId: null };
 }
 
+// Generic reporter inputs — used by both buildSummaryComment and buildChangelogEntry
+function reportCtx({ slug, baseDir, mode, version, provider, model, raceReport, smoke, security, metaJson, resolved, totalCost, totalIn, totalOut, receipt, receiptPath, diffReports, newFiles, extraNotes }) {
+  return {
+    owner: OWNER, repo: REPO, branch: BRANCH,
+    slug, baseDir, mode, version, provider, model, raceReport,
+    smoke, security, metaJson, resolved, totalCost, totalIn, totalOut,
+    receipt, receiptPath, diffReports, newFiles, extraNotes,
+  };
+}
+
 async function main() {
   const inputs = resolveInputs();
   if (!inputs) { console.log('Comment has no valid tag - ignoring.'); return; }
@@ -564,6 +553,7 @@ async function main() {
   const baseDir = `${PROJECTS_DIR}/${slug}`;
   const mainFile = `${baseDir}/index.html`;
   const receiptPath = `${RECEIPTS_DIR}/${slug}.json`;
+  const changelogPath = `${baseDir}/CHANGELOG.md`;
 
   if (commentId) {
     try { await octokit.reactions.createForIssueComment({ owner: OWNER, repo: REPO, comment_id: commentId, content: 'eyes' }); } catch (e) { }
@@ -661,6 +651,14 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
     const target = await step(`Locating v${targetVersion}`, () => findVersion(slug, targetVersion));
     if (!target) throw new Error(`Version v${targetVersion} not found for \`${slug}\`.`);
     if (!target.receipt || !target.receipt.files) throw new Error(`Receipt for v${targetVersion} is missing.`);
+
+    // Read current state (pre-revert) for diffing
+    const currentSnapshot = {
+      'index.html': await readFile(`${baseDir}/index.html`) || '',
+      'style.css': await readFile(`${baseDir}/style.css`) || '',
+      'script.js': await readFile(`${baseDir}/script.js`) || '',
+    };
+
     const revertedFiles = await step(`Fetching files from v${targetVersion}`, async () => {
       const files = {};
       for (const name of Object.keys(target.receipt.files)) {
@@ -670,12 +668,15 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
       return files;
     });
     if (!revertedFiles['index.html']) throw new Error(`v${targetVersion} has no index.html.`);
+
+    const diffReports = Rep.buildChangeReport(currentSnapshot, revertedFiles, false);
     const newVersion = bumpVersion(currentMeta.version);
     const oldMeta = JSON.parse(revertedFiles['meta.json'] || '{}');
     oldMeta.version = newVersion;
     oldMeta.revertedFrom = targetVersion;
     oldMeta.revertedAt = new Date().toISOString();
     revertedFiles['meta.json'] = JSON.stringify(oldMeta, null, 2);
+
     const receipt = R.buildReceipt({
       repo: `${OWNER}/${REPO}`, slug, files: revertedFiles, mode: 'revert',
       runId: RUN_ID, commit: null, provider: 'revert', model: `from-v${targetVersion}`,
@@ -684,6 +685,18 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
       prompt: `revert to v${targetVersion}`, vanilla: T.isVanilla(revertedFiles['index.html'] || '', TRUSTED_DOMAINS).ok,
     });
     revertedFiles[receiptPath] = JSON.stringify(receipt, null, 2) + '\n';
+
+    // Changelog entry for the revert
+    const oldChangelog = await readFile(changelogPath) || '';
+    const newChangelog = Rep.buildChangelogEntry({
+      version: newVersion, mode: 'revert', when: new Date().toISOString(),
+      provider: 'revert', model: `from-v${targetVersion}`, totalCost: 0,
+      diffReports, metaJson: { features: [], fixes: [], suggestions: [], humanInvolvement: 'None' },
+      oldChangelog, isNew: false,
+      extraNotes: `**Reverted to content of v${targetVersion}** (\`${target.commit}\`, ${formatDate(target.when)}).`,
+    });
+    revertedFiles['CHANGELOG.md'] = newChangelog;
+
     const fullFiles = {};
     for (const [name, content] of Object.entries(revertedFiles)) {
       if (name === receiptPath) fullFiles[name] = content;
@@ -695,16 +708,33 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
     revertedFiles[receiptPath] = JSON.stringify(receipt, null, 2) + '\n';
     await atomicCommit({ [receiptPath]: revertedFiles[receiptPath] }, [], `chore: receipt ${slug}`);
     await syncCheckout();
-    const url = `https://${OWNER}.github.io/${REPO}/${baseDir}/`;
-    const body = `↩️ **Reverted \`${slug}\`**\n\n- **From:** v${currentMeta.version}\n- **To (content):** v${targetVersion} (\`${target.commit}\`)\n- **New version:** **v${newVersion}**\n\n🌐 **Live App:** ${url}`;
+
+    const body = Rep.buildSummaryComment(reportCtx({
+      slug, baseDir, mode: 'revert', version: newVersion,
+      provider: 'revert', model: `from-v${targetVersion}`, raceReport: [],
+      smoke: { ok: true, errors: [], skipped: true },
+      security: { findings: [], counts: { total: 0, high: 0, medium: 0, low: 0, byTool: {} } },
+      metaJson: { features: [], fixes: [], suggestions: [], humanInvolvement: 'None' },
+      resolved: { discovered: [] },
+      totalCost: 0, totalIn: 0, totalOut: 0,
+      receipt, receiptPath, diffReports, newFiles: revertedFiles,
+      extraNotes: `Restored content of **v${targetVersion}** (\`${target.commit}\`).`,
+    }));
     await finishStatus(issue, body + HINT, true);
+
+    const isDeployed = await waitForPagesBuild(Date.now());
+    if (isDeployed && issue) {
+      const url = `https://${OWNER}.github.io/${REPO}/${baseDir}/`;
+      const shot = `### 📸 Live Preview\n\n[![${slug} screenshot](https://image.thum.io/get/width/1200/crop/900/${url}?t=${Date.now()})](${url})\n\n_Click to open_`;
+      await appendToStatus(issue, shot);
+    }
     await pushProgress({ status: 'done' });
     return;
   }
 
   if (mode === 'delete') {
     const filesToDelete = [];
-    for (const f of ['index.html', 'style.css', 'script.js', 'manifest.json', 'sw.js', 'icon-192.png', 'icon-512.png', 'meta.json']) {
+    for (const f of ['index.html', 'style.css', 'script.js', 'manifest.json', 'sw.js', 'icon-192.png', 'icon-512.png', 'meta.json', 'CHANGELOG.md']) {
       const p = `${baseDir}/${f}`;
       if ((await readFile(p)) !== null) filesToDelete.push(p);
     }
@@ -717,9 +747,21 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
     await pushProgress({ status: 'done' }); return;
   }
 
+  // ============================================================
+  // Build / improve / fix / audit / inspire
+  // ============================================================
   let existingHtml = await readFile(mainFile);
   let existingCss = await readFile(`${baseDir}/style.css`) || '';
   let existingJs = await readFile(`${baseDir}/script.js`) || '';
+  const isNew = !existingHtml;
+
+  // Preserve full copies for the diff (before truncation)
+  const oldForDiff = {
+    'index.html': existingHtml || '',
+    'style.css': existingCss,
+    'script.js': existingJs,
+  };
+
   if ((mode === 'improve' || mode === 'fix' || mode === 'audit') && !existingHtml) throw new Error(`Cannot ${mode} "${slug}": no existing file.`);
 
   let ask;
@@ -743,15 +785,13 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
     } else ask = prompt;
   }
 
-  // ============================================================
-  // LIB_PROMPT injected here (library catalog for the AI)
-  // ============================================================
   let fullPrompt = RULES + LIB_PROMPT + ask + inspirationCtx;
   if (existingHtml) {
-    if (existingHtml.length > EXISTING_LIMIT) existingHtml = existingHtml.slice(0, EXISTING_LIMIT);
-    if (existingCss.length > CSS_JS_LIMIT) existingCss = existingCss.slice(0, CSS_JS_LIMIT);
-    if (existingJs.length > CSS_JS_LIMIT) existingJs = existingJs.slice(0, CSS_JS_LIMIT);
-    fullPrompt += `\n\nCURRENT FILES:\n[index.html]:\n${existingHtml}\n\n[style.css]:\n${existingCss}\n\n[script.js]:\n${existingJs}`;
+    let eHtml = existingHtml, eCss = existingCss, eJs = existingJs;
+    if (eHtml.length > EXISTING_LIMIT) eHtml = eHtml.slice(0, EXISTING_LIMIT);
+    if (eCss.length > CSS_JS_LIMIT) eCss = eCss.slice(0, CSS_JS_LIMIT);
+    if (eJs.length > CSS_JS_LIMIT) eJs = eJs.slice(0, CSS_JS_LIMIT);
+    fullPrompt += `\n\nCURRENT FILES:\n[index.html]:\n${eHtml}\n\n[style.css]:\n${eCss}\n\n[script.js]:\n${eJs}`;
   }
 
   let cand = await step('Generate with AI (model race)', () => generate(fullPrompt), { promptChars: fullPrompt.length });
@@ -815,9 +855,7 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
     process.exit(1);
   }
 
-  // ============================================================
-  // LIBRARY RESOLUTION — verify URLs, fetch bytes, inject SRI, derive CSP
-  // ============================================================
+  // Verify external refs, inject SRI, derive CSP
   let resolved;
   try {
     resolved = await Lib.resolveHtml(files['index.html']);
@@ -836,8 +874,13 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
     const watermark = `\n<!-- Built by Ariotica AI -->\n<div style="position:fixed;bottom:12px;right:12px;opacity:0.35;font-size:11px;font-family:monospace;color:white;pointer-events:none;z-index:9999;">⚡ Ariotica</div>`;
     currentHtml = currentHtml.replace(/<\/body>/i, `${watermark}\n</body>`);
   }
+  // CSP: update in place if present, else inject
   const cspTag = `<meta http-equiv="Content-Security-Policy" content="${resolved.csp}">`;
-  if (!currentHtml.includes('Content-Security-Policy')) currentHtml = currentHtml.replace('<head>', `<head>\n  ${cspTag}`);
+  if (/http-equiv=["']Content-Security-Policy["']/i.test(currentHtml)) {
+    currentHtml = currentHtml.replace(/<meta[^>]*http-equiv=["']Content-Security-Policy["'][^>]*>/i, cspTag);
+  } else {
+    currentHtml = currentHtml.replace('<head>', `<head>\n  ${cspTag}`);
+  }
 
   let hash = 0;
   for (let i = 0; i < slug.length; i++) hash = slug.charCodeAt(i) + ((hash << 5) - hash);
@@ -906,7 +949,7 @@ self.addEventListener('fetch', (e) => {
 
   let version = '1.0.0';
   if (meta.version) version = meta.version;
-  else {
+  else if (!isNew) {
     try {
       const oldMeta = JSON.parse(await readFile(`${baseDir}/meta.json`) || '{}');
       if (oldMeta.version) { const parts = oldMeta.version.split('.').map(Number); parts[2] += 1; version = parts.join('.'); }
@@ -921,6 +964,17 @@ self.addEventListener('fetch', (e) => {
     _watermark: "⚡ Built by Ariotica AI"
   };
   files['meta.json'] = JSON.stringify(metaJson, null, 2);
+
+  // ============================================================
+  // Diff + changelog
+  // ============================================================
+  const diffReports = isNew ? [] : Rep.buildChangeReport(oldForDiff, files, false);
+  const oldChangelog = await readFile(changelogPath) || '';
+  files['CHANGELOG.md'] = Rep.buildChangelogEntry({
+    version, mode, when: new Date().toISOString(),
+    provider, model, totalCost: 0, // patched below once we have totals
+    diffReports, metaJson, oldChangelog, isNew,
+  });
 
   const receipt = R.buildReceipt({ repo: `${OWNER}/${REPO}`, slug, files, mode, runId: RUN_ID, commit: null, provider, model, race: raceReport, smoke, security: security.counts, prompt, vanilla: T.isVanilla(testHtml, TRUSTED_DOMAINS).ok });
   files[receiptPath] = JSON.stringify(receipt, null, 2) + '\n';
@@ -941,7 +995,6 @@ self.addEventListener('fetch', (e) => {
     if (filename === MANIFEST_PATH || filename === receiptPath) fullFiles[filename] = content;
     else fullFiles[`${baseDir}/${filename}`] = content;
   }
-  // Library cache updates ride along in the same atomic commit
   if (resolved.cacheChanged) {
     fullFiles['libraries_cache.json'] = JSON.stringify(resolved.cache, null, 2) + '\n';
   }
@@ -952,12 +1005,17 @@ self.addEventListener('fetch', (e) => {
   const totalCost = raceReport.reduce((s, r) => s + (r.cost || 0), 0);
   const totalIn   = raceReport.reduce((s, r) => s + (r.tokensIn || 0), 0);
   const totalOut  = raceReport.reduce((s, r) => s + (r.tokensOut || 0), 0);
+
+  // Rewrite the changelog with the actual cost (was 0 above)
+  files['CHANGELOG.md'] = Rep.buildChangelogEntry({
+    version, mode, when: new Date().toISOString(),
+    provider, model, totalCost,
+    diffReports, metaJson, oldChangelog, isNew,
+  });
+
   const costEntry = {
-    ts: new Date().toISOString(),
-    slug, mode, provider, model,
-    runId: RUN_ID,
-    cost: totalCost, tokensIn: totalIn, tokensOut: totalOut,
-    score, sec: cand.sec || null,
+    ts: new Date().toISOString(), slug, mode, provider, model, runId: RUN_ID,
+    cost: totalCost, tokensIn: totalIn, tokensOut: totalOut, score, sec: cand.sec || null,
     race: raceReport.map(r => ({
       provider: r.provider, model: r.model, sec: r.sec, ok: r.ok, score: r.score,
       reason: r.reason, cost: r.cost || 0, tokensIn: r.tokensIn || 0, tokensOut: r.tokensOut || 0,
@@ -978,48 +1036,29 @@ self.addEventListener('fetch', (e) => {
 
   await atomicCommit({
     [receiptPath]: files[receiptPath],
+    [`${baseDir}/CHANGELOG.md`]: files['CHANGELOG.md'],
     [COSTS_PATH]: JSON.stringify(costs, null, 2) + '\n',
     [LB_PATH]: JSON.stringify(leaderboard, null, 2) + '\n',
-  }, [], `chore: receipt + analytics ${slug}`);
+  }, [], `chore: receipt + changelog + analytics ${slug}`);
 
   await syncCheckout();
 
-  const url = `https://${OWNER}.github.io/${REPO}/${baseDir}/`;
-  const folderUrl = `https://github.com/${OWNER}/${REPO}/tree/${BRANCH}/${baseDir}`;
-
-  let body = `✅ **${mode}** complete: \`${baseDir}/\` via **${provider}**${model ? ` (${model})` : ''}\n\n`;
-  body += `🌐 **Live App:** ${url}\n`;
-  body += `📁 **Source Code:** ${folderUrl}\n`;
-  const rl = raceLine(raceReport); if (rl) body += `\n🏁 Model race: ${rl}`;
-  if (!smoke.skipped) body += smoke.ok ? '\n\n🧪 Smoke test: passed' : `\n\n🧪 Smoke test: ⚠️ ${smoke.errors.length} runtime issue(s) remain`;
-  body += `\n\n💰 **Cost:** $${totalCost.toFixed(4)} · ${totalIn.toLocaleString()} in / ${totalOut.toLocaleString()} out tokens`;
-  body += `\n\n🧾 Receipt: [\`sha256:${receipt.sha256.slice(0, 12)}…\`](https://github.com/${OWNER}/${REPO}/blob/${BRANCH}/${receiptPath})`;
-  if (version) body += `\n\n**🏷️ Version:** \`v${version}\``;
-  if (resolved.discovered.length) {
-    body += `\n\n📚 **New libraries cached:**\n${resolved.discovered.map(d => `- \`${d.url}\` (${d.bytes}B)`).join('\n')}`;
-  }
-  if (metaJson.features.length) body += `\n\n**✨ New Features:**\n${metaJson.features.map(f => `- ${f}`).join('\n')}`;
-  if (metaJson.fixes.length) body += `\n\n**🔧 Bugs Fixed:**\n${metaJson.fixes.map(f => `- ${f}`).join('\n')}`;
-  if (security.findings.length) body += `\n\n**Scanner findings (${security.findings.length}):**\n` + security.findings.slice(0, 5).map((f) => `- [${f.sev}] ${f.msg}`).join('\n');
+  // ============================================================
+  // Single comment: summary + diff + (screenshot appended later)
+  // ============================================================
+  const body = Rep.buildSummaryComment(reportCtx({
+    slug, baseDir, mode, version, provider, model, raceReport,
+    smoke, security, metaJson, resolved, totalCost, totalIn, totalOut,
+    receipt, receiptPath, diffReports, newFiles: files,
+  }));
 
   await finishStatus(issue, body + HINT, false);
 
   const isDeployed = await waitForPagesBuild(startTime);
-
   if (isDeployed && issue) {
-    const screenshotUrl = `https://image.thum.io/get/width/1200/crop/900/${url}?t=${Date.now()}`;
-    try {
-      await octokit.issues.createComment({
-        owner: OWNER, repo: REPO, issue_number: issue,
-        body: [
-          `### 📸 Live Preview — \`${slug}\``, '',
-          `🌐 **Open app:** ${url}`,
-          `📁 **Source:** ${folderUrl}`, '',
-          `[![${slug} screenshot](${screenshotUrl})](${url})`, '',
-          `_Screenshot refreshes on each build · click to open_`,
-        ].join('\n'),
-      });
-    } catch (e) { console.log('Failed to post screenshot comment:', e.message); }
+    const url = `https://${OWNER}.github.io/${REPO}/${baseDir}/`;
+    const shot = `### 📸 Live Preview\n\n[![${slug} screenshot](https://image.thum.io/get/width/1200/crop/900/${url}?t=${Date.now()})](${url})\n\n_Screenshot refreshes each build · click to open_`;
+    await appendToStatus(issue, shot);
   }
 
   if (issue) { try { await octokit.issues.update({ owner: OWNER, repo: REPO, issue_number: issue, state: 'closed' }); } catch {} }
