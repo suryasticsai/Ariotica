@@ -16,6 +16,7 @@
   const emptyState = $('empty-state');
   const mediaSection = $('media-section');
   const chatSection = $('chat-section');
+  const spinner = $('spinner');
 
   // State variables
   let roomId = null;
@@ -25,11 +26,21 @@
   let localStream = null;
   let isHost = false;
   let micOn = true;
-  let videoOn = false; // start with camera off
+  let videoOn = false;
+  let retryCount = 0;
+  const MAX_RETRIES = 3;
 
   // Utility functions
   function setStatus(text) {
     statusEl.textContent = text;
+  }
+
+  function showSpinner() {
+    spinner.classList.remove('d-none');
+  }
+
+  function hideSpinner() {
+    spinner.classList.add('d-none');
   }
 
   function updateShareLink() {
@@ -59,6 +70,7 @@
     cameraBtn.setAttribute('aria-pressed', 'true');
     videoOn = false;
     micOn = true;
+    hideSpinner();
   }
 
   function addMessage(text, fromSelf) {
@@ -74,7 +86,7 @@
   async function getMedia() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-      // Disable video initially (camera off)
+      // Start with video disabled (camera off)
       stream.getVideoTracks().forEach((t) => (t.enabled = false));
       localStream = stream;
       localVideo.srcObject = stream;
@@ -112,53 +124,80 @@
     resetUI();
   }
 
-  // PeerJS logic based on Ariotica spec
-  function start(hostId, withVideo) {
-    // hostId is deterministic: 'ariotica-' + roomId
-    peer = new Peer(hostId);
+  // PeerJS logic with retry & spinner
+  function startAsHost(hostId) {
+    isHost = true;
+    initPeer(hostId, true);
+  }
+
+  function startAsGuest(hostId) {
+    isHost = false;
+    initPeer(hostId, false);
+  }
+
+  function initPeer(hostId, tryAsHost) {
+    hideSpinner(); // ensure spinner hidden before new attempt
+    showSpinner();
+    if (tryAsHost) {
+      peer = new Peer(hostId);
+    } else {
+      peer = new Peer(); // random id for guest
+    }
+
     peer.on('open', () => {
-      setStatus('Waiting for a friend…');
+      hideSpinner();
+      if (tryAsHost) {
+        setStatus('Waiting for a friend…');
+      } else {
+        setStatus('Connecting…');
+      }
     });
+
     peer.on('error', (err) => {
-      if (err.type === 'unavailable-id') {
-        // Someone already hosts – become guest
+      hideSpinner();
+      if (err.type === 'unavailable-id' && tryAsHost) {
+        // Host ID already taken – become guest
         peer.destroy();
-        joinAsGuest(hostId);
+        startAsGuest(hostId);
+      } else if (err.type === 'server-error') {
+        if (retryCount < MAX_RETRIES) {
+          retryCount++;
+          setStatus('Signaling server busy. Retrying in 3 seconds…');
+          setTimeout(() => initPeer(hostId, tryAsHost), 3000);
+        } else {
+          setStatus('Error: Signaling server unavailable');
+        }
       } else {
         console.error('Peer error:', err);
         setStatus('Error: ' + err.type);
       }
     });
+
     peer.on('connection', (conn) => {
-      // Host receives incoming data connection
       dataConn = conn;
       setupDataConnection(conn);
     });
+
     peer.on('call', (incomingCall) => {
-      // Answer incoming call
-      incomingCall.answer(localStream);
+      // Answer with our stream (may be null if user denied media)
+      incomingCall.answer(localStream || undefined);
       call = incomingCall;
       setupCallHandlers(incomingCall);
     });
-  }
 
-  function joinAsGuest(hostId) {
-    peer = new Peer(); // random id
-    peer.on('open', () => {
-      // Data connection
-      dataConn = peer.connect(hostId, { reliable: true });
-      setupDataConnection(dataConn);
-      // Media call if we have a stream
-      if (localStream) {
-        call = peer.call(hostId, localStream);
-        setupCallHandlers(call);
-      }
-      setStatus('Connecting…');
-    });
-    peer.on('error', (err) => {
-      console.error('Guest peer error:', err);
-      setStatus('Error: ' + err.type);
-    });
+    // When we are a guest we need to connect after peer is open
+    if (!tryAsHost) {
+      peer.on('open', () => {
+        // Data connection
+        dataConn = peer.connect(hostId, { reliable: true });
+        setupDataConnection(dataConn);
+        // Media call if we have a stream
+        if (localStream) {
+          call = peer.call(hostId, localStream);
+          setupCallHandlers(call);
+        }
+      });
+    }
   }
 
   function setupDataConnection(conn) {
@@ -193,18 +232,15 @@
   }
 
   // UI event listeners
-  createRoomBtn.addEventListener('click', () => {
+  createRoomBtn.addEventListener('click', async () => {
     roomId = Math.random().toString(36).substring(2, 8);
-    isHost = true;
+    const deterministicId = 'ariotica-' + roomId;
     location.hash = roomId;
+    document.title = `Room – ${roomId}`;
     updateShareLink();
     createRoomBtn.style.display = 'none';
-    document.title = `Room – ${roomId}`;
-    // Start everything
-    getMedia().then(() => {
-      const deterministicId = 'ariotica-' + roomId;
-      start(deterministicId, true);
-    });
+    await getMedia();
+    startAsHost(deterministicId);
   });
 
   copyBtn.addEventListener('click', async () => {
@@ -230,17 +266,18 @@
     msgInput.value = '';
   });
 
-  // Load existing hash (join existing room)
+  // Initialization based on hash (auto‑join)
   async function init() {
     if (location.hash) {
+      // Hide create button for guests
+      createRoomBtn.style.display = 'none';
       roomId = location.hash.substring(1);
-      isHost = false;
+      const deterministicId = 'ariotica-' + roomId;
       document.title = `Room – ${roomId}`;
       updateShareLink();
       await getMedia();
-      const deterministicId = 'ariotica-' + roomId;
-      // Attempt to become host; will fallback to guest if id taken
-      start(deterministicId, true);
+      // Try to become host; fallback handled inside initPeer
+      startAsHost(deterministicId);
     } else {
       // No hash – show create button
       createRoomBtn.style.display = 'inline-block';
@@ -248,7 +285,7 @@
   }
 
   window.addEventListener('hashchange', () => {
-    // Simple reload to re‑initialise with new room id
+    // Simple reload to handle new room ids cleanly
     location.reload();
   });
 

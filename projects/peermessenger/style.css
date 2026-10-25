@@ -73,3 +73,10 @@ video {
   background-color: #000;
   object-fit: cover;
 }
+
+/* Spinner positioning */
+#spinner {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.5rem;
+}

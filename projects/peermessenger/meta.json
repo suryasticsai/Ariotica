@@ -1,34 +1,31 @@
 {
   "version": "1.0.0",
   "features": [
-    "Hash‑based room routing with deterministic host IDs",
-    "Audio‑only by default with optional camera toggle",
-    "PeerJS data channel for text chat",
-    "Mute/unmute microphone, camera on/off, hang‑up controls",
-    "Live status line with aria‑live for screen readers",
-    "Shareable link copy button",
-    "Responsive layout using Flexbox and Bootstrap utilities",
-    "High‑contrast focus outlines and CSS variables for theming",
-    "Empty chat state handling",
-    "Graceful error handling for media and peer errors"
+    "Hash‑based routing with automatic room join",
+    "PeerJS video/audio chat with deterministic host ID",
+    "Auto‑retry on PeerJS server‑error up to three attempts",
+    "Bootstrap spinner displayed while connecting to signaling server",
+    "Responsive layout using Flexbox/Grid and Bootstrap utilities",
+    "Accessible semantic markup with ARIA live regions and focus outlines",
+    "CSS variable based design system with smooth transitions"
   ],
   "fixes": [
-    "Added missing video elements and media section",
-    "Implemented proper deterministic host ID and fallback to guest",
-    "Ensured status updates reflect all states",
-    "Provided copy‑to‑clipboard feedback",
-    "Handled UI reset after hang‑up",
-    "Removed console errors when buttons are pressed without a call"
+    "\"Create Room\" button is hidden when a hash is present",
+    "Automatic guest connection on page load when a room hash exists",
+    "Retry logic for PeerJS \"server-error\" with user‑visible status updates",
+    "Visual spinner added for connecting state",
+    "Spinner and status handling cleaned to avoid console errors"
   ],
   "suggestions": [
-    "Persist recent room ID in localStorage (prefixed with app name) for quick re‑join",
-    "Add a small onboarding modal for first‑time users",
-    "Include a download button for the chat transcript"
+    "Persist last used room ID in localStorage (prefixed with app name) for quick re‑entry",
+    "Add a toggle to enable/disable video before calling to save bandwidth",
+    "Show a small participant count badge when multiple peers join via data connections"
   ],
   "grade": "B",
   "percentile": "Top 50%",
-  "humanInvolvement": "Code was reviewed and manually tested in Chrome and Firefox on desktop and mobile emulation to verify all buttons work without console errors.",
+  "humanInvolvement": "Test the app on both desktop and mobile browsers, verify that the retry mechanism works when the PeerJS server is temporarily unavailable, and confirm that all ARIA attributes and focus states meet WCAG AA contrast requirements.",
   "libraries": [
+    "bootstrap",
     "peerjs"
   ],
   "_watermark": "⚡ Built by Ariotica AI"
