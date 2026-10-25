@@ -15,11 +15,15 @@ const { askAI } = require('./lib/providers');
 
 const PROJECTS_DIR  = 'projects';
 const RECEIPTS_DIR  = 'receipts';
+const ANALYTICS_DIR = 'analytics';
+const COSTS_PATH    = `${ANALYTICS_DIR}/costs.json`;
+const LB_PATH       = `${ANALYTICS_DIR}/leaderboard.json`;
 const MANIFEST_PATH = 'projects.json';
 
 const EXISTING_LIMIT = 30000;
 const CSS_JS_LIMIT = 15000;
 const STATUS_EVERY   = 5000;
+const COSTS_LIMIT   = 1000;
 
 const BINARY_EXT = /\.(png|jpe?g|gif|webp|ico|woff2?|ttf|otf)$/i;
 
@@ -46,7 +50,7 @@ const stepLine = (s) => `${icon(s)} ${s.name}${s.sec != null ? ` — ${s.sec}s` 
 const elapsed = () => Math.round((Date.now() - T0) / 1000);
 
 // ============================================================
-// T3: zero-dependency PNG encoder + icon generator
+// T3: PNG encoder + icon generator (unchanged)
 // ============================================================
 let _crcTable = null;
 function crc32(buf) {
@@ -62,7 +66,6 @@ function crc32(buf) {
   for (let i = 0; i < buf.length; i++) crc = _crcTable[(crc ^ buf[i]) & 0xFF] ^ (crc >>> 8);
   return (crc ^ 0xFFFFFFFF) >>> 0;
 }
-
 function pngChunk(type, data) {
   const len = Buffer.alloc(4); len.writeUInt32BE(data.length, 0);
   const typeBuf = Buffer.from(type, 'ascii');
@@ -70,7 +73,6 @@ function pngChunk(type, data) {
   crcBuf.writeUInt32BE(crc32(Buffer.concat([typeBuf, data])), 0);
   return Buffer.concat([len, typeBuf, data, crcBuf]);
 }
-
 function hslToRgb(h, s, l) {
   const c = (1 - Math.abs(2 * l - 1)) * s;
   const hp = h / 60;
@@ -83,48 +85,35 @@ function hslToRgb(h, s, l) {
   else if (hp < 5) { r = x; b = c; }
   else { r = c; b = x; }
   const m = l - c / 2;
-  return [
-    Math.round((r + m) * 255),
-    Math.round((g + m) * 255),
-    Math.round((b + m) * 255),
-  ];
+  return [Math.round((r + m) * 255), Math.round((g + m) * 255), Math.round((b + m) * 255)];
 }
-
 function makeIconPNG(size, hsl) {
-  const [R, G, B] = hslToRgb(hsl.h, hsl.s, hsl.l);
-  const lum = (0.299 * R + 0.587 * G + 0.114 * B) / 255;
+  const [R_, G_, B_] = hslToRgb(hsl.h, hsl.s, hsl.l);
+  const lum = (0.299 * R_ + 0.587 * G_ + 0.114 * B_) / 255;
   const mark = lum > 0.6 ? [15, 18, 32] : [255, 255, 255];
   const rowLen = size * 4 + 1;
   const raw = Buffer.alloc(size * rowLen);
   const cx = size / 2, cy = size / 2;
   const rOuter = (size * 0.32) ** 2;
   const rInner = (size * 0.14) ** 2;
-
   for (let y = 0; y < size; y++) {
     raw[y * rowLen] = 0;
     for (let x = 0; x < size; x++) {
       const i = y * rowLen + 1 + x * 4;
-      raw[i] = R; raw[i + 1] = G; raw[i + 2] = B; raw[i + 3] = 255;
+      raw[i] = R_; raw[i + 1] = G_; raw[i + 2] = B_; raw[i + 3] = 255;
       const dx = x - cx + 0.5, dy = y - cy + 0.5;
       const d2 = dx * dx + dy * dy;
-      if (d2 < rOuter && d2 > rInner) {
-        raw[i] = mark[0]; raw[i + 1] = mark[1]; raw[i + 2] = mark[2];
-      } else if (d2 < rInner * 0.5) {
-        raw[i] = mark[0]; raw[i + 1] = mark[1]; raw[i + 2] = mark[2];
-      }
+      if (d2 < rOuter && d2 > rInner) { raw[i] = mark[0]; raw[i + 1] = mark[1]; raw[i + 2] = mark[2]; }
+      else if (d2 < rInner * 0.5) { raw[i] = mark[0]; raw[i + 1] = mark[1]; raw[i + 2] = mark[2]; }
     }
   }
-
   const idat = zlib.deflateSync(raw);
   const ihdr = Buffer.alloc(13);
-  ihdr.writeUInt32BE(size, 0);
-  ihdr.writeUInt32BE(size, 4);
+  ihdr.writeUInt32BE(size, 0); ihdr.writeUInt32BE(size, 4);
   ihdr[8] = 8; ihdr[9] = 6; ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0;
   return Buffer.concat([
     Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
-    pngChunk('IHDR', ihdr),
-    pngChunk('IDAT', idat),
-    pngChunk('IEND', Buffer.alloc(0)),
+    pngChunk('IHDR', ihdr), pngChunk('IDAT', idat), pngChunk('IEND', Buffer.alloc(0)),
   ]);
 }
 
@@ -144,11 +133,10 @@ async function waitForPagesBuild(commitTime) {
         return true;
       }
     } catch (e) {
-      if (e.status === 404) { console.log('[pages] Pages not configured, skipping wait.'); return false; }
+      if (e.status === 404) { console.log('[pages] Pages not configured.'); return false; }
     }
     await new Promise(r => setTimeout(r, 5000));
   }
-  console.log('[pages] timeout waiting for deployment');
   return false;
 }
 
@@ -161,7 +149,6 @@ async function updateStatusComment(force) {
   try { await octokit.issues.updateComment({ owner: OWNER, repo: REPO, comment_id: statusCommentId, body }); }
   catch (e) { console.log('[status] update failed:', e.message); }
 }
-
 async function startStatusComment(issue, header) {
   if (!issue) return;
   statusHeader = header;
@@ -170,14 +157,12 @@ async function startStatusComment(issue, header) {
     statusCommentId = data.id;
   } catch (e) { console.log('[status] create failed:', e.message); }
 }
-
 function writeJobSummary(extra) {
   const f = process.env.GITHUB_STEP_SUMMARY;
   if (!f) return;
   try { fs.appendFileSync(f, `## Ariotica run ${RUN_ID} (${elapsed()}s)\n\n${steps.map((s) => '- ' + stepLine(s)).join('\n')}\n\n${extra || ''}\n`); }
   catch { }
 }
-
 async function finishStatus(issue, body, close) {
   writeJobSummary(body);
   if (!issue) return;
@@ -191,10 +176,7 @@ async function finishStatus(issue, body, close) {
     if (close) await octokit.issues.update({ owner: OWNER, repo: REPO, issue_number: issue, state: 'closed' });
   } catch (e) { console.log('[status] finish failed:', e.message); }
 }
-
-async function pushProgress(update = {}, force = false) {
-  await updateStatusComment(force || !!update.status);
-}
+async function pushProgress(update = {}, force = false) { await updateStatusComment(force || !!update.status); }
 
 async function step(name, fn, meta = {}) {
   const t0 = Date.now();
@@ -210,7 +192,6 @@ async function step(name, fn, meta = {}) {
     await pushProgress({}, true); throw e;
   }
 }
-
 async function softStep(name, fn) {
   try { return await step(name, fn); } catch (e) { console.log(`[soft] ${name} failed: ${e.message}`); return null; }
 }
@@ -245,31 +226,20 @@ STRICT RULES:
 
 OUTPUT FORMAT: reply with ONLY one JSON object and nothing else.
 {
-  "files": {
-    "index.html": "<!DOCTYPE html>...",
-    "style.css": ":root { ... }",
-    "script.js": "console.log('...');"
-  },
-  "features": ["List of new features added"],
-  "fixes": ["List of bugs fixed"],
-  "suggestions": ["Ideas for the next version"],
-  "humanInvolvement": "Explain what the human needs to do next",
-  "libraries": ["List any external libraries used (None preferred)"]
+  "files": { "index.html": "...", "style.css": "...", "script.js": "..." },
+  "features": ["..."], "fixes": ["..."], "suggestions": ["..."],
+  "humanInvolvement": "...", "libraries": ["..."]
 }
 `;
 
 const SKILL_RULES = `You are an expert technical author.
 Write a dense, 500-word markdown cheatsheet on how to implement the requested skill in vanilla JavaScript.
-Include short, copy-pasteable code snippets. Focus on best practices.
 Reply with ONLY the raw markdown text. No JSON. No conversational filler.`;
 
 const GEN_SYSTEM = 'You reply with a single valid JSON object only. No markdown fences, no other text.';
 const genMessages = (userText) => [{ role: 'system', content: GEN_SYSTEM }, { role: 'user', content: userText }];
-const HINT = '\n\n💬 Reply with `[improve] …`, `[fix] …`, `[audit]`, `[delete]`, `[revert] …`, `[ask] …`, `[skill] …`, `[inspire] …`, or `[evolve] <file> …`.';
+const HINT = '\n\n💬 Reply with `[improve] …`, `[fix] …`, `[audit]`, `[delete]`, `[revert] …`, `[ask] …`, `[leaderboard]`, `[skill] …`, `[inspire] …`, or `[evolve] <file> …`.';
 
-// ============================================================
-// PATCH 1: array normalization at the top of gradeHtml
-// ============================================================
 async function gradeHtml(text) {
   const meta = T.parseMultiFileResponse(text);
   if (!meta || !meta.files || !meta.files['index.html']) {
@@ -278,7 +248,6 @@ async function gradeHtml(text) {
   for (const [k, v] of Object.entries(meta.files)) {
     if (typeof v !== 'string') meta.files[k] = Array.isArray(v) ? v.join('\n') : String(v);
   }
-
   let testHtml = meta.files['index.html'];
   for (const [name, content] of Object.entries(meta.files)) {
     if (name.endsWith('.css')) {
@@ -292,11 +261,9 @@ async function gradeHtml(text) {
       else testHtml = testHtml.replace('</body>', `<script>\n${content}\n</script>\n</body>`);
     }
   }
-
   if (!T.isUsable(testHtml)) return { ok: false, score: 0, html: testHtml, reason: 'incomplete or malformed HTML' };
   const v = T.isVanilla(testHtml);
   if (!v.ok) return { ok: false, score: 10, html: testHtml, reason: `forbidden pattern ${v.hit}` };
-
   const smoke = await smokeTest(testHtml);
   const n = smoke.errors.length;
   return { ok: smoke.ok, score: 100 - 10 * Math.min(n, 9), html: testHtml, files: meta.files, meta, smoke, reason: smoke.ok ? '' : `${n} runtime error(s)` };
@@ -305,222 +272,256 @@ async function gradeHtml(text) {
 const structurallyBad = (c) => !c.grade.files || !c.grade.files['index.html'] || !T.isVanilla(c.grade.html).ok;
 const generate = (userText) => askAI(genMessages(userText), { json: true, grade: gradeHtml, onEvent: aiEvents() });
 
-async function readFile(path) {
-  try { const { data } = await octokit.repos.getContent({ owner: OWNER, repo: REPO, path, ref: BRANCH }); if (Array.isArray(data)) return null; return Buffer.from(data.content, 'base64').toString('utf8'); }
+async function readFile(p) {
+  try { const { data } = await octokit.repos.getContent({ owner: OWNER, repo: REPO, path: p, ref: BRANCH }); if (Array.isArray(data)) return null; return Buffer.from(data.content, 'base64').toString('utf8'); }
   catch (e) { if (e.status === 404) return null; throw e; }
 }
 
 // ============================================================
-// Revert helpers — read files/receipts at a specific commit
+// [COST] analytics helpers
 // ============================================================
-async function readFileAtRef(path, ref) {
+function rebuildLeaderboard(costs) {
+  const models = {};
+  const providers = {};
+  for (const c of costs) {
+    for (const r of (c.race || [])) {
+      const key = `${r.provider}/${r.model || 'unknown'}`;
+      const m = models[key] || { provider: r.provider, model: r.model, wins: 0, losses: 0, cancels: 0, totalScore: 0, scoredCount: 0, totalSec: 0, timedCount: 0, totalCost: 0, totalIn: 0, totalOut: 0, lastSeen: null };
+      const p = providers[r.provider] || { wins: 0, losses: 0, cancels: 0, totalScore: 0, scoredCount: 0, totalSec: 0, timedCount: 0, totalCost: 0, totalIn: 0, totalOut: 0 };
+      const isCancel = r.reason === 'lost the race';
+      const isWin = !isCancel && r.ok;
+      const isLoss = !isCancel && !r.ok;
+      if (isCancel) { m.cancels++; p.cancels++; }
+      if (isWin) { m.wins++; p.wins++; }
+      if (isLoss) { m.losses++; p.losses++; }
+      if (!isCancel) {
+        m.totalScore += (r.score || 0); m.scoredCount++;
+        p.totalScore += (r.score || 0); p.scoredCount++;
+      }
+      if (r.sec && !isCancel) {
+        m.totalSec += r.sec; m.timedCount++;
+        p.totalSec += r.sec; p.timedCount++;
+      }
+      m.totalCost += (r.cost || 0);
+      m.totalIn += (r.tokensIn || 0);
+      m.totalOut += (r.tokensOut || 0);
+      p.totalCost += (r.cost || 0);
+      p.totalIn += (r.tokensIn || 0);
+      p.totalOut += (r.tokensOut || 0);
+      m.lastSeen = c.ts;
+      models[key] = m;
+      providers[r.provider] = p;
+    }
+  }
+  for (const m of Object.values(models)) {
+    m.avgScore = m.scoredCount ? m.totalScore / m.scoredCount : 0;
+    m.avgSec = m.timedCount ? m.totalSec / m.timedCount : 0;
+    m.winRate = (m.wins + m.losses) ? m.wins / (m.wins + m.losses) : 0;
+  }
+  for (const p of Object.values(providers)) {
+    p.avgScore = p.scoredCount ? p.totalScore / p.scoredCount : 0;
+    p.avgSec = p.timedCount ? p.totalSec / p.timedCount : 0;
+    p.winRate = (p.wins + p.losses) ? p.wins / (p.wins + p.losses) : 0;
+  }
+  return { updatedAt: new Date().toISOString(), totalBuilds: costs.length, models, providers };
+}
+
+// ============================================================
+// Revert helpers (unchanged)
+// ============================================================
+async function readFileAtRef(p, ref) {
   try {
-    const { data } = await octokit.repos.getContent({ owner: OWNER, repo: REPO, path, ref });
+    const { data } = await octokit.repos.getContent({ owner: OWNER, repo: REPO, path: p, ref });
     if (Array.isArray(data)) return null;
     let content = data.content;
     if (data.encoding === 'none' || !content) {
       const { data: blob } = await octokit.git.getBlob({ owner: OWNER, repo: REPO, file_sha: data.sha });
       content = blob.content;
     }
-    if (BINARY_EXT.test(path)) return content;
+    if (BINARY_EXT.test(p)) return content;
     return Buffer.from(content, 'base64').toString('utf8');
-  } catch (e) {
-    if (e.status === 404) return null;
-    throw e;
-  }
+  } catch (e) { if (e.status === 404) return null; throw e; }
 }
-
-function formatDate(iso) {
-  try { return new Date(iso).toISOString().replace('T', ' ').slice(0, 16); }
-  catch { return iso; }
-}
-
-function bumpVersion(v) {
-  const parts = String(v || '1.0.0').split('.').map(Number);
-  parts[2] = (parts[2] || 0) + 1;
-  return parts.join('.');
-}
+function formatDate(iso) { try { return new Date(iso).toISOString().replace('T', ' ').slice(0, 16); } catch { return iso; } }
+function bumpVersion(v) { const parts = String(v || '1.0.0').split('.').map(Number); parts[2] = (parts[2] || 0) + 1; return parts.join('.'); }
 
 async function listVersions(slug) {
   const escaped = slug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const featRe   = new RegExp(`^feat: ${escaped} v(\\S+) \\((\\w+)\\)$`);
   const revertRe = new RegExp(`^revert: ${escaped} to v(\\S+) \\(as v(\\S+)\\)$`);
-
-  const commits = await octokit.paginate(octokit.repos.listCommits, {
-    owner: OWNER, repo: REPO, sha: BRANCH, per_page: 100,
-  });
-
+  const commits = await octokit.paginate(octokit.repos.listCommits, { owner: OWNER, repo: REPO, sha: BRANCH, per_page: 100 });
   const versions = [];
   for (const c of commits) {
     const msg = c.commit.message.split('\n')[0];
     const m1 = msg.match(featRe);
     const m2 = msg.match(revertRe);
-    if (m1) {
-      versions.push({ version: m1[1], mode: m1[2], commit: c.sha.slice(0, 7), commitSha: c.sha, when: c.commit.author.date, message: msg });
-    } else if (m2) {
-      versions.push({ version: m2[2], mode: 'revert', revertedFrom: m2[1], commit: c.sha.slice(0, 7), commitSha: c.sha, when: c.commit.author.date, message: msg });
-    }
+    if (m1) versions.push({ version: m1[1], mode: m1[2], commit: c.sha.slice(0, 7), commitSha: c.sha, when: c.commit.author.date, message: msg });
+    else if (m2) versions.push({ version: m2[2], mode: 'revert', revertedFrom: m2[1], commit: c.sha.slice(0, 7), commitSha: c.sha, when: c.commit.author.date, message: msg });
   }
   return versions;
 }
-
 async function findVersion(slug, targetVersion) {
   const versions = await listVersions(slug);
   const hit = versions.find(v => v.version === targetVersion);
   if (!hit) return null;
   const receiptRaw = await readFileAtRef(`${RECEIPTS_DIR}/${slug}.json`, hit.commitSha);
-  const receipt = receiptRaw ? JSON.parse(receiptRaw) : null;
-  return { ...hit, receipt };
+  return { ...hit, receipt: receiptRaw ? JSON.parse(receiptRaw) : null };
 }
 
-// ============================================================
-// T3: atomicCommit handles binary files via base64
-// ============================================================
 async function atomicCommit(files, deletedPaths, message) {
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
       const { data: refData } = await octokit.git.getRef({ owner: OWNER, repo: REPO, ref: `heads/${BRANCH}` });
       const latestCommitSha = refData.object.sha;
       const { data: commitData } = await octokit.git.getCommit({ owner: OWNER, repo: REPO, commit_sha: latestCommitSha });
-
       const treeItems = [];
-      for (const [path, content] of Object.entries(files)) {
-        const isBinary = BINARY_EXT.test(path);
-        const { data: blob } = await octokit.git.createBlob({
-          owner: OWNER, repo: REPO,
-          content,
-          encoding: isBinary ? 'base64' : 'utf-8',
-        });
-        treeItems.push({ path, mode: '100644', type: 'blob', sha: blob.sha });
+      for (const [p, content] of Object.entries(files)) {
+        const isBinary = BINARY_EXT.test(p);
+        const { data: blob } = await octokit.git.createBlob({ owner: OWNER, repo: REPO, content, encoding: isBinary ? 'base64' : 'utf-8' });
+        treeItems.push({ path: p, mode: '100644', type: 'blob', sha: blob.sha });
       }
-      for (const path of (deletedPaths || [])) {
-        treeItems.push({ path, mode: '100644', type: 'blob', sha: null });
-      }
-
-      const { data: newTree } = await octokit.git.createTree({
-        owner: OWNER, repo: REPO,
-        base_tree: commitData.tree.sha,
-        tree: treeItems,
-      });
-
-      const { data: newCommit } = await octokit.git.createCommit({
-        owner: OWNER, repo: REPO, message,
-        tree: newTree.sha, parents: [latestCommitSha],
-      });
-
+      for (const p of (deletedPaths || [])) treeItems.push({ path: p, mode: '100644', type: 'blob', sha: null });
+      const { data: newTree } = await octokit.git.createTree({ owner: OWNER, repo: REPO, base_tree: commitData.tree.sha, tree: treeItems });
+      const { data: newCommit } = await octokit.git.createCommit({ owner: OWNER, repo: REPO, message, tree: newTree.sha, parents: [latestCommitSha] });
       await octokit.git.updateRef({ owner: OWNER, repo: REPO, ref: `heads/${BRANCH}`, sha: newCommit.sha });
       return newCommit.sha;
-    } catch (e) {
-      if (attempt === 3) throw e;
-      await new Promise(r => setTimeout(r, 2000));
-    }
+    } catch (e) { if (attempt === 3) throw e; await new Promise(r => setTimeout(r, 2000)); }
   }
 }
-
 async function syncCheckout() {
   try {
     execSync(`git fetch origin ${BRANCH} --quiet`, { stdio: 'pipe' });
     execSync(`git reset --hard -q origin/${BRANCH}`, { stdio: 'pipe' });
     console.log(`[sync] checkout → origin/${BRANCH}`);
-  } catch (e) {
-    console.log('[sync] non-fatal:', e.message);
-  }
+  } catch (e) { console.log('[sync] non-fatal:', e.message); }
 }
 
-// ============================================================
-// PATCH 3: GitHub search q must be ≤ 256 chars
-// ============================================================
 async function searchGitHubForInspiration(query) {
   const safeQuery = String(query).slice(0, 180).replace(/["\\\r\n]/g, ' ').trim();
   if (!safeQuery) return { inspiration: '', count: 0 };
   try {
-    const { data } = await octokit.search.repos({
-      q: `${safeQuery} language:html stars:>100`,
-      sort: 'stars', order: 'desc', per_page: 3
-    });
+    const { data } = await octokit.search.repos({ q: `${safeQuery} language:html stars:>100`, sort: 'stars', order: 'desc', per_page: 3 });
     let inspiration = '';
     for (const repo of data.items) {
       try {
-        const { data: fileData } = await octokit.repos.getContent({
-          owner: repo.owner.login, repo: repo.name, path: 'index.html'
-        });
+        const { data: fileData } = await octokit.repos.getContent({ owner: repo.owner.login, repo: repo.name, path: 'index.html' });
         if (fileData && fileData.content) {
           const content = Buffer.from(fileData.content, 'base64').toString('utf8');
-          inspiration += `\n--- INSPIRATION FROM: ${repo.full_name} (⭐ ${repo.stargazers_count}) ---\n`;
-          inspiration += content.slice(0, 2500) + '\n\n';
+          inspiration += `\n--- INSPIRATION FROM: ${repo.full_name} (⭐ ${repo.stargazers_count}) ---\n${content.slice(0, 2500)}\n\n`;
         }
       } catch (e) { }
     }
     return { inspiration, count: data.items.length };
-  } catch (e) {
-    console.log('Search failed:', e.message);
-    return { inspiration: '', count: 0 };
-  }
+  } catch (e) { console.log('Search failed:', e.message); return { inspiration: '', count: 0 }; }
 }
 
-// ============================================================
-// [ask] MODE — BM25 over repo + issue history
-// ============================================================
 function searchChunks(chunks, query, k) {
-  try {
-    const idx = Rag.createIndex(chunks);
-    return idx.search(query, k || 6);
-  } catch (e) {
-    console.log('[ask] BM25 index failed, falling back to substring:', e.message);
+  try { const idx = Rag.createIndex(chunks); return idx.search(query, k || 6); }
+  catch (e) {
+    console.log('[ask] BM25 failed:', e.message);
     const q = query.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     if (!q) return [];
-    return chunks
-      .map((chunk) => {
-        const matches = chunk.text.toLowerCase().match(new RegExp(q, 'g')) || [];
-        return { chunk, score: matches.length };
-      })
-      .filter((h) => h.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, k || 6);
+    return chunks.map((c) => ({ chunk: c, score: (c.text.toLowerCase().match(new RegExp(q, 'g')) || []).length })).filter(h => h.score > 0).sort((a, b) => b.score - a.score).slice(0, k || 6);
   }
 }
 
 async function runAsk(inputs) {
   const { prompt, issue } = inputs;
   const query = (prompt || '').trim();
-  if (!query) throw new Error('Usage: `[ask] <question>` — e.g. `[ask] how does the receipt hash work?`');
-
+  if (!query) throw new Error('Usage: `[ask] <question>`');
   const result = await step('Search repo + issues (BM25)', async () => {
-    const repoChunks = K.collectRepoChunks(process.cwd(), {});
-    const issueChunks = await K.collectIssueChunks(octokit, OWNER, REPO, 40);
-    const chunks = repoChunks.concat(issueChunks);
-    if (!chunks.length) throw new Error('No knowledge chunks available — is knowledge/index.json built?');
+    const chunks = K.collectRepoChunks(process.cwd(), {}).concat(await K.collectIssueChunks(octokit, OWNER, REPO, 40));
+    if (!chunks.length) throw new Error('No knowledge chunks — is knowledge/index.json built?');
     return { chunks, hits: searchChunks(chunks, query, 6) };
   });
-
   const lines = [`🔎 **Answer for:** ${query}`, ''];
-  if (!result.hits.length) {
-    lines.push('_No matches found in repo or issue history._');
-  } else {
+  if (!result.hits.length) lines.push('_No matches found._');
+  else {
     result.hits.forEach((h, i) => {
-      const snippet = h.chunk.text.slice(0, 400).replace(/\n+/g, ' ').trim();
       lines.push(`**${i + 1}. \`${h.chunk.path}\`** · score ${Number(h.score).toFixed(2)}`);
-      lines.push(`> ${snippet}${h.chunk.text.length > 400 ? '…' : ''}`);
+      lines.push(`> ${h.chunk.text.slice(0, 400).replace(/\n+/g, ' ').trim()}${h.chunk.text.length > 400 ? '…' : ''}`);
       lines.push('');
     });
     lines.push(`_${result.hits.length} of ${result.chunks.length} chunks shown._`);
   }
-
   await finishStatus(issue, lines.join('\n'), true);
   await pushProgress({ status: 'done' });
 }
 
 // ============================================================
-// Input resolution
+// [COST] [leaderboard] mode
 // ============================================================
+async function runLeaderboard(issue) {
+  const result = await step('Loading analytics', async () => {
+    const lbRaw = await readFile(LB_PATH);
+    const costsRaw = await readFile(COSTS_PATH);
+    const lb = lbRaw ? JSON.parse(lbRaw) : { updatedAt: null, totalBuilds: 0, models: {}, providers: {} };
+    const costs = costsRaw ? JSON.parse(costsRaw) : [];
+    return { lb, costs };
+  });
+
+  const { lb, costs } = result;
+  const totalCost = costs.reduce((s, c) => s + (c.cost || 0), 0);
+  const totalIn = costs.reduce((s, c) => s + (c.tokensIn || 0), 0);
+  const totalOut = costs.reduce((s, c) => s + (c.tokensOut || 0), 0);
+
+  const lines = [`📊 **Ariotica Leaderboard**`, ''];
+  lines.push(`**Lifetime:** ${costs.length} builds · $${totalCost.toFixed(4)} spent · ${totalIn.toLocaleString()} in / ${totalOut.toLocaleString()} out tokens`);
+
+  const topModels = Object.values(lb.models || {})
+    .filter(m => (m.wins + m.losses) >= 2)
+    .sort((a, b) => b.winRate - a.winRate || b.wins - a.wins)
+    .slice(0, 10);
+  if (topModels.length) {
+    lines.push('', '### 🏆 Top Models (min 2 races)');
+    lines.push('| Model | Wins | Losses | Win Rate | Avg Score | Avg Sec | Cost |');
+    lines.push('|---|---|---|---|---|---|---|');
+    for (const m of topModels) {
+      lines.push(`| \`${m.model}\` | ${m.wins} | ${m.losses} | ${(m.winRate * 100).toFixed(0)}% | ${m.avgScore.toFixed(1)} | ${m.avgSec.toFixed(1)}s | $${(m.totalCost || 0).toFixed(4)} |`);
+    }
+  }
+
+  const days = {};
+  for (const c of costs) {
+    const day = (c.ts || '').slice(0, 10);
+    if (!day) continue;
+    days[day] = days[day] || { cost: 0, builds: 0, tin: 0, tout: 0 };
+    days[day].cost += c.cost || 0;
+    days[day].builds++;
+    days[day].tin += c.tokensIn || 0;
+    days[day].tout += c.tokensOut || 0;
+  }
+  const dayKeys = Object.keys(days).sort().slice(-7);
+  if (dayKeys.length) {
+    lines.push('', '### 💰 Cost by Day (last 7)');
+    lines.push('| Date | Builds | Cost | Tokens In | Tokens Out |');
+    lines.push('|---|---|---|---|---|');
+    for (const d of dayKeys) {
+      const x = days[d];
+      lines.push(`| ${d} | ${x.builds} | $${x.cost.toFixed(4)} | ${x.tin.toLocaleString()} | ${x.tout.toLocaleString()} |`);
+    }
+  }
+
+  const recent = costs.slice(-10).reverse();
+  if (recent.length) {
+    lines.push('', '### 📜 Recent Builds');
+    lines.push('| When | Slug | Mode | Winner | Cost |');
+    lines.push('|---|---|---|---|---|');
+    for (const c of recent) {
+      lines.push(`| ${(c.ts || '').slice(0, 16).replace('T', ' ')} | \`${c.slug}\` | ${c.mode} | ${c.provider}/${c.model || '?'} | $${(c.cost || 0).toFixed(4)} |`);
+    }
+  }
+
+  await finishStatus(issue, lines.join('\n') + HINT, false);
+  await pushProgress({ status: 'done' });
+}
+
 function resolveInputs() {
   const dProj = (process.env.DISPATCH_PROJECT || '').trim();
   if (dProj) return { project: dProj, prompt: (process.env.DISPATCH_PROMPT || '').trim(), mode: (process.env.DISPATCH_MODE || 'create').toLowerCase(), issue: null, commentId: null };
-
   const num = parseInt(process.env.ISSUE_NUMBER || '0', 10) || null;
   const tm = T.parseTitle(process.env.ISSUE_TITLE || '');
-  if (!tm) throw new Error('Title must be: [BUILD] name [improve|fix|audit|delete|revert]');
-
+  if (!tm) throw new Error('Title must be: [BUILD] name [mode]');
   if ((process.env.EVENT_NAME || '') === 'issue_comment') {
     const c = T.parseComment(process.env.COMMENT_BODY || '');
     if (!c) return null;
@@ -549,17 +550,18 @@ async function main() {
 
   if (commentId) {
     try { await octokit.reactions.createForIssueComment({ owner: OWNER, repo: REPO, comment_id: commentId, content: 'eyes' }); } catch (e) { }
-    if (mode !== 'ask' && mode !== 'skill' && mode !== 'evolve') { try { await octokit.issues.update({ owner: OWNER, repo: REPO, issue_number: issue, state: 'open' }); } catch { } }
+    if (mode !== 'ask' && mode !== 'skill' && mode !== 'evolve' && mode !== 'leaderboard') { try { await octokit.issues.update({ owner: OWNER, repo: REPO, issue_number: issue, state: 'open' }); } catch { } }
   }
   const quoted = prompt ? `\n> ${prompt.slice(0, 200).replace(/\n/g, ' ')}` : '';
-  const header = mode === 'ask'
-    ? `🔎 **Searching the repo…**${quoted}`
-    : mode === 'revert'
-      ? `↩️ **Handling revert for \`${slug || '?'}\`**${quoted}`
-      : `⏳ **Working on it** — \`${mode}\` on \`${slug || 'system'}\`${quoted}`;
+  const header =
+    mode === 'ask'         ? `🔎 **Searching the repo…**${quoted}` :
+    mode === 'leaderboard' ? `📊 **Loading analytics…**` :
+    mode === 'revert'      ? `↩️ **Handling revert for \`${slug || '?'}\`**${quoted}` :
+                             `⏳ **Working on it** — \`${mode}\` on \`${slug || 'system'}\`${quoted}`;
   await startStatusComment(issue, header);
 
   if (mode === 'ask') return runAsk(inputs);
+  if (mode === 'leaderboard') return runLeaderboard(issue);
 
   if (mode === 'skill') {
     const skillName = prompt.slice(0, 30).replace(/[^a-z0-9]/gi, '-').toLowerCase();
@@ -572,19 +574,13 @@ async function main() {
     return;
   }
 
-  // --- THE DARWIN PROTOCOL (EVOLVE) ---
   if (mode === 'evolve') {
     const parts = prompt.split(' ');
     const targetFile = parts[0];
     const instructions = parts.slice(1).join(' ');
-
-    if (!targetFile || !targetFile.includes('.')) {
-      throw new Error('Usage: [evolve] <filename> <instructions>.');
-    }
-
+    if (!targetFile || !targetFile.includes('.')) throw new Error('Usage: [evolve] <filename> <instructions>.');
     const original = await readFile(targetFile);
     if (!original) throw new Error(`Target file not found: ${targetFile}`);
-
     const evolvePrompt = `You are modifying the source code of an autonomous AI agent (Ariotica).
 Here is the current content of '${targetFile}':
 \`\`\`javascript
@@ -595,27 +591,15 @@ INSTRUCTIONS:
 ${instructions}
 
 Return ONLY the complete, modified file content. No markdown formatting, no conversational text. Keep all existing functionality intact.`;
-
     const r = await step(`Evolve ${targetFile}`, () => askAI([{ role: 'user', content: evolvePrompt }], { maxTokens: 8000 }));
     let newCode = r.text.trim();
     newCode = newCode.replace(/^```(?:javascript|js)?\s*\n?/, '').replace(/\n?```\s*$/, '');
-
-    // ============================================================
-    // HARDENED VALIDATION: syntax + require resolution
-    //   - old check only caught syntax errors, not "Cannot find module"
-    //   - resolution base is path.dirname(targetFile), NOT the temp file's dir
-    //   - Module._resolveFilename does not execute the target (safe for evolve generate.js)
-    // ============================================================
     await step('Validate Evolve Output', async () => {
       const tempName = `.evolve-tmp-${Date.now()}.js`;
-      const absTemp = path.resolve(tempName);
       fs.writeFileSync(tempName, newCode);
       try {
-        // 1. Syntax
         try { execSync(`node -c ${tempName}`, { stdio: 'pipe' }); }
         catch (e) { throw new Error(`Invalid JS syntax. Blocked. ${(e.stderr || '').toString().slice(0, 400)}`); }
-
-        // 2. Require resolution (static scan of the new file, no execution)
         const Module = require('module');
         const baseFile = path.resolve(targetFile);
         const basePaths = Module._nodeModulePaths(path.dirname(baseFile));
@@ -624,72 +608,43 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
         const re = /require\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
         while ((m = re.exec(newCode))) {
           const spec = m[1];
-          if (!spec.startsWith('.')) continue; // bare specifiers resolved from node_modules, trusted
-          try {
-            Module._resolveFilename(spec, { filename: baseFile, paths: basePaths });
-          } catch (e) {
-            unresolved.push(`${spec} (${e.code || 'UNRESOLVED'})`);
-          }
+          if (!spec.startsWith('.')) continue;
+          try { Module._resolveFilename(spec, { filename: baseFile, paths: basePaths }); }
+          catch (e) { unresolved.push(`${spec} (${e.code || 'UNRESOLVED'})`); }
         }
-        if (unresolved.length) {
-          throw new Error(`Unresolved relative require(s) in ${targetFile}: ${unresolved.join(', ')}. Blocked.`);
-        }
-      } finally {
-        try { fs.unlinkSync(tempName); } catch { }
-      }
+        if (unresolved.length) throw new Error(`Unresolved relative require(s) in ${targetFile}: ${unresolved.join(', ')}. Blocked.`);
+      } finally { try { fs.unlinkSync(tempName); } catch { } }
     });
-
     await step(`Commit ${targetFile}`, () => atomicCommit({ [targetFile]: newCode }, [], `feat(evolve): modify ${targetFile}`));
     await syncCheckout();
-
     await finishStatus(issue, `🧬 **Evolution Successful.** \`${targetFile}\` updated (syntax + require resolution verified).`, true);
     await pushProgress({ status: 'done' });
     return;
   }
-  // ------------------------------------
 
   let manifest = [];
   try { const raw = await readFile(MANIFEST_PATH); if (raw) manifest = JSON.parse(raw); if (!Array.isArray(manifest)) manifest = []; } catch { manifest = []; }
 
-  // ============================================================
-  // REVERT MODE
-  // ============================================================
   if (mode === 'revert') {
     const targetVersion = (prompt || '').trim().replace(/^v/i, '');
-
     if (!targetVersion) {
       const versions = await step('Reading version history', () => listVersions(slug));
-      if (!versions.length) {
-        await finishStatus(issue, `📜 No history for \`${slug}\`. Has it been built yet?`, true);
-        await pushProgress({ status: 'done' });
-        return;
-      }
-      const rows = versions.slice(0, 10).map(v =>
-        `| v${v.version} | ${formatDate(v.when)} | \`${v.commit}\` | ${v.mode}${v.revertedFrom ? ` (from v${v.revertedFrom})` : ''} |`
-      ).join('\n');
+      if (!versions.length) { await finishStatus(issue, `📜 No history for \`${slug}\`.`, true); await pushProgress({ status: 'done' }); return; }
+      const rows = versions.slice(0, 10).map(v => `| v${v.version} | ${formatDate(v.when)} | \`${v.commit}\` | ${v.mode}${v.revertedFrom ? ` (from v${v.revertedFrom})` : ''} |`).join('\n');
       const previousVersion = versions[1] ? versions[1].version : null;
       const hintLine = previousVersion
         ? `Reply with \`[revert] <version>\` to roll back, e.g. \`[revert] ${previousVersion}\`.`
         : `_Only one version exists so far — nothing to revert to yet. Run an \`[improve]\` first._`;
       const body = `📜 **\`${slug}\` — version history**\n\n| Version | When (UTC) | Commit | Mode |\n|---|---|---|---|\n${rows}\n\n${hintLine}`;
-      await finishStatus(issue, body + HINT, false);
-      await pushProgress({ status: 'done' });
-      return;
+      await finishStatus(issue, body + HINT, false); await pushProgress({ status: 'done' }); return;
     }
-
     const currentMeta = JSON.parse(await readFile(`${baseDir}/meta.json`) || '{}');
-    if (!currentMeta.version) throw new Error(`Cannot revert: \`${slug}\` has no meta.json — has it been built?`);
-    if (currentMeta.version === targetVersion) {
-      throw new Error(`Already at v${targetVersion} — nothing to revert.`);
-    }
-
+    if (!currentMeta.version) throw new Error(`Cannot revert: \`${slug}\` has no meta.json.`);
+    if (currentMeta.version === targetVersion) throw new Error(`Already at v${targetVersion} — nothing to revert.`);
     const target = await step(`Locating v${targetVersion}`, () => findVersion(slug, targetVersion));
-    if (!target) throw new Error(`Version v${targetVersion} not found in history for \`${slug}\`.`);
-    if (!target.receipt || !target.receipt.files) {
-      throw new Error(`Receipt for v${targetVersion} (${target.commit}) is missing or malformed.`);
-    }
-
-    const revertedFiles = await step(`Fetching ${Object.keys(target.receipt.files).length} files from v${targetVersion}`, async () => {
+    if (!target) throw new Error(`Version v${targetVersion} not found for \`${slug}\`.`);
+    if (!target.receipt || !target.receipt.files) throw new Error(`Receipt for v${targetVersion} is missing.`);
+    const revertedFiles = await step(`Fetching files from v${targetVersion}`, async () => {
       const files = {};
       for (const name of Object.keys(target.receipt.files)) {
         const content = await readFileAtRef(`${baseDir}/${name}`, target.commitSha);
@@ -697,17 +652,13 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
       }
       return files;
     });
-    if (!revertedFiles['index.html']) {
-      throw new Error(`v${targetVersion} has no index.html at commit ${target.commit}.`);
-    }
-
+    if (!revertedFiles['index.html']) throw new Error(`v${targetVersion} has no index.html.`);
     const newVersion = bumpVersion(currentMeta.version);
     const oldMeta = JSON.parse(revertedFiles['meta.json'] || '{}');
     oldMeta.version = newVersion;
     oldMeta.revertedFrom = targetVersion;
     oldMeta.revertedAt = new Date().toISOString();
     revertedFiles['meta.json'] = JSON.stringify(oldMeta, null, 2);
-
     const receipt = R.buildReceipt({
       repo: `${OWNER}/${REPO}`, slug, files: revertedFiles, mode: 'revert',
       runId: RUN_ID, commit: null, provider: 'revert', model: `from-v${targetVersion}`,
@@ -716,30 +667,19 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
       prompt: `revert to v${targetVersion}`, vanilla: true,
     });
     revertedFiles[receiptPath] = JSON.stringify(receipt, null, 2) + '\n';
-
     const fullFiles = {};
     for (const [name, content] of Object.entries(revertedFiles)) {
       if (name === receiptPath) fullFiles[name] = content;
       else fullFiles[`${baseDir}/${name}`] = content;
     }
-
     const commitSha = await step(`Commit revert v${currentMeta.version} → v${newVersion}`, () =>
       atomicCommit(fullFiles, [], `revert: ${slug} to v${targetVersion} (as v${newVersion})`));
-
     receipt.commit = commitSha;
     revertedFiles[receiptPath] = JSON.stringify(receipt, null, 2) + '\n';
     await atomicCommit({ [receiptPath]: revertedFiles[receiptPath] }, [], `chore: receipt ${slug}`);
-
     await syncCheckout();
-
     const url = `https://${OWNER}.github.io/${REPO}/${baseDir}/`;
-    const body = `↩️ **Reverted \`${slug}\`**\n\n` +
-      `- **From:** v${currentMeta.version}\n` +
-      `- **To (content):** v${targetVersion} (\`${target.commit}\` · ${formatDate(target.when)})\n` +
-      `- **New version:** **v${newVersion}**\n\n` +
-      `🌐 **Live App:** ${url}\n\n` +
-      `_${Object.keys(revertedFiles).length - 1} files restored. Original history is intact — you can \`[revert]\` again or \`[improve]\` from here._`;
-
+    const body = `↩️ **Reverted \`${slug}\`**\n\n- **From:** v${currentMeta.version}\n- **To (content):** v${targetVersion} (\`${target.commit}\`)\n- **New version:** **v${newVersion}**\n\n🌐 **Live App:** ${url}`;
     await finishStatus(issue, body + HINT, true);
     await pushProgress({ status: 'done' });
     return;
@@ -752,14 +692,10 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
       if ((await readFile(p)) !== null) filesToDelete.push(p);
     }
     if ((await readFile(receiptPath)) !== null) filesToDelete.push(receiptPath);
-
     const existed = filesToDelete.length > 0;
     manifest = manifest.filter((e) => e.project !== slug);
-    const manifestJson = JSON.stringify(manifest, null, 2) + '\n';
-
-    await atomicCommit({ [MANIFEST_PATH]: manifestJson }, filesToDelete, `chore: delete ${slug}`);
+    await atomicCommit({ [MANIFEST_PATH]: JSON.stringify(manifest, null, 2) + '\n' }, filesToDelete, `chore: delete ${slug}`);
     await syncCheckout();
-
     await finishStatus(issue, existed ? `🗑 Deleted \`${slug}\` (${filesToDelete.length} files).` : `\`${slug}\` did not exist.`, true);
     await pushProgress({ status: 'done' }); return;
   }
@@ -767,7 +703,6 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
   let existingHtml = await readFile(mainFile);
   let existingCss = await readFile(`${baseDir}/style.css`) || '';
   let existingJs = await readFile(`${baseDir}/script.js`) || '';
-
   if ((mode === 'improve' || mode === 'fix' || mode === 'audit') && !existingHtml) throw new Error(`Cannot ${mode} "${slug}": no existing file.`);
 
   let ask;
@@ -777,10 +712,7 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
   else if (mode === 'audit') {
     let combined = existingHtml.replace('</head>', `<style>${existingCss}</style></head>`).replace('</body>', `<script>${existingJs}</script></body>`);
     const initial = await step('Initial security scan', () => runAllScanners(combined));
-    if (!initial.findings.length && !prompt) {
-      await finishStatus(issue, '✅ Audit clean — nothing to fix.', true);
-      await pushProgress({ status: 'done' }); return;
-    }
+    if (!initial.findings.length && !prompt) { await finishStatus(issue, '✅ Audit clean.', true); await pushProgress({ status: 'done' }); return; }
     const report = initial.findings.length ? initial.findings.map((f) => `- [${f.sev}] ${f.msg}`).join('\n') : '(none)';
     ask = `Fix the security issues.\n\nFINDINGS:\n${report}\n\nEXTRA: ${prompt || 'none'}`;
   }
@@ -791,9 +723,7 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
     if (searchRes.inspiration) {
       inspirationCtx = `\n\nHere are some highly successful open-source apps for inspiration. Extract their best UI/UX patterns and logic, but write the code entirely from scratch:\n${searchRes.inspiration}`;
       ask = `Build a brand new app based on this idea: ${prompt}. Use the provided inspiration code as a style and feature guide, but DO NOT copy it verbatim. Make it better.`;
-    } else {
-      ask = prompt;
-    }
+    } else ask = prompt;
   }
 
   let fullPrompt = RULES + ask + inspirationCtx;
@@ -827,7 +757,7 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
   let meta = cand.grade.meta;
   let provider = cand.provider; let model = cand.model;
 
-  steps.push({ name: 'Smoke test', status: smoke.ok ? 'done' : 'error', at: new Date().toISOString(), note: 'ran during the model race', error: smoke.ok ? undefined : `${smoke.errors.length} runtime error(s)` });
+  steps.push({ name: 'Smoke test', status: smoke.ok ? 'done' : 'error', at: new Date().toISOString(), note: 'ran during race', error: smoke.ok ? undefined : `${smoke.errors.length} runtime error(s)` });
   await pushProgress();
 
   let attempt = 1;
@@ -837,7 +767,7 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
     const fixed = await softStep(`Repair attempt ${attempt}`, async () => {
       const r = await generate(repairPrompt);
       raceReport = raceReport.concat(r.race);
-      if (structurallyBad(r) || r.grade.score <= baseline) throw new Error('repair did not improve; keeping original');
+      if (structurallyBad(r) || r.grade.score <= baseline) throw new Error('repair did not improve');
       return r;
     });
     if (fixed) {
@@ -880,25 +810,16 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
   const letter = slug.charAt(0).toUpperCase();
 
   const hsl = { h: hue, s: 0.70, l: 0.50 };
-  const png192 = makeIconPNG(192, hsl);
-  const png512 = makeIconPNG(512, hsl);
-  files['icon-192.png'] = png192.toString('base64');
-  files['icon-512.png'] = png512.toString('base64');
+  files['icon-192.png'] = makeIconPNG(192, hsl).toString('base64');
+  files['icon-512.png'] = makeIconPNG(512, hsl).toString('base64');
 
   const manifestPwa = {
-    name: slug.replace(/-/g, ' ').toUpperCase(),
-    short_name: slug,
-    start_url: ".",
-    display: "standalone",
-    background_color: "#0b1410",
-    theme_color: color,
+    name: slug.replace(/-/g, ' ').toUpperCase(), short_name: slug, start_url: ".",
+    display: "standalone", background_color: "#0b1410", theme_color: color,
     icons: [
       { src: 'icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any' },
       { src: 'icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any' },
-      {
-        src: `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230b1410'/><text x='50%' y='55%' font-size='60' fill='${encodeURIComponent(color)}' font-family='system-ui' font-weight='bold' text-anchor='middle' dominant-baseline='middle'>${letter}</text></svg>`,
-        sizes: 'any', type: 'image/svg+xml'
-      }
+      { src: `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%230b1410'/><text x='50%' y='55%' font-size='60' fill='${encodeURIComponent(color)}' font-family='system-ui' font-weight='bold' text-anchor='middle' dominant-baseline='middle'>${letter}</text></svg>`, sizes: 'any', type: 'image/svg+xml' }
     ]
   };
   files['manifest.json'] = JSON.stringify(manifestPwa, null, 2);
@@ -919,14 +840,12 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
     }
     return h.digest('hex');
   })();
-
   const precache = ['./', './index.html'];
   if (files['style.css']) precache.push('./style.css');
   if (files['script.js']) precache.push('./script.js');
   if (files['manifest.json']) precache.push('./manifest.json');
   if (files['icon-192.png']) precache.push('./icon-192.png');
   if (files['icon-512.png']) precache.push('./icon-512.png');
-
   const cacheName = `app-${slug}-${staticHash.slice(0, 8)}`;
   files['sw.js'] = `/* Ariotica SW · ${cacheName} */
 const CACHE = ${JSON.stringify(cacheName)};
@@ -954,11 +873,7 @@ self.addEventListener('fetch', (e) => {
   else {
     try {
       const oldMeta = JSON.parse(await readFile(`${baseDir}/meta.json`) || '{}');
-      if (oldMeta.version) {
-        const parts = oldMeta.version.split('.').map(Number);
-        parts[2] += 1;
-        version = parts.join('.');
-      }
+      if (oldMeta.version) { const parts = oldMeta.version.split('.').map(Number); parts[2] += 1; version = parts.join('.'); }
     } catch {}
   }
 
@@ -994,9 +909,41 @@ self.addEventListener('fetch', (e) => {
   const startTime = Date.now();
   const commitSha = await step(`Commit files to ${baseDir}/`, () => atomicCommit(fullFiles, [], `feat: ${slug} v${version} (${mode})`));
 
+  // ============================================================
+  // [COST] record cost + rebuild leaderboard; committed with the receipt
+  // ============================================================
+  const totalCost = raceReport.reduce((s, r) => s + (r.cost || 0), 0);
+  const totalIn   = raceReport.reduce((s, r) => s + (r.tokensIn || 0), 0);
+  const totalOut  = raceReport.reduce((s, r) => s + (r.tokensOut || 0), 0);
+  const costEntry = {
+    ts: new Date().toISOString(),
+    slug, mode, provider, model,
+    runId: RUN_ID,
+    cost: totalCost, tokensIn: totalIn, tokensOut: totalOut,
+    score, sec: cand.sec || null,
+    race: raceReport.map(r => ({
+      provider: r.provider, model: r.model, sec: r.sec, ok: r.ok, score: r.score,
+      reason: r.reason, cost: r.cost || 0, tokensIn: r.tokensIn || 0, tokensOut: r.tokensOut || 0,
+    })),
+  };
+
+  let costs = [];
+  try { const raw = await readFile(COSTS_PATH); if (raw) costs = JSON.parse(raw); if (!Array.isArray(costs)) costs = []; } catch { costs = []; }
+  costs.push(costEntry);
+  if (costs.length > COSTS_LIMIT) costs = costs.slice(-COSTS_LIMIT);
+  const leaderboard = rebuildLeaderboard(costs);
+
   receipt.commit = commitSha;
+  receipt.cost = totalCost;
+  receipt.tokensIn = totalIn;
+  receipt.tokensOut = totalOut;
   files[receiptPath] = JSON.stringify(receipt, null, 2) + '\n';
-  await atomicCommit({ [receiptPath]: files[receiptPath] }, [], `chore: receipt ${slug}`);
+
+  await atomicCommit({
+    [receiptPath]: files[receiptPath],
+    [COSTS_PATH]: JSON.stringify(costs, null, 2) + '\n',
+    [LB_PATH]: JSON.stringify(leaderboard, null, 2) + '\n',
+  }, [], `chore: receipt + analytics ${slug}`);
 
   await syncCheckout();
 
@@ -1008,6 +955,7 @@ self.addEventListener('fetch', (e) => {
   body += `📁 **Source Code:** ${folderUrl}\n`;
   const rl = raceLine(raceReport); if (rl) body += `\n🏁 Model race: ${rl}`;
   if (!smoke.skipped) body += smoke.ok ? '\n\n🧪 Smoke test: passed' : `\n\n🧪 Smoke test: ⚠️ ${smoke.errors.length} runtime issue(s) remain`;
+  body += `\n\n💰 **Cost:** $${totalCost.toFixed(4)} · ${totalIn.toLocaleString()} in / ${totalOut.toLocaleString()} out tokens`;
   body += `\n\n🧾 Receipt: [\`sha256:${receipt.sha256.slice(0, 12)}…\`](https://github.com/${OWNER}/${REPO}/blob/${BRANCH}/${receiptPath})`;
   if (version) body += `\n\n**🏷️ Version:** \`v${version}\``;
   if (metaJson.features.length) body += `\n\n**✨ New Features:**\n${metaJson.features.map(f => `- ${f}`).join('\n')}`;
@@ -1021,25 +969,22 @@ self.addEventListener('fetch', (e) => {
   if (isDeployed && issue) {
     const screenshotUrl = `https://image.thum.io/get/width/1200/crop/900/${url}?t=${Date.now()}`;
     try {
-      const previewBody = [
-        `### 📸 Live Preview — \`${slug}\``,
-        '',
-        `🌐 **Open app:** ${url}`,
-        `📁 **Source:** ${folderUrl}`,
-        '',
-        `[![${slug} screenshot](${screenshotUrl})](${url})`,
-        '',
-        `_Screenshot refreshes on each build · click to open_`,
-      ].join('\n');
-      await octokit.issues.createComment({ owner: OWNER, repo: REPO, issue_number: issue, body: previewBody });
+      await octokit.issues.createComment({
+        owner: OWNER, repo: REPO, issue_number: issue,
+        body: [
+          `### 📸 Live Preview — \`${slug}\``, '',
+          `🌐 **Open app:** ${url}`,
+          `📁 **Source:** ${folderUrl}`, '',
+          `[![${slug} screenshot](${screenshotUrl})](${url})`, '',
+          `_Screenshot refreshes on each build · click to open_`,
+        ].join('\n'),
+      });
     } catch (e) { console.log('Failed to post screenshot comment:', e.message); }
   }
 
-  if (issue) {
-    try { await octokit.issues.update({ owner: OWNER, repo: REPO, issue_number: issue, state: 'closed' }); } catch {}
-  }
+  if (issue) { try { await octokit.issues.update({ owner: OWNER, repo: REPO, issue_number: issue, state: 'closed' }); } catch {} }
 
-  await pushProgress({ status: 'done', securitySummary: security.counts, smoke: smoke.ok ? 'pass' : 'fail', sha256: receipt.sha256 });
+  await pushProgress({ status: 'done', securitySummary: security.counts, smoke: smoke.ok ? 'pass' : 'fail', sha256: receipt.sha256, cost: totalCost });
 }
 
 main().catch(async (err) => {
