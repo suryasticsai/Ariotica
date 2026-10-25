@@ -2,22 +2,22 @@
   "schema": 1,
   "app": "peermessenger",
   "files": {
-    "index.html": "2afe5316886fda9fcd700e54b65d838e9b2ee3db8dd057aff1c9f7b456315405",
-    "style.css": "f6a390e9164cf18b05bba8c91d46d71bf276b693b85ce8c999cdda91a71f74ec",
-    "script.js": "29e8099e6017b280ebf1b330e8eeed87c023ba39c79db914de75bc368459b57a",
+    "index.html": "9d8bf89f16a9ed62be8c9b7a1a059cf3907029c869fba1f652ce4266cdbec9ea",
+    "style.css": "136ef120ba138e6aa3bde15e018ee4254f66a3ca2fbf364c75cc56c7d873f3ea",
+    "script.js": "c424d5e90a6ddb8a3c31b08fd373e44288a495cd42b2eb64cbb6d76e7cc0ea68",
     "icon-192.png": "55150c7bd08e29b8119e9fa552ab293fbc8e5db4377cf91e9b8679d062f41b41",
     "icon-512.png": "345f73f480d04324b0b751ab1aab4006913237b9ab76e2d9aefd6090b0cf5d9b",
     "manifest.json": "25d6175366eede7633f735528e82a40f1cec6dfc49a114349d6bbe229a8dd4e1",
-    "sw.js": "72d8504be190336f4bb3c2489591ff1f1889fffad5026b5a7706f276bf00757f",
-    "meta.json": "b3f342ba71b4193a48fe45d3ea9e67c35370e5a4894ac718b3c2aa1c1fc95f56",
-    "CHANGELOG.md": "26f409f5b621f454f238f7983bdf4a47a132993e81602c866cd1dfcf780a4f8e"
+    "sw.js": "95e016c27d77a7f5c4de17121e308aff29ed6ec64ef467eba9453a64b2175bf0",
+    "meta.json": "335093957a8608ed53fd59705ecef0234eab222f38f8990f5d59a89f721ef37a",
+    "CHANGELOG.md": "1e87fc3c4ee3335f2633f18c3a59554d38507c676eba0dc603df39cde7757e26"
   },
-  "bytes": 29959,
-  "builtAt": "2026-10-25T14:16:31.990Z",
-  "mode": "fix",
+  "bytes": 49046,
+  "builtAt": "2026-10-25T16:46:06.247Z",
+  "mode": "improve",
   "repo": "suryasticsai/Ariotica",
-  "runId": "40201286182",
-  "commit": "07a01c4d2abf70aaf25a70f17307b4ffc6e9d68c",
+  "runId": "40213075712",
+  "commit": null,
   "model": {
     "provider": "Groq",
     "name": "openai/gpt-oss-120b"
@@ -26,16 +26,16 @@
     {
       "provider": "Groq",
       "model": "openai/gpt-oss-120b",
-      "sec": 16,
+      "sec": 13,
       "ok": true,
       "score": 100,
       "reason": "",
-      "cost": 0.00582075,
-      "tokensIn": 4365,
-      "tokensOut": 6888
+      "cost": 0.0049626,
+      "tokensIn": 6039,
+      "tokensOut": 5409
     }
   ],
-  "sha256": "2afe5316886fda9fcd700e54b65d838e9b2ee3db8dd057aff1c9f7b456315405",
+  "sha256": "9d8bf89f16a9ed62be8c9b7a1a059cf3907029c869fba1f652ce4266cdbec9ea",
   "checks": {
     "complete": true,
     "vanilla": false,
@@ -47,22 +47,19 @@
     "smoke": "pass",
     "smokeErrors": [],
     "scan": {
-      "total": 1,
-      "high": 0,
-      "medium": 1,
+      "total": 3,
+      "high": 1,
+      "medium": 2,
       "low": 0,
       "byTool": {
-        "custom": 0,
-        "eslint": 1,
+        "custom": 1,
+        "eslint": 2,
         "sparrow": 0,
         "externals": 0
       }
     }
   },
-  "promptSha256": "e4c3b83e218dade525a41cbcca02db268c4aadaafd72fc79f76f5536d8dbafa0",
-  "prompt": "Here i want to create room which room link can be shared where other user who entered room via link can chat, voice call",
-  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js peermessenger",
-  "cost": 0.00582075,
-  "tokensIn": 4365,
-  "tokensOut": 6888
+  "promptSha256": "7372a3ae7e15e8d623c6d728ad6048a067e849ccb736858483b4844e549763ce",
+  "prompt": "Add the camera toggle, hang up, mute, and a status line. Make sure the share link works.",
+  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js peermessenger"
 }

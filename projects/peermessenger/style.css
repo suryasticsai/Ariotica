@@ -4,6 +4,7 @@
   --color-primary-dark: #0b5ed7;
   --color-success: #198754;
   --color-success-dark: #157347;
+  --color-danger: #dc3545;
   --color-text: #212529;
   --color-muted: #6c757d;
   --transition: 0.3s ease;
@@ -21,13 +22,11 @@ body {
   line-height: 1.5;
 }
 
-button,
-input {
+button, input {
   transition: var(--transition);
 }
 
-button:hover,
-button:focus {
+button:hover, button:focus {
   opacity: 0.9;
 }
 
@@ -35,12 +34,12 @@ button:focus {
   word-break: break-all;
 }
 
-#messages {
+#log {
   max-height: 250px;
   overflow-y: auto;
 }
 
-#messages li {
+#log li {
   margin-bottom: 0.5rem;
 }
 
@@ -48,16 +47,29 @@ button:focus {
   margin-top: 2rem;
 }
 
+/* Responsive layout */
 @media (max-width: 576px) {
-  .audio-wrapper {
+  #media-section .d-flex {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
   }
 }
 
-/* High contrast focus outline */
+/* High‑contrast focus outline */
 button:focus-visible,
 input:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
+}
+
+/* Button active states */
+button[aria-pressed="true"] {
+  background-color: var(--color-primary-dark);
+  color: #fff;
+}
+
+/* Ensure video elements keep aspect ratio */
+video {
+  background-color: #000;
+  object-fit: cover;
 }

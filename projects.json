@@ -303,46 +303,47 @@
   {
     "project": "peermessenger",
     "file": "projects/peermessenger/index.html",
-    "prompt": "Here i want to create room which room link can be shared where other user who entered room via link can chat, voice call",
-    "created": "2026-10-25T14:16:31",
-    "mode": "fix",
+    "prompt": "Add the camera toggle, hang up, mute, and a status line. Make sure the share link works.",
+    "created": "2026-10-25T16:46:06",
+    "mode": "improve",
     "provider": "Groq",
     "model": "openai/gpt-oss-120b",
-    "findings": 1,
+    "findings": 3,
     "smoke": "pass",
-    "size": 32022,
+    "size": 50967,
     "version": "1.0.0",
     "features": [
-      "Hash‑based room creation and sharing",
-      "PeerJS audio call (voice only)",
-      "Real‑time text chat via DataConnection",
-      "Responsive layout with Bootstrap and custom CSS variables",
-      "Accessibility: semantic HTML, aria‑labels, focus outlines",
-      "Empty state placeholder for chat",
-      "Copy‑to‑clipboard share link",
-      "Create Room button for explicit room generation"
+      "Hash‑based room routing with deterministic host IDs",
+      "Audio‑only by default with optional camera toggle",
+      "PeerJS data channel for text chat",
+      "Mute/unmute microphone, camera on/off, hang‑up controls",
+      "Live status line with aria‑live for screen readers",
+      "Shareable link copy button",
+      "Responsive layout using Flexbox and Bootstrap utilities",
+      "High‑contrast focus outlines and CSS variables for theming",
+      "Empty chat state handling",
+      "Graceful error handling for media and peer errors"
     ],
     "fixes": [
-      "Added explicit \"Create Room\" workflow to avoid host ID changes on reload",
-      "Removed CSP integrity and crossorigin attributes from external CDN links",
-      "Separated host vs. joiner logic to prevent self‑connection errors",
-      "Ensured share link updates correctly after room creation",
-      "Handled media permission errors gracefully"
+      "Added missing video elements and media section",
+      "Implemented proper deterministic host ID and fallback to guest",
+      "Ensured status updates reflect all states",
+      "Provided copy‑to‑clipboard feedback",
+      "Handled UI reset after hang‑up",
+      "Removed console errors when buttons are pressed without a call"
     ],
     "suggestions": [
-      "Add optional video streams for richer communication",
-      "Show connection status indicators (online/offline, muted)",
-      "Persist last used room in localStorage for quick re‑join",
-      "Implement a simple user name prompt for chat messages"
+      "Persist recent room ID in localStorage (prefixed with app name) for quick re‑join",
+      "Add a small onboarding modal for first‑time users",
+      "Include a download button for the chat transcript"
     ],
-    "grade": "A+",
-    "percentile": "Top 5%",
-    "humanInvolvement": "Test on desktop and mobile browsers, verify microphone permission flow, ensure room link works across multiple devices, and check that no console errors appear after each UI interaction.",
+    "grade": "B",
+    "percentile": "Top 50%",
+    "humanInvolvement": "Code was reviewed and manually tested in Chrome and Firefox on desktop and mobile emulation to verify all buttons work without console errors.",
     "libraries": [
-      "bootstrap",
       "peerjs"
     ],
-    "sha256": "2afe5316886fda9fcd700e54b65d838e9b2ee3db8dd057aff1c9f7b456315405",
+    "sha256": "9d8bf89f16a9ed62be8c9b7a1a059cf3907029c869fba1f652ce4266cdbec9ea",
     "receipt": "receipts/peermessenger.json"
   }
 ]
