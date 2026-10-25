@@ -76,5 +76,31 @@
         "tokensOut": 2562
       }
     ]
+  },
+  {
+    "ts": "2026-10-25T14:00:38.839Z",
+    "slug": "peermessenger",
+    "mode": "inspire",
+    "provider": "Groq",
+    "model": "openai/gpt-oss-120b",
+    "runId": "40200101470",
+    "cost": 0.00332685,
+    "tokensIn": 2054,
+    "tokensOut": 4025,
+    "score": 100,
+    "sec": 10,
+    "race": [
+      {
+        "provider": "Groq",
+        "model": "openai/gpt-oss-120b",
+        "sec": 10,
+        "ok": true,
+        "score": 100,
+        "reason": "",
+        "cost": 0.00332685,
+        "tokensIn": 2054,
+        "tokensOut": 4025
+      }
+    ]
   }
 ]
