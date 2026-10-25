@@ -4,20 +4,20 @@
   "files": {
     "index.html": "031b4694115948aa1842cc7f424a1fb67a9420da897cdb7a7b420aca93a44ed5",
     "style.css": "7eb25efe36fc6821ecd3f796e1c981eedd47b4057e794375866d18294dd9dcf5",
-    "script.js": "3f8d6fd1ab23fa77a0d3700c6b2023c776eed9bd501aa3d556d102f4b1dc4578",
+    "script.js": "adb1587d799b5c7c0f6d8113393d3b9462629813bb61ab62853788ac459f2cad",
     "icon-192.png": "55150c7bd08e29b8119e9fa552ab293fbc8e5db4377cf91e9b8679d062f41b41",
     "icon-512.png": "345f73f480d04324b0b751ab1aab4006913237b9ab76e2d9aefd6090b0cf5d9b",
     "manifest.json": "25d6175366eede7633f735528e82a40f1cec6dfc49a114349d6bbe229a8dd4e1",
-    "sw.js": "55701923ef7f4bfd722671347e153eef2d7bfb19066ae84caecaca833201790d",
-    "meta.json": "ebb33cbc800d8b1e98c90a0506d719aa82747d8783bf05b4518648f700653e53",
-    "CHANGELOG.md": "f8ab4b1de2b71ab874376fe4bfdb32cd55496b28231bfefcede5dc207cc3c320"
+    "sw.js": "b402d5db6a3b9102f9e6c8ef6831e7b03693440f409ec19c8e87e75d867296b9",
+    "meta.json": "ede9b50e29e7790faeb30d5e03282e6ebd77a114cb3c5745aefbc2a7f3613560",
+    "CHANGELOG.md": "06d2877a383b470e42f161324b01c6df1c0a18daaefaacc84b0360778734e845"
   },
-  "bytes": 58625,
-  "builtAt": "2026-10-25T17:07:29.904Z",
-  "mode": "improve",
+  "bytes": 65466,
+  "builtAt": "2026-10-25T18:52:58.412Z",
+  "mode": "fix",
   "repo": "suryasticsai/Ariotica",
-  "runId": "40214764560",
-  "commit": "bc187a0ae3ab817c2f9ccc48de730868c829088b",
+  "runId": "40223179612",
+  "commit": null,
   "model": {
     "provider": "Groq",
     "name": "openai/gpt-oss-120b"
@@ -26,13 +26,13 @@
     {
       "provider": "Groq",
       "model": "openai/gpt-oss-120b",
-      "sec": 14,
+      "sec": 13,
       "ok": true,
       "score": 100,
       "reason": "",
-      "cost": 0.00535275,
-      "tokensIn": 7100,
-      "tokensOut": 5717
+      "cost": 0.0053349,
+      "tokensIn": 7391,
+      "tokensOut": 5635
     }
   ],
   "sha256": "031b4694115948aa1842cc7f424a1fb67a9420da897cdb7a7b420aca93a44ed5",
@@ -59,10 +59,7 @@
       }
     }
   },
-  "promptSha256": "f62abac96d6ced71eed614342e0fc20680905071a868bd97c8b2b588ac86f39a",
-  "prompt": "Fix the PeerJS connection flow and UI states:\n1. Hide the \"Create Room\" button if window.location.hash is NOT empty (i.e., if the user is a guest). Only show it if there is no hash.\n2. Auto-join: If the user opens the link with a hash, auto",
-  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js peermessenger",
-  "cost": 0.00535275,
-  "tokensIn": 7100,
-  "tokensOut": 5717
+  "promptSha256": "6b6e322c7bb5b69b4c5c892d107f80004c2559012fd51fb0d88efc6cf85539f3",
+  "prompt": "Fix the WebRTC connection logic and media permissions.\n1. In the init() function, if location.hash exists (the user is a guest), you MUST call startAsGuest(deterministicId) directly. Do NOT call startAsHost. The guest should NEVER try to cl",
+  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js peermessenger"
 }

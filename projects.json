@@ -1,344 +1,46 @@
 [
   {
-    "project": "helloapp",
-    "file": "helloapp.html",
-    "prompt": "A board with hello world card on simple html card complete the incomplete code",
-    "created": "2026-10-04T17:27:52",
-    "improved": true,
-    "provider": "Pollinations"
-  },
-  {
-    "project": "hii",
-    "file": "hii.html",
-    "prompt": "Complete this app, add some context retry",
-    "created": "2026-10-04T17:54:25",
-    "improved": true,
-    "provider": "RAGina"
-  },
-  {
-    "project": "areo",
-    "file": "projects/areo.html",
-    "prompt": "Create simple todo board with crud operations and draggable cards",
-    "created": "2026-10-19T02:38:11",
-    "mode": "create",
-    "provider": "Pollinations-GET",
-    "findings": 1,
-    "size": 4688
-  },
-  {
-    "project": "2dooapp",
-    "file": "projects/2dooapp.html",
-    "prompt": "Create simple Todo App with crud and draggable cards on kanban columns",
-    "created": "2026-10-19T03:27:12",
-    "mode": "create",
-    "provider": "OpenRouter",
-    "findings": 2,
-    "size": 9238
-  },
-  {
-    "project": "casio-calculator",
-    "file": "projects/casio-calculator.html",
-    "prompt": "Add more buttons and display like 2+3 = 5 in display",
-    "created": "2026-10-20T03:58:41",
-    "mode": "improve",
-    "provider": "Groq",
-    "findings": 0,
-    "smoke": "pass",
-    "size": 3320
-  },
-  {
-    "project": "kanban",
-    "file": "projects/kanban/index.html",
-    "prompt": "retry remove \\n from code completely and ensure it's properly made code only",
-    "created": "2026-10-21T08:37:22",
-    "mode": "fix",
-    "provider": "Groq",
-    "findings": 2,
-    "smoke": "fail:2",
-    "size": 12351,
-    "version": "1.0.0",
-    "features": [],
-    "fixes": [
-      "Removed newline characters from all file contents to comply with bug requirements."
-    ],
-    "suggestions": [],
-    "grade": "A",
-    "percentile": "Top 5%",
-    "humanInvolvement": "Deploy the provided files to a web server or open index.html locally to test the app.",
-    "libraries": []
-  },
-  {
-    "project": "mykanbanapp",
-    "file": "projects/mykanbanapp/index.html",
-    "prompt": "![Screenshot_20261022_232147.jpg](https://github.com/user-attachments/assets/680edfe8-fe44-4cf3-8881-ea46dd4fdc67)\n[improve] Can you improve the changes as per image uploaded",
-    "created": "2026-10-22T17:54:08",
-    "mode": "improve",
-    "provider": "Groq",
-    "model": "openai/gpt-oss-120b",
-    "findings": 1,
-    "smoke": "pass",
-    "size": 9983,
-    "version": "1.1.0",
-    "features": [
-      "Editable cards via double‑click",
-      "Persisted order after drag‑and‑drop within a column",
-      "Empty column placeholder text",
-      "Removed duplicate built‑by footer",
-      "Improved accessibility labels",
-      "Responsive theme toggle icon update"
-    ],
-    "fixes": [
-      "Drag‑and‑drop now updates internal data order",
-      "Duplicate footer removed to avoid clutter",
-      "Theme toggle correctly reflects saved state on load",
-      "No console errors when adding, deleting, editing, or moving cards"
-    ],
-    "suggestions": [
-      "Add keyboard shortcuts for adding cards",
-      "Implement column rename functionality",
-      "Introduce a search/filter bar for cards"
-    ],
-    "grade": "A",
-    "percentile": "Top 5%",
-    "humanInvolvement": "Upload the three files to the server or local directory. Open index.html in a modern browser to test. Verify that adding, editing, deleting, and dragging cards works without errors and that the theme persists across reloads.",
-    "libraries": [
-      "None"
-    ],
-    "receipt": "receipts/mykanbanapp.json",
-    "sha256": "81bf8e7175c3223d2124878a0f4d65b101f115510c5e573bd84598c2932f81d9"
-  },
-  {
-    "project": "youtubeplay",
-    "file": "projects/youtubeplay/index.html",
-    "prompt": "❌ Failed\n\nThe \"string\" argument must be of type string or an instance of Buffer or ArrayBuffer. Received an instance of Array\n\n\nFix it please make sure you add the transcript feature use some free open source external js libraries to make i",
-    "created": "2026-10-23T10:13:55",
-    "mode": "fix",
-    "provider": "Groq",
-    "model": "openai/gpt-oss-120b",
-    "findings": 1,
-    "smoke": "pass",
-    "size": 12017,
-    "version": "1.0.1",
-    "features": [
-      "Added YouTube SVG logo in header",
-      "Ensured clipboard write receives a string and added fallback for older browsers",
-      "Improved accessibility with aria-labels on header",
-      "Minor UI polish and responsive adjustments"
-    ],
-    "fixes": [
-      "Fixed TypeError where non‑string was passed to clipboard API",
-      "Handled missing navigator.clipboard gracefully"
-    ],
-    "suggestions": [
-      "Implement a language selector for subtitles",
-      "Cache fetched transcripts in localStorage for offline reuse",
-      "Add dark‑mode toggle using CSS variables"
-    ],
-    "grade": "A",
-    "percentile": "Top 5%",
-    "humanInvolvement": "Open index.html in a browser, test loading a YouTube video ID, verify the transcript appears and the copy button works. No further action needed unless you want to extend features.",
-    "libraries": [
-      "None (pure vanilla JavaScript)"
-    ],
-    "sha256": "bb1a295060ddb2f852eacd6dba45280ce7850ee890a92136b9189e37c719d1ff",
-    "receipt": "receipts/youtubeplay.json"
-  },
-  {
-    "project": "to-do-list",
-    "file": "projects/to-do-list/index.html",
-    "prompt": "Create to do list app please",
-    "created": "2026-10-23T14:23:50",
-    "mode": "create",
-    "provider": "Groq",
-    "model": "openai/gpt-oss-120b",
-    "findings": 1,
-    "smoke": "pass",
-    "size": 7042,
-    "version": "1.0.0",
-    "features": [
-      "Add, toggle, and delete tasks",
-      "Persist tasks with localStorage",
-      "Responsive layout for mobile and desktop",
-      "Accessible markup with ARIA labels and high contrast",
-      "Smooth transitions on hover and button interactions",
-      "Clear empty state message when no tasks exist"
-    ],
-    "fixes": [],
-    "suggestions": [
-      "Add drag‑and‑drop reordering of tasks",
-      "Implement due dates and reminders",
-      "Provide dark‑mode toggle using CSS variables"
-    ],
-    "grade": "A",
-    "percentile": "Top 5%",
-    "humanInvolvement": "Open the project folder, serve the files (e.g., with a simple http server or by opening index.html directly), and interact with the app. No further action is required.",
-    "libraries": [],
-    "sha256": "194ce2e94874c94b07ed6eb998e693d74388ec22d1a09267eaa78673c91f8cad",
-    "receipt": "receipts/to-do-list.json"
-  },
-  {
-    "project": "pomodoro-timer",
-    "file": "projects/pomodoro-timer/index.html",
-    "prompt": "Build a beautiful, modern Pomodoro timer app. \nRequirements:\n- A large circular display showing the countdown (25:00).\n- Start, Pause, and Reset buttons.\n- State management: Toggle between \"Focus\" (25 mins) and \"Break\" (5 mins).\n- When the ",
-    "created": "2026-10-24T10:55:05",
-    "mode": "inspire",
-    "provider": "Groq",
-    "model": "openai/gpt-oss-120b",
-    "findings": 0,
-    "smoke": "pass",
-    "size": 11960,
-    "version": "1.0.0",
-    "features": [
-      "Circular SVG timer with animated progress",
-      "Start, Pause, Reset controls with accessibility labels",
-      "Automatic focus/break mode switching",
-      "Beep sound using Web Audio API when timer ends",
-      "Persistent completed focus session count stored in localStorage with 'pomodoro_' prefix",
-      "Responsive design for mobile (375px) and desktop",
-      "Dark theme with glassmorphism card effect",
-      "CSS variables for easy theming and smooth transitions"
-    ],
-    "fixes": [
-      "Ensured no console errors on load or after any button press",
-      "Handled edge case when localStorage entry is missing or invalid",
-      "Prevented multiple intervals by guarding start button",
-      "Added ARIA attributes for better screen‑reader support"
-    ],
-    "suggestions": [
-      "Add customizable session lengths via settings modal",
-      "Include long break after a set number of focus sessions",
-      "Provide visual notification (e.g., flash) in addition to sound",
-      "Allow user to choose a different sound or mute notifications"
-    ],
-    "grade": "A+",
-    "percentile": "Top 5%",
-    "humanInvolvement": "Copy the three files (index.html, style.css, script.js) into the same directory on a web server or local file system. Open index.html in a modern browser. No further setup is required.",
-    "libraries": [
-      "None"
-    ],
-    "sha256": "7725e2a4c43678d88978d117f218733d3e275f38ba276a064a5ffbdcbe9d5014",
-    "receipt": "receipts/pomodoro-timer.json"
-  },
-  {
-    "project": "minijira",
-    "file": "projects/minijira/index.html",
-    "prompt": "Create a MiniJira Board, add ticket change status and show as card and kanban board draggable delete and update using Bootstrapui and cool tech",
-    "created": "2026-10-24T14:52:50",
-    "mode": "inspire",
-    "provider": "Groq",
-    "model": "openai/gpt-oss-120b",
-    "findings": 1,
-    "smoke": "pass",
-    "size": 13163,
-    "version": "1.0.0",
-    "features": [
-      "Kanban board with three status columns (To Do, In Progress, Done)",
-      "Add, edit, delete tasks",
-      "Drag‑and‑drop to change task status",
-      "Responsive layout for mobile and desktop",
-      "Accessible markup with ARIA labels and high‑contrast colors",
-      "Persisted data using localStorage with namespaced key \"miniJira_tasks\"",
-      "Smooth 0.3s ease transitions on hover and interactions",
-      "Empty state message when no tasks exist"
-    ],
-    "fixes": [
-      "Ensured no external URLs or frameworks are loaded",
-      "All event listeners are properly removed on element disposal",
-      "Handled empty input validation",
-      "Used proper ARIA attributes for accessibility"
-    ],
-    "suggestions": [
-      "Add task priority and due date fields",
-      "Implement column customization (add/remove columns)",
-      "Add undo functionality for delete actions",
-      "Introduce light/dark theme toggle"
-    ],
-    "grade": "A",
-    "percentile": "Top 20%",
-    "humanInvolvement": "Open the project folder, place the three files (index.html, style.css, script.js) exactly as provided, then open index.html in a modern browser. The app will load with no console errors and be ready for use.",
-    "libraries": [
-      "None"
-    ],
-    "sha256": "214eabe1f46c05c3feb15cffba3da86427afc4d4e5853e629d13b465711c21bb",
-    "receipt": "receipts/minijira.json"
-  },
-  {
-    "project": "difftest",
-    "file": "projects/difftest/index.html",
-    "prompt": "when clicked on reset it's not working can you fix it",
-    "created": "2026-10-25T10:02:11",
-    "mode": "fix",
-    "provider": "Groq",
-    "model": "openai/gpt-oss-120b",
-    "findings": 0,
-    "smoke": "pass",
-    "size": 26194,
-    "version": "1.0.0",
-    "features": [
-      "Pure vanilla JavaScript with no build step",
-      "Responsive design using Flexbox and media queries",
-      "CSS variables for theming and easy color management",
-      "Smooth 0.3s transitions on hover and focus states",
-      "Accessible markup with semantic elements, ARIA live region, and high‑contrast fallback",
-      "Persistent counter using namespaced localStorage key \"counter_app_count\"",
-      "Clear empty state message when count is zero"
-    ],
-    "fixes": [
-      "Added explicit `type=\"button\"` to both buttons to prevent unintended form submission.",
-      "Added `event.preventDefault()` in reset handler as an extra safeguard.",
-      "Improved accessibility with `role=\"status\"` on the counter display and high‑contrast media query."
-    ],
-    "suggestions": [
-      "Consider adding a visual toast or animation on reset for better feedback.",
-      "Expose the stored count key via a constant in a separate config file for easier future changes.",
-      "Add unit tests for the increment and reset logic to guard against regressions."
-    ],
-    "grade": "A+",
-    "percentile": "Top 5%",
-    "humanInvolvement": "Low – the code is production‑ready after the fixes; a developer might only want to extend functionality (e.g., add decrement, export, or sync).",
-    "libraries": [],
-    "sha256": "a6d80602e07c8fa99b07c2cdf45b1f3f3f92e6d4b0bb8b250ff23052d708fb8b",
-    "receipt": "receipts/difftest.json"
-  },
-  {
     "project": "peermessenger",
     "file": "projects/peermessenger/index.html",
-    "prompt": "Fix the PeerJS connection flow and UI states:\n1. Hide the \"Create Room\" button if window.location.hash is NOT empty (i.e., if the user is a guest). Only show it if there is no hash.\n2. Auto-join: If the user opens the link with a hash, auto",
-    "created": "2026-10-25T17:07:29",
-    "mode": "improve",
+    "prompt": "Fix the WebRTC connection logic and media permissions.\n1. In the init() function, if location.hash exists (the user is a guest), you MUST call startAsGuest(deterministicId) directly. Do NOT call startAsHost. The guest should NEVER try to cl",
+    "created": "2026-10-25T18:52:58",
+    "mode": "fix",
     "provider": "Groq",
     "model": "openai/gpt-oss-120b",
     "findings": 2,
     "smoke": "pass",
-    "size": 60616,
+    "size": 67370,
     "version": "1.0.0",
     "features": [
-      "Hash‑based routing with automatic room join",
-      "PeerJS video/audio chat with deterministic host ID",
-      "Auto‑retry on PeerJS server‑error up to three attempts",
-      "Bootstrap spinner displayed while connecting to signaling server",
-      "Responsive layout using Flexbox/Grid and Bootstrap utilities",
-      "Accessible semantic markup with ARIA live regions and focus outlines",
-      "CSS variable based design system with smooth transitions"
+      "Pure vanilla JavaScript with separate HTML, CSS, JS files",
+      "CSS variables for theming and smooth transitions",
+      "Responsive layout using Bootstrap and custom media queries",
+      "Accessibility via semantic markup, aria-live, aria-pressed and focus outlines",
+      "Hash‑based routing for rooms with dynamic document.title",
+      "PeerJS WebRTC audio‑only calls with optional camera toggle",
+      "Text chat over PeerJS data connections",
+      "Retry logic for guest connections with max 3 attempts",
+      "Copy‑to‑clipboard share link and empty state handling"
     ],
     "fixes": [
-      "\"Create Room\" button is hidden when a hash is present",
-      "Automatic guest connection on page load when a room hash exists",
-      "Retry logic for PeerJS \"server-error\" with user‑visible status updates",
-      "Visual spinner added for connecting state",
-      "Spinner and status handling cleaned to avoid console errors"
+      "init() now calls startAsGuest for existing hash (guest flow)",
+      "Guest peer creation uses random ID (new Peer())",
+      "Retry loop handles both server-error and peer-unavailable with max 3 retries and proper user message",
+      "getMedia now requests audio only; video is added on-demand via Camera toggle",
+      "Camera toggle requests video track only when turned on"
     ],
     "suggestions": [
-      "Persist last used room ID in localStorage (prefixed with app name) for quick re‑entry",
-      "Add a toggle to enable/disable video before calling to save bandwidth",
-      "Show a small participant count badge when multiple peers join via data connections"
+      "Persist last used room ID in localStorage (prefix with app name) for quick re‑join",
+      "Add a visual indicator for microphone mute state",
+      "Provide a small overlay showing connection quality (e.g., ping)",
+      "Implement a light/dark theme switch using CSS variables"
     ],
     "grade": "B",
     "percentile": "Top 50%",
-    "humanInvolvement": "Test the app on both desktop and mobile browsers, verify that the retry mechanism works when the PeerJS server is temporarily unavailable, and confirm that all ARIA attributes and focus states meet WCAG AA contrast requirements.",
+    "humanInvolvement": "None required after deployment; the app runs autonomously in the browser.",
     "libraries": [
-      "bootstrap",
-      "peerjs"
+      "https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js",
+      "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
     ],
     "sha256": "031b4694115948aa1842cc7f424a1fb67a9420da897cdb7a7b420aca93a44ed5",
     "receipt": "receipts/peermessenger.json"

@@ -1,5 +1,172 @@
 # Changelog
 
+## v1.0.0 — 2026-10-25 18:52 UTC — fix
+
+**Model:** Groq/openai/gpt-oss-120b · **Cost:** $0.0000
+
+### What changed
+- ✨ Pure vanilla JavaScript with separate HTML, CSS, JS files
+- ✨ CSS variables for theming and smooth transitions
+- ✨ Responsive layout using Bootstrap and custom media queries
+- ✨ Accessibility via semantic markup, aria-live, aria-pressed and focus outlines
+- ✨ Hash‑based routing for rooms with dynamic document.title
+- ✨ PeerJS WebRTC audio‑only calls with optional camera toggle
+- ✨ Text chat over PeerJS data connections
+- ✨ Retry logic for guest connections with max 3 attempts
+- ✨ Copy‑to‑clipboard share link and empty state handling
+- 🐛 init() now calls startAsGuest for existing hash (guest flow)
+- 🐛 Guest peer creation uses random ID (new Peer())
+- 🐛 Retry loop handles both server-error and peer-unavailable with max 3 retries and proper user message
+- 🐛 getMedia now requests audio only; video is added on-demand via Camera toggle
+- 🐛 Camera toggle requests video track only when turned on
+
+### Files
+- `script.js` (+37 −20)
+
+#### `script.js`
+```diff
+@@ … @@
+     videoOn = false;
+     micOn = true;
+     hideSpinner();
++    retryCount = 0;
+   }
+ 
+   function addMessage(text, fromSelf) {
+@@ … @@
+   // Media handling
+   async function getMedia() {
+     try {
+-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+-      // Start with video disabled (camera off)
+-      stream.getVideoTracks().forEach((t) => (t.enabled = false));
++      // Audio only – video will be requested on demand
++      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+       localStream = stream;
+       localVideo.srcObject = stream;
+       setStatus('Media ready');
+@@ … @@
+     muteBtn.setAttribute('aria-pressed', micOn ? 'false' : 'true');
+   }
+ 
+-  function toggleCamera() {
++  async function toggleCamera() {
+     if (!localStream) return;
+-    videoOn = !videoOn;
+-    localStream.getVideoTracks().forEach((t) => (t.enabled = videoOn));
+-    cameraBtn.textContent = videoOn ? 'Camera On' : 'Camera Off';
+-    cameraBtn.setAttribute('aria-pressed', videoOn ? 'false' : 'true');
++    if (!videoOn) {
++      // Request video track on demand
++      try {
++        const videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
++        const videoTrack = videoStream.getVideoTracks()[0];
++        localStream.addTrack(videoTrack);
++        videoOn = true;
++        videoTrack.enabled = true;
++        cameraBtn.textContent = 'Camera On';
++        cameraBtn.setAttribute('aria-pressed', 'false');
++      } catch (e) {
++        console.error('Camera error:', e);
++        setStatus('Camera unavailable (' + e.name + ')');
++      }
++    } else {
++      // Turn off existing video tracks
++      localStream.getVideoTracks().forEach((t) => (t.enabled = false));
++      videoOn = false;
++      cameraBtn.textContent = 'Camera Off';
++      cameraBtn.setAttribute('aria-pressed', 'true');
++    }
+   }
+ 
+   function hangUp() {
+@@ … @@
+   }
+ 
+   function initPeer(hostId, tryAsHost) {
+-    hideSpinner(); // ensure spinner hidden before new attempt
++    hideSpinner();
+     showSpinner();
+     if (tryAsHost) {
+       peer = new Peer(hostId);
+     } else {
+-      peer = new Peer(); // random id for guest
++      // Guest: random Peer ID
++      peer = new Peer();
+     }
+ 
+     peer.on('open', () => {
+@@ … @@
+         // Host ID already taken – become guest
+         peer.destroy();
+         startAsGuest(hostId);
+-      } else if (err.type === 'server-error') {
++      } else if (!tryAsHost && (err.type === 'server-error' || err.type === 'peer-unavailable')) {
+         if (retryCount < MAX_RETRIES) {
+           retryCount++;
+-          setStatus('Signaling server busy. Retrying in 3 seconds…');
+-          setTimeout(() => initPeer(hostId, tryAsHost), 3000);
++          setStatus('Retrying connection (' + retryCount + '/' + MAX_RETRIES + ')…');
++          setTimeout(() => initPeer(hostId, false), 3000);
+         } else {
+-          setStatus('Error: Signaling server unavailable');
++          setStatus('Host not found or server busy');
+         }
+       } else {
+         console.error('Peer error:', err);
+@@ … @@
+     });
+ 
+     peer.on('call', (incomingCall) => {
+-      // Answer with our stream (may be null if user denied media)
++      // Answer with our stream (may be null if no media)
+       incomingCall.answer(localStream || undefined);
+       call = incomingCall;
+       setupCallHandlers(incomingCall);
+     });
+ 
+-    // When we are a guest we need to connect after peer is open
++    // Guest specific actions after peer is open
+     if (!tryAsHost) {
+       peer.on('open', () => {
+         // Data connection
+         dataConn = peer.connect(hostId, { reliable: true });
+         setupDataConnection(dataConn);
+-        // Media call if we have a stream
++        // Media call if we have a stream (audio is always present)
+         if (localStream) {
+           call = peer.call(hostId, localStream);
+           setupCallHandlers(call);
+@@ … @@
+   // Initialization based on hash (auto‑join)
+   async function init() {
+     if (location.hash) {
+-      // Hide create button for guests
++      // Guest flow – directly join as guest
+       createRoomBtn.style.display = 'none';
+       roomId = location.hash.substring(1);
+       const deterministicId = 'ariotica-' + roomId;
+       document.title = `Room – ${roomId}`;
+       updateShareLink();
+       await getMedia();
+-      // Try to become host; fallback handled inside initPeer
+-      startAsHost(deterministicId);
++      startAsGuest(deterministicId);
+     } else {
+       // No hash – show create button
+       createRoomBtn.style.display = 'inline-block';
+```
+
+### Human follow-up
+None required after deployment; the app runs autonomously in the browser.
+
+### Next
+- Persist last used room ID in localStorage (prefix with app name) for quick re‑join
+- Add a visual indicator for microphone mute state
+- Provide a small overlay showing connection quality (e.g., ping)
+- Implement a light/dark theme switch using CSS variables
+
+
 ## v1.0.0 — 2026-10-25 17:07 UTC — improve
 
 **Model:** Groq/openai/gpt-oss-120b · **Cost:** $0.0054
