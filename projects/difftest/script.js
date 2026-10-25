@@ -2,7 +2,8 @@
   const STORAGE_KEY = 'counter_app_count';
   const countEl = document.querySelector('.counter-display');
   const messageEl = document.getElementById('message');
-  const btn = document.getElementById('incrementBtn');
+  const incrementBtn = document.getElementById('incrementBtn');
+  const resetBtn = document.getElementById('resetBtn');
 
   const loadCount = function() {
     const stored = localStorage.getItem(STORAGE_KEY);
@@ -21,8 +22,14 @@
     }
   };
 
-  btn.addEventListener('click', function() {
+  incrementBtn.addEventListener('click', function() {
     count++;
+    localStorage.setItem(STORAGE_KEY, count);
+    updateUI();
+  });
+
+  resetBtn.addEventListener('click', function() {
+    count = 0;
     localStorage.setItem(STORAGE_KEY, count);
     updateUI();
   });
