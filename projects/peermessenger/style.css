@@ -1,0 +1,63 @@
+:root {
+  --color-bg: #f8f9fa;
+  --color-primary: #0d6efd;
+  --color-primary-dark: #0b5ed7;
+  --color-success: #198754;
+  --color-success-dark: #157347;
+  --color-text: #212529;
+  --color-muted: #6c757d;
+  --transition: 0.3s ease;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.5;
+}
+
+button,
+input {
+  transition: var(--transition);
+}
+
+button:hover,
+button:focus {
+  opacity: 0.9;
+}
+
+#share-link {
+  word-break: break-all;
+}
+
+#messages {
+  max-height: 250px;
+  overflow-y: auto;
+}
+
+#messages li {
+  margin-bottom: 0.5rem;
+}
+
+#empty-state {
+  margin-top: 2rem;
+}
+
+@media (max-width: 576px) {
+  .audio-wrapper {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* High contrast focus outline */
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
