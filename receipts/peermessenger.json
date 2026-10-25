@@ -2,22 +2,22 @@
   "schema": 1,
   "app": "peermessenger",
   "files": {
-    "index.html": "74b408b13e2dcb4f8a165d09ee0986b15719219addd762d6f8fe15cb0886b293",
+    "index.html": "2afe5316886fda9fcd700e54b65d838e9b2ee3db8dd057aff1c9f7b456315405",
     "style.css": "f6a390e9164cf18b05bba8c91d46d71bf276b693b85ce8c999cdda91a71f74ec",
-    "script.js": "28234f46c519c3f765ffe3facc1282f803ee8464453d7b03f04030da9e55b373",
+    "script.js": "29e8099e6017b280ebf1b330e8eeed87c023ba39c79db914de75bc368459b57a",
     "icon-192.png": "55150c7bd08e29b8119e9fa552ab293fbc8e5db4377cf91e9b8679d062f41b41",
     "icon-512.png": "345f73f480d04324b0b751ab1aab4006913237b9ab76e2d9aefd6090b0cf5d9b",
     "manifest.json": "25d6175366eede7633f735528e82a40f1cec6dfc49a114349d6bbe229a8dd4e1",
-    "sw.js": "6fdb2c79de86875e868f3615c1ecba6028cbf6bdc049c7b71e533988270063de",
-    "meta.json": "49996b7a17cdf7801e5b70240da3c66f487bab5e63daad07c52fe0f7c2e546fb",
-    "CHANGELOG.md": "b4cedf89028a19b686f1574ee5299cf6283ce59841ae11d0d777bb6b72a2c208"
+    "sw.js": "72d8504be190336f4bb3c2489591ff1f1889fffad5026b5a7706f276bf00757f",
+    "meta.json": "b3f342ba71b4193a48fe45d3ea9e67c35370e5a4894ac718b3c2aa1c1fc95f56",
+    "CHANGELOG.md": "26f409f5b621f454f238f7983bdf4a47a132993e81602c866cd1dfcf780a4f8e"
   },
-  "bytes": 21822,
-  "builtAt": "2026-10-25T14:00:31.612Z",
-  "mode": "inspire",
+  "bytes": 29959,
+  "builtAt": "2026-10-25T14:16:31.990Z",
+  "mode": "fix",
   "repo": "suryasticsai/Ariotica",
-  "runId": "40200101470",
-  "commit": "7c3eb5cad02fc7f7ad01dc6ea3d087fe087c307c",
+  "runId": "40201286182",
+  "commit": null,
   "model": {
     "provider": "Groq",
     "name": "openai/gpt-oss-120b"
@@ -26,16 +26,16 @@
     {
       "provider": "Groq",
       "model": "openai/gpt-oss-120b",
-      "sec": 10,
+      "sec": 16,
       "ok": true,
       "score": 100,
       "reason": "",
-      "cost": 0.00332685,
-      "tokensIn": 2054,
-      "tokensOut": 4025
+      "cost": 0.00582075,
+      "tokensIn": 4365,
+      "tokensOut": 6888
     }
   ],
-  "sha256": "74b408b13e2dcb4f8a165d09ee0986b15719219addd762d6f8fe15cb0886b293",
+  "sha256": "2afe5316886fda9fcd700e54b65d838e9b2ee3db8dd057aff1c9f7b456315405",
   "checks": {
     "complete": true,
     "vanilla": false,
@@ -47,22 +47,19 @@
     "smoke": "pass",
     "smokeErrors": [],
     "scan": {
-      "total": 0,
+      "total": 1,
       "high": 0,
-      "medium": 0,
+      "medium": 1,
       "low": 0,
       "byTool": {
         "custom": 0,
-        "eslint": 0,
+        "eslint": 1,
         "sparrow": 0,
         "externals": 0
       }
     }
   },
-  "promptSha256": "859af956074e508029ba3125b8204432473606747668331c624a1b583567fe7e",
-  "prompt": "Create a peer2peer Voice, chat messenger which can chat with eachother using webrtc",
-  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js peermessenger",
-  "cost": 0.00332685,
-  "tokensIn": 2054,
-  "tokensOut": 4025
+  "promptSha256": "e4c3b83e218dade525a41cbcca02db268c4aadaafd72fc79f76f5536d8dbafa0",
+  "prompt": "Here i want to create room which room link can be shared where other user who entered room via link can chat, voice call",
+  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js peermessenger"
 }

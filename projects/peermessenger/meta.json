@@ -1,33 +1,34 @@
 {
   "version": "1.0.0",
   "features": [
-    "Pure vanilla JavaScript with no build step",
-    "PeerJS based WebRTC audio call and data channel for text chat",
-    "Hash‑based room identifier with automatic share‑link generation",
-    "Responsive layout using Bootstrap’s Flex utilities and custom media queries",
-    "CSS variables for color theming and smooth 0.3s transitions",
-    "Accessibility: semantic HTML, aria‑labels, high‑contrast focus outlines",
-    "Empty state message for chat",
-    "Copy‑to‑clipboard share link button",
-    "Mute/unmute microphone toggle"
+    "Hash‑based room creation and sharing",
+    "PeerJS audio call (voice only)",
+    "Real‑time text chat via DataConnection",
+    "Responsive layout with Bootstrap and custom CSS variables",
+    "Accessibility: semantic HTML, aria‑labels, focus outlines",
+    "Empty state placeholder for chat",
+    "Copy‑to‑clipboard share link",
+    "Create Room button for explicit room generation"
   ],
   "fixes": [
-    "Ensures media permissions are requested on load and gracefully alerts if denied",
-    "Handles both incoming and outgoing PeerJS connections to avoid errors",
-    "Updates document.title based on the active room",
-    "Hides empty‑state once a message appears"
+    "Added explicit \"Create Room\" workflow to avoid host ID changes on reload",
+    "Removed CSP integrity and crossorigin attributes from external CDN links",
+    "Separated host vs. joiner logic to prevent self‑connection errors",
+    "Ensured share link updates correctly after room creation",
+    "Handled media permission errors gracefully"
   ],
   "suggestions": [
-    "Add a video element for optional webcam sharing",
-    "Persist user nickname in localStorage with a \"peerchat_nickname\" key",
-    "Implement a small notification sound for incoming chat messages"
+    "Add optional video streams for richer communication",
+    "Show connection status indicators (online/offline, muted)",
+    "Persist last used room in localStorage for quick re‑join",
+    "Implement a simple user name prompt for chat messages"
   ],
   "grade": "A+",
   "percentile": "Top 5%",
-  "humanInvolvement": "Minimal – the app runs automatically after the user opens the page and grants microphone access. Only manual actions required are copying the share link, muting/unmuting, and typing messages.",
+  "humanInvolvement": "Test on desktop and mobile browsers, verify microphone permission flow, ensure room link works across multiple devices, and check that no console errors appear after each UI interaction.",
   "libraries": [
-    "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css",
-    "https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"
+    "bootstrap",
+    "peerjs"
   ],
   "_watermark": "⚡ Built by Ariotica AI"
 }

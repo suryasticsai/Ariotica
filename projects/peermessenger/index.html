@@ -17,6 +17,7 @@
     <h1 class="mb-4 text-center">Peer2Peer Voice &amp; Chat</h1>
 
     <section id="room-section" class="mb-4 text-center">
+      <button id="create-room" class="btn btn-primary mb-2" aria-label="Create a new room">Create Room</button>
       <p id="share-link" class="mb-2">Share this link:</p>
       <button id="copy-btn" class="btn btn-outline-primary" aria-label="Copy share link">Copy</button>
     </section>
@@ -47,8 +48,10 @@
   <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js" integrity="sha384-nlUQ8ZqCbvStErob+biJNzSgltf6urV3VGqhfIfzhmg9RXmpeRm76ELw0pYnKlTR" crossorigin="anonymous"></script>
   <script src="script.js"></script>
 
+  <div style="position:fixed;bottom:12px;right:12px;opacity:0.35;font-size:11px;font-family:monospace;color:white;pointer-events:none;z-index:9999;">⚡ Ariotica</div>
+  <script>if('serviceWorker' in navigator){addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}</script>
+
 <!-- Built by Ariotica AI -->
 <div style="position:fixed;bottom:12px;right:12px;opacity:0.35;font-size:11px;font-family:monospace;color:white;pointer-events:none;z-index:9999;">⚡ Ariotica</div>
-<script>if('serviceWorker' in navigator){addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}</script>
 </body>
 </html>

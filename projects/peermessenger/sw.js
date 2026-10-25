@@ -1,5 +1,5 @@
-/* Ariotica SW · app-peermessenger-54353800 */
-const CACHE = "app-peermessenger-54353800";
+/* Ariotica SW · app-peermessenger-2c87373b */
+const CACHE = "app-peermessenger-2c87373b";
 const PRECACHE = ["./","./index.html","./style.css","./script.js","./manifest.json","./icon-192.png","./icon-512.png"];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => Promise.all(PRECACHE.map((u) => c.add(u).catch(() => {})))).then(() => self.skipWaiting())); });
 self.addEventListener('activate', (e) => { e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });

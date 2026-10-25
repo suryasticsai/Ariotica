@@ -1,9 +1,9 @@
-// Peer2Peer Voice & Chat Messenger using PeerJS
-(() => {
+(function(){
   const localAudioEl = document.getElementById('local-audio');
   const remoteAudioEl = document.getElementById('remote-audio');
   const copyBtn = document.getElementById('copy-btn');
   const shareLinkEl = document.getElementById('share-link');
+  const createRoomBtn = document.getElementById('create-room');
   const toggleAudioBtn = document.getElementById('toggle-audio');
   const messagesEl = document.getElementById('messages');
   const msgForm = document.getElementById('msg-form');
@@ -15,19 +15,18 @@
   let dataConn = null;
   let callObj = null;
   let isMuted = false;
+  let isHost = false;
+  let roomId = null;
 
-  // Helper to add chat message
   function addMessage(text, fromSelf) {
     const li = document.createElement('li');
     li.textContent = text;
     li.style.textAlign = fromSelf ? 'right' : 'left';
     messagesEl.appendChild(li);
     messagesEl.scrollTop = messagesEl.scrollHeight;
-    // Hide empty state after first message
     if (emptyStateEl) emptyStateEl.style.display = 'none';
   }
 
-  // Copy share link to clipboard
   copyBtn.addEventListener('click', async () => {
     try {
       await navigator.clipboard.writeText(location.href);
@@ -38,7 +37,6 @@
     }
   });
 
-  // Mute / unmute microphone
   toggleAudioBtn.addEventListener('click', () => {
     if (!localStream) return;
     isMuted = !isMuted;
@@ -46,7 +44,6 @@
     toggleAudioBtn.textContent = isMuted ? 'Unmute' : 'Mute';
   });
 
-  // Handle sending chat messages
   msgForm.addEventListener('submit', e => {
     e.preventDefault();
     const msg = msgInput.value.trim();
@@ -56,57 +53,78 @@
     msgInput.value = '';
   });
 
-  // Initialize PeerJS and media
-  async function init() {
+  createRoomBtn.addEventListener('click', () => {
+    roomId = Math.random().toString(36).substring(2, 8);
+    isHost = true;
+    location.hash = roomId;
+    updateUIForRoom();
+    initPeer();
+  });
+
+  function updateShareLink(){
+    const url = `${location.origin}${location.pathname}#${roomId}`;
+    shareLinkEl.textContent = url;
+  }
+
+  function updateUIForRoom(){
+    createRoomBtn.style.display = 'none';
+    updateShareLink();
+    document.title = `Room – ${roomId}`;
+  }
+
+  async function init(){
+    if (location.hash) {
+      roomId = location.hash.substring(1);
+      isHost = false;
+      updateUIForRoom();
+      await startMedia();
+      initPeer();
+    } else {
+      createRoomBtn.style.display = 'inline-block';
+      await startMedia();
+    }
+  }
+
+  async function startMedia(){
     try {
       localStream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
       localAudioEl.srcObject = localStream;
     } catch (err) {
       alert('Microphone access denied. The app cannot work without it.');
       console.error(err);
-      return;
     }
+  }
 
+  function initPeer(){
     peer = new Peer();
-
     peer.on('open', id => {
-      // If there is no hash, we are the host – use our peer id as room identifier
-      if (!location.hash) {
-        location.hash = id;
-        updateShareLink(id);
-        document.title = `Room – ${id}`;
+      if (isHost) {
+        document.title = `Room – ${roomId}`;
+        updateShareLink();
       } else {
-        const remoteId = location.hash.substring(1);
-        document.title = `Room – ${remoteId}`;
-        // Connect data channel
-        dataConn = peer.connect(remoteId);
+        dataConn = peer.connect(roomId);
         dataConn.on('open', () => console.log('Data connection open'));
         dataConn.on('data', data => addMessage(data, false));
         dataConn.on('error', err => console.error('Data connection error', err));
-        // Initiate audio call
-        callObj = peer.call(remoteId, localStream);
+        callObj = peer.call(roomId, localStream);
         setupCallHandlers(callObj);
       }
     });
-
-    // Incoming data connections (when we are the host)
     peer.on('connection', conn => {
+      if (!isHost) return;
       dataConn = conn;
       dataConn.on('open', () => console.log('Incoming data connection open'));
       dataConn.on('data', data => addMessage(data, false));
       dataConn.on('error', err => console.error('Incoming data error', err));
     });
-
-    // Incoming audio call
     peer.on('call', call => {
       call.answer(localStream);
       setupCallHandlers(call);
     });
-
     peer.on('error', err => console.error('Peer error', err));
   }
 
-  function setupCallHandlers(call) {
+  function setupCallHandlers(call){
     call.on('stream', remoteStream => {
       remoteAudioEl.srcObject = remoteStream;
     });
@@ -114,17 +132,9 @@
     call.on('error', err => console.error('Call error', err));
   }
 
-  function updateShareLink(id) {
-    const url = `${location.origin}${location.pathname}#${id}`;
-    shareLinkEl.textContent = url;
-  }
-
-  // Listen to hash changes – allow joining a different room without reload
   window.addEventListener('hashchange', () => {
-    // Simple reload to reset state (keeps implementation straightforward)
     location.reload();
   });
 
-  // Kick off
   init();
 })();
