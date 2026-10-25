@@ -17,7 +17,7 @@
   "mode": "improve",
   "repo": "suryasticsai/Ariotica",
   "runId": "40182498529",
-  "commit": null,
+  "commit": "5eef6dd04a831008ca250763c9995e87e590d5af",
   "model": {
     "provider": "Groq",
     "name": "openai/gpt-oss-120b"
@@ -58,5 +58,8 @@
   },
   "promptSha256": "cd7de21523684acfd297b516b37adddc576c91ea95c3f6c49aa86719b962aeb2",
   "prompt": "add a reset button and change the background color",
-  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js difftest"
+  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js difftest",
+  "cost": 0.0019545,
+  "tokensIn": 3015,
+  "tokensOut": 2003
 }

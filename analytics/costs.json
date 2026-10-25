@@ -24,5 +24,31 @@
         "tokensOut": 2446
       }
     ]
+  },
+  {
+    "ts": "2026-10-25T09:54:13.360Z",
+    "slug": "difftest",
+    "mode": "improve",
+    "provider": "Groq",
+    "model": "openai/gpt-oss-120b",
+    "runId": "40182498529",
+    "cost": 0.0019545,
+    "tokensIn": 3015,
+    "tokensOut": 2003,
+    "score": 100,
+    "sec": 5,
+    "race": [
+      {
+        "provider": "Groq",
+        "model": "openai/gpt-oss-120b",
+        "sec": 5,
+        "ok": true,
+        "score": 100,
+        "reason": "",
+        "cost": 0.0019545,
+        "tokensIn": 3015,
+        "tokensOut": 2003
+      }
+    ]
   }
 ]
