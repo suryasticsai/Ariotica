@@ -2,22 +2,22 @@
   "schema": 1,
   "app": "difftest",
   "files": {
-    "index.html": "cb0d74fd43eeb61af7216372ab09433ef244dbd4227a430467c02889ebc055bd",
-    "style.css": "e2b2f0b49773380e11394e189ddeeecbe5c48081a5783cc73e70edd0218ce258",
-    "script.js": "541530ebdbdea07f9f7f6b8625ad3a87d35fc366a6def82ab0c65fffbae5cc86",
+    "index.html": "a6d80602e07c8fa99b07c2cdf45b1f3f3f92e6d4b0bb8b250ff23052d708fb8b",
+    "style.css": "ff5735ac29c984875c303d386ffe9bdbe5dfe6430e85e2a66cfa7500cfe408e5",
+    "script.js": "ae32880eec1b2bf7657358e779e1b4ae3ef976e7540457d887b2638a35a99b04",
     "icon-192.png": "38830c024482b9fc4832d293cc22e357223fb4574e1d6cb8499f28f95e594cbb",
     "icon-512.png": "2a7491be9766a41f3a0100f883aecf203a3b2617ebf7f76af51f6e66350fd124",
     "manifest.json": "29554f2c81f18b60182fdd7a4032e13b8fa391c7da3aabf144b77ef9dde5c9c1",
-    "sw.js": "fd4a962646219b0e6e1ed3b3bc60552356d4c7119866779ec3e5e2c34b32ff52",
-    "meta.json": "cf3d656c2e4a1d622d52c4e4e6c798ab7090e54c9dcc979777a312b8b0c7bde0",
-    "CHANGELOG.md": "bf44fb0ee0f361eb340bb9bdbbc5b62757a8e6dc879b47f6cc3ea932aed56ceb"
+    "sw.js": "e25bf1b778ba475624b0918162bec40aa79693823921d80aa27530853cc7aa9d",
+    "meta.json": "54927fdd8c10cc8c7469959783b417073aed555a800e6638a2c866b6a4d672f0",
+    "CHANGELOG.md": "482928e5f635c1a9d978f04a3976b3be89c45303c52674d6b53fa4e484aeed1a"
   },
-  "bytes": 19332,
-  "builtAt": "2026-10-25T09:54:07.229Z",
-  "mode": "improve",
+  "bytes": 24351,
+  "builtAt": "2026-10-25T10:02:11.774Z",
+  "mode": "fix",
   "repo": "suryasticsai/Ariotica",
-  "runId": "40182498529",
-  "commit": "5eef6dd04a831008ca250763c9995e87e590d5af",
+  "runId": "40182734901",
+  "commit": null,
   "model": {
     "provider": "Groq",
     "name": "openai/gpt-oss-120b"
@@ -26,16 +26,16 @@
     {
       "provider": "Groq",
       "model": "openai/gpt-oss-120b",
-      "sec": 5,
+      "sec": 7,
       "ok": true,
       "score": 100,
       "reason": "",
-      "cost": 0.0019545,
-      "tokensIn": 3015,
-      "tokensOut": 2003
+      "cost": 0.00238485,
+      "tokensIn": 3089,
+      "tokensOut": 2562
     }
   ],
-  "sha256": "cb0d74fd43eeb61af7216372ab09433ef244dbd4227a430467c02889ebc055bd",
+  "sha256": "a6d80602e07c8fa99b07c2cdf45b1f3f3f92e6d4b0bb8b250ff23052d708fb8b",
   "checks": {
     "complete": true,
     "vanilla": false,
@@ -56,10 +56,7 @@
       }
     }
   },
-  "promptSha256": "cd7de21523684acfd297b516b37adddc576c91ea95c3f6c49aa86719b962aeb2",
-  "prompt": "add a reset button and change the background color",
-  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js difftest",
-  "cost": 0.0019545,
-  "tokensIn": 3015,
-  "tokensOut": 2003
+  "promptSha256": "1ec3570f70db86b201497c1752656f19c368b934ebad62e83ebe4b7375f8c571",
+  "prompt": "when clicked on reset it's not working can you fix it",
+  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js difftest"
 }

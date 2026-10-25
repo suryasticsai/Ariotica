@@ -1,5 +1,5 @@
 (function() {
-  const STORAGE_KEY = 'counter_app_count';
+  const STORAGE_KEY = 'counter_app_count'; // namespaced with app name
   const countEl = document.querySelector('.counter-display');
   const messageEl = document.getElementById('message');
   const incrementBtn = document.getElementById('incrementBtn');
@@ -22,17 +22,21 @@
     }
   };
 
+  // Increment handler
   incrementBtn.addEventListener('click', function() {
     count++;
     localStorage.setItem(STORAGE_KEY, count);
     updateUI();
   });
 
-  resetBtn.addEventListener('click', function() {
+  // Reset handler – fixed to ensure button type="button" prevents default submit behavior
+  resetBtn.addEventListener('click', function(event) {
+    event.preventDefault(); // safeguard against accidental form submission
     count = 0;
     localStorage.setItem(STORAGE_KEY, count);
     updateUI();
   });
 
+  // Initialise UI on load
   updateUI();
 })();
