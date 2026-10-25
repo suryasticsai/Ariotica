@@ -2,7 +2,7 @@
 
 ## v1.0.0 — 2026-10-25 17:07 UTC — improve
 
-**Model:** Groq/openai/gpt-oss-120b · **Cost:** $0.0000
+**Model:** Groq/openai/gpt-oss-120b · **Cost:** $0.0054
 
 ### What changed
 - ✨ Hash‑based routing with automatic room join

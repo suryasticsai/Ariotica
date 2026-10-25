@@ -17,7 +17,7 @@
   "mode": "improve",
   "repo": "suryasticsai/Ariotica",
   "runId": "40214764560",
-  "commit": null,
+  "commit": "bc187a0ae3ab817c2f9ccc48de730868c829088b",
   "model": {
     "provider": "Groq",
     "name": "openai/gpt-oss-120b"
@@ -61,5 +61,8 @@
   },
   "promptSha256": "f62abac96d6ced71eed614342e0fc20680905071a868bd97c8b2b588ac86f39a",
   "prompt": "Fix the PeerJS connection flow and UI states:\n1. Hide the \"Create Room\" button if window.location.hash is NOT empty (i.e., if the user is a guest). Only show it if there is no hash.\n2. Auto-join: If the user opens the link with a hash, auto",
-  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js peermessenger"
+  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js peermessenger",
+  "cost": 0.00535275,
+  "tokensIn": 7100,
+  "tokensOut": 5717
 }
