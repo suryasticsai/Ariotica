@@ -17,7 +17,7 @@
   "mode": "fix",
   "repo": "suryasticsai/Ariotica",
   "runId": "40223179612",
-  "commit": null,
+  "commit": "cee8544afe35349d6b823f0c7b71494a5be95f76",
   "model": {
     "provider": "Groq",
     "name": "openai/gpt-oss-120b"
@@ -61,5 +61,8 @@
   },
   "promptSha256": "6b6e322c7bb5b69b4c5c892d107f80004c2559012fd51fb0d88efc6cf85539f3",
   "prompt": "Fix the WebRTC connection logic and media permissions.\n1. In the init() function, if location.hash exists (the user is a guest), you MUST call startAsGuest(deterministicId) directly. Do NOT call startAsHost. The guest should NEVER try to cl",
-  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js peermessenger"
+  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js peermessenger",
+  "cost": 0.0053349,
+  "tokensIn": 7391,
+  "tokensOut": 5635
 }
