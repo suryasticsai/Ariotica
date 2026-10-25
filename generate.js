@@ -253,6 +253,8 @@ STRICT RULES:
 - **RESPONSIVE**: Must look perfect on mobile (375px) and desktop. Use media queries.
 - **ACCESSIBILITY**: Use semantic HTML, aria-labels, and ensure high contrast.
 - **UX**: Always include a clear empty state (e.g., "No tasks yet, add one!"). Handle edge cases gracefully.
+- **MULTI-PAGE**: If the app needs multiple views (e.g., Settings, Dashboard, About), use hash-based routing (e.g., #/settings) and listen to the window.onhashchange event. Update document.title based on the route. Hide/show sections using CSS classes based on the hash. Do NOT use external routing libraries.
+- **WEBRTC**: If building a video/audio call app, use PeerJS. Always request media with navigator.mediaDevices.getUserMedia. Use window.location.hash for the room ID. Copy the current URL for the share link.
 - **STORAGE NAMESPACING**: If you use localStorage, ALL keys MUST be prefixed with the app's name (e.g., "kanban_items" not "items").
 - The app must run without console errors on load and when every button is pressed once.
 
