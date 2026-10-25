@@ -9,6 +9,7 @@ const T = require('./lib/text');
 const Rag = require('./lib/rag');
 const K = require('./lib/knowledge');
 const R = require('./lib/receipt');
+const Lib = require('./lib/libraries');
 const { runAllScanners } = require('./lib/scan');
 const { smokeTest } = require('./lib/smoke');
 const { askAI } = require('./lib/providers');
@@ -50,7 +51,7 @@ const stepLine = (s) => `${icon(s)} ${s.name}${s.sec != null ? ` — ${s.sec}s` 
 const elapsed = () => Math.round((Date.now() - T0) / 1000);
 
 // ============================================================
-// T3: PNG encoder + icon generator (unchanged)
+// T3: PNG encoder + icon generator
 // ============================================================
 let _crcTable = null;
 function crc32(buf) {
@@ -211,17 +212,19 @@ function aiEvents() {
   };
 }
 
+// ============================================================
+// RULES — library policy is injected via LIB_PROMPT
+// ============================================================
 const RULES = `You are a Senior UI/UX Engineer building a PURE VANILLA JAVASCRIPT web app using multiple files.
 STRICT RULES:
 - Create separate files: index.html, style.css, script.js.
 - Link them properly using <link rel="stylesheet" href="style.css"> and <script src="script.js"></script>.
-- NO frameworks, NO external URLs, NO import/export/require.
+- NO build step. NO import/export statements. NO require().
 - **DESIGN SYSTEM**: You MUST use CSS variables (:root) for colors. Use a modern, sleek aesthetic. Use Flexbox/Grid. Use smooth transitions (0.3s ease) on all hover states and button clicks.
 - **RESPONSIVE**: Must look perfect on mobile (375px) and desktop. Use media queries.
 - **ACCESSIBILITY**: Use semantic HTML, aria-labels, and ensure high contrast.
 - **UX**: Always include a clear empty state (e.g., "No tasks yet, add one!"). Handle edge cases gracefully.
 - **STORAGE NAMESPACING**: If you use localStorage, ALL keys MUST be prefixed with the app's name (e.g., "kanban_items" not "items").
-- Use only: DOM APIs, CSS, localStorage, Canvas, SVG, emoji. System fonts only.
 - The app must run without console errors on load and when every button is pressed once.
 
 OUTPUT FORMAT: reply with ONLY one JSON object and nothing else.
@@ -234,12 +237,25 @@ OUTPUT FORMAT: reply with ONLY one JSON object and nothing else.
 
 const SKILL_RULES = `You are an expert technical author.
 Write a dense, 500-word markdown cheatsheet on how to implement the requested skill in vanilla JavaScript.
+Include short, copy-pasteable code snippets. Focus on best practices.
 Reply with ONLY the raw markdown text. No JSON. No conversational filler.`;
 
 const GEN_SYSTEM = 'You reply with a single valid JSON object only. No markdown fences, no other text.';
 const genMessages = (userText) => [{ role: 'system', content: GEN_SYSTEM }, { role: 'user', content: userText }];
 const HINT = '\n\n💬 Reply with `[improve] …`, `[fix] …`, `[audit]`, `[delete]`, `[revert] …`, `[ask] …`, `[leaderboard]`, `[skill] …`, `[inspire] …`, or `[evolve] <file> …`.';
 
+// ============================================================
+// Library system — load catalog once, build prompt section once
+// ============================================================
+const LIB_PROMPT = Lib.buildPromptSection();
+const TRUSTED_DOMAINS = Lib.loadTrusted();
+const CATALOG_GLOBALS = Object.values(Lib.loadCatalog())
+  .filter(e => e && !e._meta && e.global)
+  .map(e => e.global);
+
+// ============================================================
+// gradeHtml — domain-aware isVanilla + library-aware smoke filter
+// ============================================================
 async function gradeHtml(text) {
   const meta = T.parseMultiFileResponse(text);
   if (!meta || !meta.files || !meta.files['index.html']) {
@@ -248,6 +264,7 @@ async function gradeHtml(text) {
   for (const [k, v] of Object.entries(meta.files)) {
     if (typeof v !== 'string') meta.files[k] = Array.isArray(v) ? v.join('\n') : String(v);
   }
+
   let testHtml = meta.files['index.html'];
   for (const [name, content] of Object.entries(meta.files)) {
     if (name.endsWith('.css')) {
@@ -261,15 +278,29 @@ async function gradeHtml(text) {
       else testHtml = testHtml.replace('</body>', `<script>\n${content}\n</script>\n</body>`);
     }
   }
+
   if (!T.isUsable(testHtml)) return { ok: false, score: 0, html: testHtml, reason: 'incomplete or malformed HTML' };
-  const v = T.isVanilla(testHtml);
+
+  const v = T.isVanilla(testHtml, TRUSTED_DOMAINS);
   if (!v.ok) return { ok: false, score: 10, html: testHtml, reason: `forbidden pattern ${v.hit}` };
-  const smoke = await smokeTest(testHtml);
+
+  // Smoke test on HTML with external scripts stripped (jsdom can't fetch them).
+  // Then filter "X is not defined" errors for known catalog globals — they
+  // exist in the browser via CDN but not in the jsdom sandbox.
+  const smoke = await smokeTest(Lib.stripExternalForTests(testHtml));
+  smoke.errors = (smoke.errors || []).filter((e) => {
+    for (const g of CATALOG_GLOBALS) {
+      if (new RegExp(`\\b${g}\\s+is\\s+not\\s+defined`, 'i').test(e)) return false;
+    }
+    return true;
+  });
+  smoke.ok = smoke.errors.length === 0;
+
   const n = smoke.errors.length;
   return { ok: smoke.ok, score: 100 - 10 * Math.min(n, 9), html: testHtml, files: meta.files, meta, smoke, reason: smoke.ok ? '' : `${n} runtime error(s)` };
 }
 
-const structurallyBad = (c) => !c.grade.files || !c.grade.files['index.html'] || !T.isVanilla(c.grade.html).ok;
+const structurallyBad = (c) => !c.grade.files || !c.grade.files['index.html'] || !T.isVanilla(c.grade.html, TRUSTED_DOMAINS).ok;
 const generate = (userText) => askAI(genMessages(userText), { json: true, grade: gradeHtml, onEvent: aiEvents() });
 
 async function readFile(p) {
@@ -278,7 +309,7 @@ async function readFile(p) {
 }
 
 // ============================================================
-// [COST] analytics helpers
+// [COST] analytics
 // ============================================================
 function rebuildLeaderboard(costs) {
   const models = {};
@@ -298,16 +329,9 @@ function rebuildLeaderboard(costs) {
         m.totalScore += (r.score || 0); m.scoredCount++;
         p.totalScore += (r.score || 0); p.scoredCount++;
       }
-      if (r.sec && !isCancel) {
-        m.totalSec += r.sec; m.timedCount++;
-        p.totalSec += r.sec; p.timedCount++;
-      }
-      m.totalCost += (r.cost || 0);
-      m.totalIn += (r.tokensIn || 0);
-      m.totalOut += (r.tokensOut || 0);
-      p.totalCost += (r.cost || 0);
-      p.totalIn += (r.tokensIn || 0);
-      p.totalOut += (r.tokensOut || 0);
+      if (r.sec && !isCancel) { m.totalSec += r.sec; m.timedCount++; p.totalSec += r.sec; p.timedCount++; }
+      m.totalCost += (r.cost || 0); m.totalIn += (r.tokensIn || 0); m.totalOut += (r.tokensOut || 0);
+      p.totalCost += (r.cost || 0); p.totalIn += (r.tokensIn || 0); p.totalOut += (r.tokensOut || 0);
       m.lastSeen = c.ts;
       models[key] = m;
       providers[r.provider] = p;
@@ -327,7 +351,7 @@ function rebuildLeaderboard(costs) {
 }
 
 // ============================================================
-// Revert helpers (unchanged)
+// Revert helpers
 // ============================================================
 async function readFileAtRef(p, ref) {
   try {
@@ -448,9 +472,6 @@ async function runAsk(inputs) {
   await pushProgress({ status: 'done' });
 }
 
-// ============================================================
-// [COST] [leaderboard] mode
-// ============================================================
 async function runLeaderboard(issue) {
   const result = await step('Loading analytics', async () => {
     const lbRaw = await readFile(LB_PATH);
@@ -459,7 +480,6 @@ async function runLeaderboard(issue) {
     const costs = costsRaw ? JSON.parse(costsRaw) : [];
     return { lb, costs };
   });
-
   const { lb, costs } = result;
   const totalCost = costs.reduce((s, c) => s + (c.cost || 0), 0);
   const totalIn = costs.reduce((s, c) => s + (c.tokensIn || 0), 0);
@@ -468,10 +488,7 @@ async function runLeaderboard(issue) {
   const lines = [`📊 **Ariotica Leaderboard**`, ''];
   lines.push(`**Lifetime:** ${costs.length} builds · $${totalCost.toFixed(4)} spent · ${totalIn.toLocaleString()} in / ${totalOut.toLocaleString()} out tokens`);
 
-  const topModels = Object.values(lb.models || {})
-    .filter(m => (m.wins + m.losses) >= 2)
-    .sort((a, b) => b.winRate - a.winRate || b.wins - a.wins)
-    .slice(0, 10);
+  const topModels = Object.values(lb.models || {}).filter(m => (m.wins + m.losses) >= 2).sort((a, b) => b.winRate - a.winRate || b.wins - a.wins).slice(0, 10);
   if (topModels.length) {
     lines.push('', '### 🏆 Top Models (min 2 races)');
     lines.push('| Model | Wins | Losses | Win Rate | Avg Score | Avg Sec | Cost |');
@@ -664,7 +681,7 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
       runId: RUN_ID, commit: null, provider: 'revert', model: `from-v${targetVersion}`,
       race: [], smoke: { ok: true, errors: [], skipped: true },
       security: { total: 0, high: 0, medium: 0, low: 0, byTool: {} },
-      prompt: `revert to v${targetVersion}`, vanilla: true,
+      prompt: `revert to v${targetVersion}`, vanilla: T.isVanilla(revertedFiles['index.html'] || '', TRUSTED_DOMAINS).ok,
     });
     revertedFiles[receiptPath] = JSON.stringify(receipt, null, 2) + '\n';
     const fullFiles = {};
@@ -711,7 +728,7 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
   else if (mode === 'fix') ask = `Fix ONLY the bug or issues described.\n\nBUG: ${prompt || 'see scanner findings'}`;
   else if (mode === 'audit') {
     let combined = existingHtml.replace('</head>', `<style>${existingCss}</style></head>`).replace('</body>', `<script>${existingJs}</script></body>`);
-    const initial = await step('Initial security scan', () => runAllScanners(combined));
+    const initial = await step('Initial security scan', () => runAllScanners(combined, { trustedDomains: TRUSTED_DOMAINS }));
     if (!initial.findings.length && !prompt) { await finishStatus(issue, '✅ Audit clean.', true); await pushProgress({ status: 'done' }); return; }
     const report = initial.findings.length ? initial.findings.map((f) => `- [${f.sev}] ${f.msg}`).join('\n') : '(none)';
     ask = `Fix the security issues.\n\nFINDINGS:\n${report}\n\nEXTRA: ${prompt || 'none'}`;
@@ -726,7 +743,10 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
     } else ask = prompt;
   }
 
-  let fullPrompt = RULES + ask + inspirationCtx;
+  // ============================================================
+  // LIB_PROMPT injected here (library catalog for the AI)
+  // ============================================================
+  let fullPrompt = RULES + LIB_PROMPT + ask + inspirationCtx;
   if (existingHtml) {
     if (existingHtml.length > EXISTING_LIMIT) existingHtml = existingHtml.slice(0, EXISTING_LIMIT);
     if (existingCss.length > CSS_JS_LIMIT) existingCss = existingCss.slice(0, CSS_JS_LIMIT);
@@ -739,10 +759,10 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
 
   if (structurallyBad(cand)) {
     currentDraft = cand.grade.html; await pushProgress({}, true);
-    const v = T.isVanilla(cand.grade.html);
+    const v = T.isVanilla(cand.grade.html, TRUSTED_DOMAINS);
     const why = !T.isUsable(cand.grade.html)
       ? 'it was cut off or malformed. Reply with ONLY the JSON object {"files": {"index.html": "...", "style.css": "...", "script.js": "..."}}.'
-      : `it used a forbidden library (matched ${v.hit}). Use ONLY vanilla JavaScript.`;
+      : `it used a forbidden pattern (${v.hit}). Follow the library rules exactly.`;
     cand = await step('Retry (rejected output)', () => generate(`Previous attempt was rejected: ${why}\n\n` + fullPrompt));
     raceReport = raceReport.concat(cand.race);
     if (structurallyBad(cand)) throw new Error(`Still rejected after retry (${cand.grade.reason || 'invalid output'})`);
@@ -762,7 +782,7 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
 
   let attempt = 1;
   while (!smoke.ok && attempt <= 3 && testHtml.length <= EXISTING_LIMIT) {
-    const repairPrompt = `${RULES}Fix the runtime errors in this app. Keep everything else exactly as it is.\n\nRUNTIME ERRORS:\n${smoke.errors.map((e) => '- ' + e).join('\n')}\n\nCURRENT HTML:\n${testHtml}`;
+    const repairPrompt = `${RULES}${LIB_PROMPT}Fix the runtime errors in this app. Keep everything else exactly as it is.\n\nRUNTIME ERRORS:\n${smoke.errors.map((e) => '- ' + e).join('\n')}\n\nCURRENT HTML:\n${testHtml}`;
     const baseline = cand.grade.score;
     const fixed = await softStep(`Repair attempt ${attempt}`, async () => {
       const r = await generate(repairPrompt);
@@ -777,7 +797,7 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
     attempt++;
   }
 
-  const security = await step('Security scan', () => runAllScanners(testHtml));
+  const security = await step('Security scan', () => runAllScanners(testHtml, { trustedDomains: TRUSTED_DOMAINS }));
 
   let score = 100;
   if (!smoke.ok) score -= 30;
@@ -795,12 +815,28 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
     process.exit(1);
   }
 
+  // ============================================================
+  // LIBRARY RESOLUTION — verify URLs, fetch bytes, inject SRI, derive CSP
+  // ============================================================
+  let resolved;
+  try {
+    resolved = await Lib.resolveHtml(files['index.html']);
+  } catch (e) {
+    await finishStatus(issue, `❌ **Library verification failed:**\n\n\`\`\`\n${e.message}\n\`\`\`\n\nFix: if the CDN is intentional, add its host to \`trusted_domains.json\`. If it's a hallucinated URL, retry with an approved library.`, false);
+    await pushProgress({ status: 'error' });
+    process.exit(1);
+  }
+  if (resolved.discovered.length) {
+    for (const d of resolved.discovered) console.log(`[libraries] discovered ${d.url} (${d.bytes}B)`);
+  }
+  files['index.html'] = resolved.html;
+
   let currentHtml = files['index.html'];
   if (!currentHtml.includes('Built by Ariotica')) {
     const watermark = `\n<!-- Built by Ariotica AI -->\n<div style="position:fixed;bottom:12px;right:12px;opacity:0.35;font-size:11px;font-family:monospace;color:white;pointer-events:none;z-index:9999;">⚡ Ariotica</div>`;
     currentHtml = currentHtml.replace(/<\/body>/i, `${watermark}\n</body>`);
   }
-  const cspTag = `<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; connect-src 'none'; img-src 'self' data:;">`;
+  const cspTag = `<meta http-equiv="Content-Security-Policy" content="${resolved.csp}">`;
   if (!currentHtml.includes('Content-Security-Policy')) currentHtml = currentHtml.replace('<head>', `<head>\n  ${cspTag}`);
 
   let hash = 0;
@@ -886,7 +922,7 @@ self.addEventListener('fetch', (e) => {
   };
   files['meta.json'] = JSON.stringify(metaJson, null, 2);
 
-  const receipt = R.buildReceipt({ repo: `${OWNER}/${REPO}`, slug, files, mode, runId: RUN_ID, commit: null, provider, model, race: raceReport, smoke, security: security.counts, prompt, vanilla: T.isVanilla(testHtml) });
+  const receipt = R.buildReceipt({ repo: `${OWNER}/${REPO}`, slug, files, mode, runId: RUN_ID, commit: null, provider, model, race: raceReport, smoke, security: security.counts, prompt, vanilla: T.isVanilla(testHtml, TRUSTED_DOMAINS).ok });
   files[receiptPath] = JSON.stringify(receipt, null, 2) + '\n';
 
   const idx = manifest.findIndex((e) => e.project === slug);
@@ -905,13 +941,14 @@ self.addEventListener('fetch', (e) => {
     if (filename === MANIFEST_PATH || filename === receiptPath) fullFiles[filename] = content;
     else fullFiles[`${baseDir}/${filename}`] = content;
   }
+  // Library cache updates ride along in the same atomic commit
+  if (resolved.cacheChanged) {
+    fullFiles['libraries_cache.json'] = JSON.stringify(resolved.cache, null, 2) + '\n';
+  }
 
   const startTime = Date.now();
   const commitSha = await step(`Commit files to ${baseDir}/`, () => atomicCommit(fullFiles, [], `feat: ${slug} v${version} (${mode})`));
 
-  // ============================================================
-  // [COST] record cost + rebuild leaderboard; committed with the receipt
-  // ============================================================
   const totalCost = raceReport.reduce((s, r) => s + (r.cost || 0), 0);
   const totalIn   = raceReport.reduce((s, r) => s + (r.tokensIn || 0), 0);
   const totalOut  = raceReport.reduce((s, r) => s + (r.tokensOut || 0), 0);
@@ -958,6 +995,9 @@ self.addEventListener('fetch', (e) => {
   body += `\n\n💰 **Cost:** $${totalCost.toFixed(4)} · ${totalIn.toLocaleString()} in / ${totalOut.toLocaleString()} out tokens`;
   body += `\n\n🧾 Receipt: [\`sha256:${receipt.sha256.slice(0, 12)}…\`](https://github.com/${OWNER}/${REPO}/blob/${BRANCH}/${receiptPath})`;
   if (version) body += `\n\n**🏷️ Version:** \`v${version}\``;
+  if (resolved.discovered.length) {
+    body += `\n\n📚 **New libraries cached:**\n${resolved.discovered.map(d => `- \`${d.url}\` (${d.bytes}B)`).join('\n')}`;
+  }
   if (metaJson.features.length) body += `\n\n**✨ New Features:**\n${metaJson.features.map(f => `- ${f}`).join('\n')}`;
   if (metaJson.fixes.length) body += `\n\n**🔧 Bugs Fixed:**\n${metaJson.fixes.map(f => `- ${f}`).join('\n')}`;
   if (security.findings.length) body += `\n\n**Scanner findings (${security.findings.length}):**\n` + security.findings.slice(0, 5).map((f) => `- [${f.sev}] ${f.msg}`).join('\n');
