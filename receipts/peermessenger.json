@@ -17,7 +17,7 @@
   "mode": "fix",
   "repo": "suryasticsai/Ariotica",
   "runId": "40201286182",
-  "commit": null,
+  "commit": "07a01c4d2abf70aaf25a70f17307b4ffc6e9d68c",
   "model": {
     "provider": "Groq",
     "name": "openai/gpt-oss-120b"
@@ -61,5 +61,8 @@
   },
   "promptSha256": "e4c3b83e218dade525a41cbcca02db268c4aadaafd72fc79f76f5536d8dbafa0",
   "prompt": "Here i want to create room which room link can be shared where other user who entered room via link can chat, voice call",
-  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js peermessenger"
+  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js peermessenger",
+  "cost": 0.00582075,
+  "tokensIn": 4365,
+  "tokensOut": 6888
 }
