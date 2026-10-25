@@ -17,7 +17,7 @@
   "mode": "improve",
   "repo": "suryasticsai/Ariotica",
   "runId": "40213075712",
-  "commit": null,
+  "commit": "7bc3149195467ca43f8ee031285ebcb7b4318224",
   "model": {
     "provider": "Groq",
     "name": "openai/gpt-oss-120b"
@@ -61,5 +61,8 @@
   },
   "promptSha256": "7372a3ae7e15e8d623c6d728ad6048a067e849ccb736858483b4844e549763ce",
   "prompt": "Add the camera toggle, hang up, mute, and a status line. Make sure the share link works.",
-  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js peermessenger"
+  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js peermessenger",
+  "cost": 0.0049626,
+  "tokensIn": 6039,
+  "tokensOut": 5409
 }
