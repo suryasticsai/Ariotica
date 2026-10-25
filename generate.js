@@ -52,7 +52,7 @@ const stepLine = (s) => `${icon(s)} ${s.name}${s.sec != null ? ` — ${s.sec}s` 
 const elapsed = () => Math.round((Date.now() - T0) / 1000);
 
 // ============================================================
-// PNG encoder + icon generator (unchanged)
+// PNG encoder + icon generator
 // ============================================================
 let _crcTable = null;
 function crc32(buf) {
@@ -125,21 +125,37 @@ function raceLine(report) {
   return rows.length > 1 ? rows.join(' · ') : '';
 }
 
-async function waitForPagesBuild(commitTime) {
-  console.log('[pages] waiting for deployment...');
-  for (let i = 0; i < 60; i++) { // bumped to 5 min for slower deploys
+// ============================================================
+// Dynamic GitHub Pages build polling
+// ============================================================
+async function waitForPagesBuild(commitSha) {
+  console.log(`[pages] polling build status for commit ${commitSha.slice(0, 7)}...`);
+  for (let i = 0; i < 40; i++) { // Max ~4 minutes (40 * 6s)
     try {
-      const { data } = await octokit.repos.getPagesBuild({ owner: OWNER, repo: REPO });
-      if (data.status === 'built' && new Date(data.updated_at).getTime() >= commitTime) {
-        console.log('[pages] deployment successful');
+      const { data: build } = await octokit.rest.repos.getLatestPagesBuild({
+        owner: OWNER,
+        repo: REPO,
+      });
+
+      if (build.status === 'built' && build.commit === commitSha) {
+        console.log(`[pages] deployment successful for commit ${commitSha.slice(0, 7)}`);
         return true;
       }
+
+      if (build.status === 'errored') {
+        console.error('[pages] deployment failed with error:', build.error);
+        return false;
+      }
+
+      console.log(`[pages] status: ${build.status}... waiting`);
     } catch (e) {
-      if (e.status === 404) { console.log('[pages] Pages not configured.'); return false; }
+      if (e.status !== 404) {
+        console.warn('[pages] API error:', e.message);
+      }
     }
-    await new Promise(r => setTimeout(r, 5000));
+    await new Promise((r) => setTimeout(r, 6000));
   }
-  console.log('[pages] timeout waiting for deployment');
+  console.log('[pages] timeout: build did not complete in time');
   return false;
 }
 
@@ -180,8 +196,6 @@ async function finishStatus(issue, body, close) {
   } catch (e) { console.log('[status] finish failed:', e.message); }
 }
 
-// Prepend a block to the existing status comment (used for the screenshot).
-// Works even after finishStatus marked the comment done.
 async function appendToStatus(issue, addition) {
   if (!issue) return;
   try {
@@ -529,7 +543,6 @@ function resolveInputs() {
   return { project: tm.project, prompt, mode, issue: num, commentId: null };
 }
 
-// Generic reporter inputs — used by both buildSummaryComment and buildChangelogEntry
 function reportCtx({ slug, baseDir, mode, version, provider, model, raceReport, smoke, security, metaJson, resolved, totalCost, totalIn, totalOut, receipt, receiptPath, diffReports, newFiles, extraNotes }) {
   return {
     owner: OWNER, repo: REPO, branch: BRANCH,
@@ -652,7 +665,6 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
     if (!target) throw new Error(`Version v${targetVersion} not found for \`${slug}\`.`);
     if (!target.receipt || !target.receipt.files) throw new Error(`Receipt for v${targetVersion} is missing.`);
 
-    // Read current state (pre-revert) for diffing
     const currentSnapshot = {
       'index.html': await readFile(`${baseDir}/index.html`) || '',
       'style.css': await readFile(`${baseDir}/style.css`) || '',
@@ -686,7 +698,6 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
     });
     revertedFiles[receiptPath] = JSON.stringify(receipt, null, 2) + '\n';
 
-    // Changelog entry for the revert
     const oldChangelog = await readFile(changelogPath) || '';
     const newChangelog = Rep.buildChangelogEntry({
       version: newVersion, mode: 'revert', when: new Date().toISOString(),
@@ -706,7 +717,8 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
       atomicCommit(fullFiles, [], `revert: ${slug} to v${targetVersion} (as v${newVersion})`));
     receipt.commit = commitSha;
     revertedFiles[receiptPath] = JSON.stringify(receipt, null, 2) + '\n';
-    await atomicCommit({ [receiptPath]: revertedFiles[receiptPath] }, [], `chore: receipt ${slug}`);
+    
+    const commitSha2 = await atomicCommit({ [receiptPath]: revertedFiles[receiptPath] }, [], `chore: receipt ${slug}`);
     await syncCheckout();
 
     const body = Rep.buildSummaryComment(reportCtx({
@@ -722,7 +734,7 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
     }));
     await finishStatus(issue, body + HINT, true);
 
-    const isDeployed = await waitForPagesBuild(Date.now());
+    const isDeployed = await waitForPagesBuild(commitSha2);
     if (isDeployed && issue) {
       const url = `https://${OWNER}.github.io/${REPO}/${baseDir}/`;
       const shot = `### 📸 Live Preview\n\n[![${slug} screenshot](https://image.thum.io/get/width/1200/crop/900/${url}?t=${Date.now()})](${url})\n\n_Click to open_`;
@@ -747,15 +759,11 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
     await pushProgress({ status: 'done' }); return;
   }
 
-  // ============================================================
-  // Build / improve / fix / audit / inspire
-  // ============================================================
   let existingHtml = await readFile(mainFile);
   let existingCss = await readFile(`${baseDir}/style.css`) || '';
   let existingJs = await readFile(`${baseDir}/script.js`) || '';
   const isNew = !existingHtml;
 
-  // Preserve full copies for the diff (before truncation)
   const oldForDiff = {
     'index.html': existingHtml || '',
     'style.css': existingCss,
@@ -855,7 +863,6 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
     process.exit(1);
   }
 
-  // Verify external refs, inject SRI, derive CSP
   let resolved;
   try {
     resolved = await Lib.resolveHtml(files['index.html']);
@@ -874,7 +881,7 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
     const watermark = `\n<!-- Built by Ariotica AI -->\n<div style="position:fixed;bottom:12px;right:12px;opacity:0.35;font-size:11px;font-family:monospace;color:white;pointer-events:none;z-index:9999;">⚡ Ariotica</div>`;
     currentHtml = currentHtml.replace(/<\/body>/i, `${watermark}\n</body>`);
   }
-  // CSP: update in place if present, else inject
+  
   const cspTag = `<meta http-equiv="Content-Security-Policy" content="${resolved.csp}">`;
   if (/http-equiv=["']Content-Security-Policy["']/i.test(currentHtml)) {
     currentHtml = currentHtml.replace(/<meta[^>]*http-equiv=["']Content-Security-Policy["'][^>]*>/i, cspTag);
@@ -965,14 +972,11 @@ self.addEventListener('fetch', (e) => {
   };
   files['meta.json'] = JSON.stringify(metaJson, null, 2);
 
-  // ============================================================
-  // Diff + changelog
-  // ============================================================
   const diffReports = isNew ? [] : Rep.buildChangeReport(oldForDiff, files, false);
   const oldChangelog = await readFile(changelogPath) || '';
   files['CHANGELOG.md'] = Rep.buildChangelogEntry({
     version, mode, when: new Date().toISOString(),
-    provider, model, totalCost: 0, // patched below once we have totals
+    provider, model, totalCost: 0,
     diffReports, metaJson, oldChangelog, isNew,
   });
 
@@ -999,14 +1003,12 @@ self.addEventListener('fetch', (e) => {
     fullFiles['libraries_cache.json'] = JSON.stringify(resolved.cache, null, 2) + '\n';
   }
 
-  const startTime = Date.now();
   const commitSha = await step(`Commit files to ${baseDir}/`, () => atomicCommit(fullFiles, [], `feat: ${slug} v${version} (${mode})`));
 
   const totalCost = raceReport.reduce((s, r) => s + (r.cost || 0), 0);
   const totalIn   = raceReport.reduce((s, r) => s + (r.tokensIn || 0), 0);
   const totalOut  = raceReport.reduce((s, r) => s + (r.tokensOut || 0), 0);
 
-  // Rewrite the changelog with the actual cost (was 0 above)
   files['CHANGELOG.md'] = Rep.buildChangelogEntry({
     version, mode, when: new Date().toISOString(),
     provider, model, totalCost,
@@ -1034,7 +1036,7 @@ self.addEventListener('fetch', (e) => {
   receipt.tokensOut = totalOut;
   files[receiptPath] = JSON.stringify(receipt, null, 2) + '\n';
 
-  await atomicCommit({
+  const commitSha2 = await atomicCommit({
     [receiptPath]: files[receiptPath],
     [`${baseDir}/CHANGELOG.md`]: files['CHANGELOG.md'],
     [COSTS_PATH]: JSON.stringify(costs, null, 2) + '\n',
@@ -1043,9 +1045,6 @@ self.addEventListener('fetch', (e) => {
 
   await syncCheckout();
 
-  // ============================================================
-  // Single comment: summary + diff + (screenshot appended later)
-  // ============================================================
   const body = Rep.buildSummaryComment(reportCtx({
     slug, baseDir, mode, version, provider, model, raceReport,
     smoke, security, metaJson, resolved, totalCost, totalIn, totalOut,
@@ -1054,7 +1053,7 @@ self.addEventListener('fetch', (e) => {
 
   await finishStatus(issue, body + HINT, false);
 
-  const isDeployed = await waitForPagesBuild(startTime);
+  const isDeployed = await waitForPagesBuild(commitSha2);
   if (isDeployed && issue) {
     const url = `https://${OWNER}.github.io/${REPO}/${baseDir}/`;
     const shot = `### 📸 Live Preview\n\n[![${slug} screenshot](https://image.thum.io/get/width/1200/crop/900/${url}?t=${Date.now()})](${url})\n\n_Screenshot refreshes each build · click to open_`;
