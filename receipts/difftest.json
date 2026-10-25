@@ -17,7 +17,7 @@
   "mode": "fix",
   "repo": "suryasticsai/Ariotica",
   "runId": "40182734901",
-  "commit": null,
+  "commit": "d458c4d2ed42ae462200cedce6118398b1bc2506",
   "model": {
     "provider": "Groq",
     "name": "openai/gpt-oss-120b"
@@ -58,5 +58,8 @@
   },
   "promptSha256": "1ec3570f70db86b201497c1752656f19c368b934ebad62e83ebe4b7375f8c571",
   "prompt": "when clicked on reset it's not working can you fix it",
-  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js difftest"
+  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js difftest",
+  "cost": 0.00238485,
+  "tokensIn": 3089,
+  "tokensOut": 2562
 }

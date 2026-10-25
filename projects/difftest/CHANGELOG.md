@@ -2,7 +2,7 @@
 
 ## v1.0.0 — 2026-10-25 10:02 UTC — fix
 
-**Model:** Groq/openai/gpt-oss-120b · **Cost:** $0.0000
+**Model:** Groq/openai/gpt-oss-120b · **Cost:** $0.0024
 
 ### What changed
 - ✨ Pure vanilla JavaScript with no build step
