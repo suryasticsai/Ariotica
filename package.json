@@ -5,7 +5,7 @@
   "description": "A live AI developer that lives in your GitHub repo: issues in, working apps out.",
   "engines": { "node": ">=20" },
   "scripts": {
-    "test": "node --test test/*.test.js",
+    "test": "node scripts/test-static.js",
     "index": "node build-index.js"
   },
   "dependencies": {
