@@ -17,7 +17,7 @@
   "mode": "create",
   "repo": "suryasticsai/Ariotica",
   "runId": "40181926536",
-  "commit": null,
+  "commit": "1acd2b1141f20b00fe9a28d07ce78942074add82",
   "model": {
     "provider": "Groq",
     "name": "openai/gpt-oss-120b"
@@ -58,5 +58,8 @@
   },
   "promptSha256": "f134101357168bd8c5011de0f2b15f4e706492410eb9faa6dfa5f699f4b7dc9f",
   "prompt": "A simple counter app with a button that increments a number",
-  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js difftest"
+  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js difftest",
+  "cost": 0.0021236999999999996,
+  "tokensIn": 1928,
+  "tokensOut": 2446
 }

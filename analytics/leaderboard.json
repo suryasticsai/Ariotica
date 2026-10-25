@@ -1,0 +1,41 @@
+{
+  "updatedAt": "2026-10-25T09:47:12.447Z",
+  "totalBuilds": 1,
+  "models": {
+    "Groq/openai/gpt-oss-120b": {
+      "provider": "Groq",
+      "model": "openai/gpt-oss-120b",
+      "wins": 1,
+      "losses": 0,
+      "cancels": 0,
+      "totalScore": 100,
+      "scoredCount": 1,
+      "totalSec": 6,
+      "timedCount": 1,
+      "totalCost": 0.0021236999999999996,
+      "totalIn": 1928,
+      "totalOut": 2446,
+      "lastSeen": "2026-10-25T09:47:12.349Z",
+      "avgScore": 100,
+      "avgSec": 6,
+      "winRate": 1
+    }
+  },
+  "providers": {
+    "Groq": {
+      "wins": 1,
+      "losses": 0,
+      "cancels": 0,
+      "totalScore": 100,
+      "scoredCount": 1,
+      "totalSec": 6,
+      "timedCount": 1,
+      "totalCost": 0.0021236999999999996,
+      "totalIn": 1928,
+      "totalOut": 2446,
+      "avgScore": 100,
+      "avgSec": 6,
+      "winRate": 1
+    }
+  }
+}
