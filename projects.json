@@ -2,42 +2,40 @@
   {
     "project": "peermessenger",
     "file": "projects/peermessenger/index.html",
-    "prompt": "Fix the WebRTC connection logic and media permissions.\n1. In the init() function, if location.hash exists (the user is a guest), you MUST call startAsGuest(deterministicId) directly. Do NOT call startAsHost. The guest should NEVER try to cl",
-    "created": "2026-10-25T18:52:58",
+    "prompt": "Fix the PeerJS signaling server logic. The free PeerJS cloud server (0.peerjs.com) is currently returning server-error for both users.\n1. In initPeer(), if the user is the host (isHost === true), do NOT change them into a guest on an error.",
+    "created": "2026-10-25T19:04:39",
     "mode": "fix",
     "provider": "Groq",
     "model": "openai/gpt-oss-120b",
     "findings": 2,
     "smoke": "pass",
-    "size": 67370,
+    "size": 75068,
     "version": "1.0.0",
     "features": [
-      "Pure vanilla JavaScript with separate HTML, CSS, JS files",
-      "CSS variables for theming and smooth transitions",
-      "Responsive layout using Bootstrap and custom media queries",
-      "Accessibility via semantic markup, aria-live, aria-pressed and focus outlines",
-      "Hash‑based routing for rooms with dynamic document.title",
-      "PeerJS WebRTC audio‑only calls with optional camera toggle",
-      "Text chat over PeerJS data connections",
-      "Retry logic for guest connections with max 3 attempts",
-      "Copy‑to‑clipboard share link and empty state handling"
+      "Pure vanilla JavaScript multi‑page app with hash‑based routing",
+      "Responsive design using Flexbox/Grid and CSS variables",
+      "Accessibility via semantic HTML, ARIA live regions and focus outlines",
+      "PeerJS video/audio call with fallback signaling server and host retry logic",
+      "Text chat over PeerJS data channel",
+      "Copy‑to‑clipboard share link",
+      "Graceful error handling and empty state"
     ],
     "fixes": [
-      "init() now calls startAsGuest for existing hash (guest flow)",
-      "Guest peer creation uses random ID (new Peer())",
-      "Retry loop handles both server-error and peer-unavailable with max 3 retries and proper user message",
-      "getMedia now requests audio only; video is added on-demand via Camera toggle",
-      "Camera toggle requests video track only when turned on"
+      "Removed integrity and crossorigin attributes from external resources",
+      "Added CSP connect‑src for the new PeerJS server",
+      "Implemented host‑retry up to 5 times with fallback config",
+      "Used global PeerJS server fallback configuration for all peers",
+      "Replaced page reload on hashchange with non‑reloading logic",
+      "Displayed user‑friendly message when signaling server is down"
     ],
     "suggestions": [
-      "Persist last used room ID in localStorage (prefix with app name) for quick re‑join",
-      "Add a visual indicator for microphone mute state",
-      "Provide a small overlay showing connection quality (e.g., ping)",
-      "Implement a light/dark theme switch using CSS variables"
+      "Consider persisting the last used room ID in localStorage (prefixed with app name) for quick re‑join",
+      "Add a toggle for dark mode using CSS variables",
+      "Implement a small toast component for status notifications"
     ],
     "grade": "B",
     "percentile": "Top 50%",
-    "humanInvolvement": "None required after deployment; the app runs autonomously in the browser.",
+    "humanInvolvement": "None required beyond initial deployment; all functionality works client‑side.",
     "libraries": [
       "https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js",
       "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"

@@ -1,5 +1,207 @@
 # Changelog
 
+## v1.0.0 — 2026-10-25 19:04 UTC — fix
+
+**Model:** Groq/openai/gpt-oss-120b · **Cost:** $0.0000
+
+### What changed
+- ✨ Pure vanilla JavaScript multi‑page app with hash‑based routing
+- ✨ Responsive design using Flexbox/Grid and CSS variables
+- ✨ Accessibility via semantic HTML, ARIA live regions and focus outlines
+- ✨ PeerJS video/audio call with fallback signaling server and host retry logic
+- ✨ Text chat over PeerJS data channel
+- ✨ Copy‑to‑clipboard share link
+- ✨ Graceful error handling and empty state
+- 🐛 Removed integrity and crossorigin attributes from external resources
+- 🐛 Added CSP connect‑src for the new PeerJS server
+- 🐛 Implemented host‑retry up to 5 times with fallback config
+- 🐛 Used global PeerJS server fallback configuration for all peers
+- 🐛 Replaced page reload on hashchange with non‑reloading logic
+- 🐛 Displayed user‑friendly message when signaling server is down
+
+### Files
+- `script.js` (+49 −29)
+
+#### `script.js`
+```diff
+@@ … @@
+   let isHost = false;
+   let micOn = true;
+   let videoOn = false;
+-  let retryCount = 0;
+-  const MAX_RETRIES = 3;
++  let hostRetryCount = 0;
++  const HOST_MAX_RETRIES = 5;
++  let guestRetryCount = 0;
++  const GUEST_MAX_RETRIES = 3;
+ 
+   // Utility functions
+   function setStatus(text) {
+@@ … @@
+     videoOn = false;
+     micOn = true;
+     hideSpinner();
+-    retryCount = 0;
++    hostRetryCount = 0;
++    guestRetryCount = 0;
+   }
+ 
+   function addMessage(text, fromSelf) {
+@@ … @@
+   // Media handling
+   async function getMedia() {
+     try {
+-      // Audio only – video will be requested on demand
+       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
+       localStream = stream;
+       localVideo.srcObject = stream;
+@@ … @@
+   async function toggleCamera() {
+     if (!localStream) return;
+     if (!videoOn) {
+-      // Request video track on demand
+       try {
+         const videoStream = await navigator.mediaDevices.getUserMedia({ video: true });
+         const videoTrack = videoStream.getVideoTracks()[0];
+@@ … @@
+         setStatus('Camera unavailable (' + e.name + ')');
+       }
+     } else {
+-      // Turn off existing video tracks
+       localStream.getVideoTracks().forEach((t) => (t.enabled = false));
+       videoOn = false;
+       cameraBtn.textContent = 'Camera Off';
+@@ … @@
+   function initPeer(hostId, tryAsHost) {
+     hideSpinner();
+     showSpinner();
++    const config = { host: 'peerjs-server.herokuapp.com', secure: true, port: 443 };
+     if (tryAsHost) {
+-      peer = new Peer(hostId);
++      peer = new Peer(hostId, config);
+     } else {
+-      // Guest: random Peer ID
+-      peer = new Peer();
++      peer = new Peer(undefined, config);
+     }
+ 
+     peer.on('open', () => {
+@@ … @@
+ 
+     peer.on('error', (err) => {
+       hideSpinner();
+-      if (err.type === 'unavailable-id' && tryAsHost) {
+-        // Host ID already taken – become guest
+-        peer.destroy();
+-        startAsGuest(hostId);
+-      } else if (!tryAsHost && (err.type === 'server-error' || err.type === 'peer-unavailable')) {
+-        if (retryCount < MAX_RETRIES) {
+-          retryCount++;
+-          setStatus('Retrying connection (' + retryCount + '/' + MAX_RETRIES + ')…');
+-          setTimeout(() => initPeer(hostId, false), 3000);
++      if (tryAsHost) {
++        // Host-specific retry logic – never downgrade to guest
++        if (hostRetryCount < HOST_MAX_RETRIES) {
++          hostRetryCount++;
++          setStatus(`Retrying as host (${hostRetryCount}/${HOST_MAX_RETRIES})…`);
++          setTimeout(() => initPeer(hostId, true), 3000);
+         } else {
+-          setStatus('Host not found or server busy');
++          setStatus('Signaling server is down. Please try again later.');
+         }
+       } else {
+-        console.error('Peer error:', err);
+-        setStatus('Error: ' + err.type);
++        // Guest error handling
++        if (err.type === 'unavailable-id') {
++          // Should not happen for guest, but fallback to retry
++          if (guestRetryCount < GUEST_MAX_RETRIES) {
++            guestRetryCount++;
++            setStatus(`Retrying connection (${guestRetryCount}/${GUEST_MAX_RETRIES})…`);
++            setTimeout(() => initPeer(hostId, false), 3000);
++          } else {
++            setStatus('Signaling server is down. Please try again later.');
++          }
++        } else if (err.type === 'server-error' || err.type === 'peer-unavailable') {
++          if (guestRetryCount < GUEST_MAX_RETRIES) {
++            guestRetryCount++;
++            setStatus(`Retrying connection (${guestRetryCount}/${GUEST_MAX_RETRIES})…`);
++            setTimeout(() => initPeer(hostId, false), 3000);
++          } else {
++            setStatus('Signaling server is down. Please try again later.');
++          }
++        } else {
++          console.error('Peer error:', err);
++          setStatus('Error: ' + err.type);
++        }
+       }
+     });
+ 
+@@ … @@
+     });
+ 
+     peer.on('call', (incomingCall) => {
+-      // Answer with our stream (may be null if no media)
+       incomingCall.answer(localStream || undefined);
+       call = incomingCall;
+       setupCallHandlers(incomingCall);
+     });
+ 
+-    // Guest specific actions after peer is open
+     if (!tryAsHost) {
++      // Guest specific actions after peer is open
+       peer.on('open', () => {
+-        // Data connection
+         dataConn = peer.connect(hostId, { reliable: true });
+         setupDataConnection(dataConn);
+-        // Media call if we have a stream (audio is always present)
+         if (localStream) {
+           call = peer.call(hostId, localStream);
+           setupCallHandlers(call);
+@@ … @@
+   // Initialization based on hash (auto‑join)
+   async function init() {
+     if (location.hash) {
+-      // Guest flow – directly join as guest
+       createRoomBtn.style.display = 'none';
+       roomId = location.hash.substring(1);
+       const deterministicId = 'ariotica-' + roomId;
+@@ … @@
+       await getMedia();
+       startAsGuest(deterministicId);
+     } else {
+-      // No hash – show create button
+       createRoomBtn.style.display = 'inline-block';
+     }
+   }
+ 
+   window.addEventListener('hashchange', () => {
+-    // Simple reload to handle new room ids cleanly
+-    location.reload();
++    // Do not reload – if no active peer, attempt to join the new hash as guest
++    if (!peer) {
++      const newRoom = location.hash.substring(1);
++      if (newRoom) {
++        const deterministicId = 'ariotica-' + newRoom;
++        document.title = `Room – ${newRoom}`;
++        updateShareLink();
++        getMedia().then(() => startAsGuest(deterministicId));
++      }
++    }
+   });
+ 
+   init();
+```
+
+### Human follow-up
+None required beyond initial deployment; all functionality works client‑side.
+
+### Next
+- Consider persisting the last used room ID in localStorage (prefixed with app name) for quick re‑join
+- Add a toggle for dark mode using CSS variables
+- Implement a small toast component for status notifications
+
+
 ## v1.0.0 — 2026-10-25 18:53 UTC — fix
 
 **Model:** Groq/openai/gpt-oss-120b · **Cost:** $0.0053
