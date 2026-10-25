@@ -17,7 +17,7 @@
   "mode": "fix",
   "repo": "suryasticsai/Ariotica",
   "runId": "40224086541",
-  "commit": null,
+  "commit": "6efa61da3b85601ca996deb502887eea896799c5",
   "model": {
     "provider": "Groq",
     "name": "openai/gpt-oss-120b"
@@ -61,5 +61,8 @@
   },
   "promptSha256": "ae4279a5b4e2cb97742500b05eba6939a2e1512a2de47f0e5f73ad29ab7a145a",
   "prompt": "Fix the PeerJS signaling server logic. The free PeerJS cloud server (0.peerjs.com) is currently returning server-error for both users.\n1. In initPeer(), if the user is the host (isHost === true), do NOT change them into a guest on an error.",
-  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js peermessenger"
+  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js peermessenger",
+  "cost": 0.0057642,
+  "tokensIn": 7503,
+  "tokensOut": 6185
 }
