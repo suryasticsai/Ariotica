@@ -1,5 +1,6 @@
 'use strict';
 const fs = require('fs');
+const path = require('path');
 const crypto = require('crypto');
 const zlib = require('zlib');
 const { execSync } = require('child_process');
@@ -372,6 +373,9 @@ async function findVersion(slug, targetVersion) {
   return { ...hit, receipt };
 }
 
+// ============================================================
+// T3: atomicCommit handles binary files via base64
+// ============================================================
 async function atomicCommit(files, deletedPaths, message) {
   for (let attempt = 1; attempt <= 3; attempt++) {
     try {
@@ -596,33 +600,63 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
     let newCode = r.text.trim();
     newCode = newCode.replace(/^```(?:javascript|js)?\s*\n?/, '').replace(/\n?```\s*$/, '');
 
-    await step('Validate JavaScript Syntax', async () => {
-      const tempFile = `/tmp/evolve-${Date.now()}.js`;
-      fs.writeFileSync(tempFile, newCode);
-      try { execSync(`node -c ${tempFile}`); }
-      catch (e) { throw new Error(`Invalid JS. Blocked. ${e.stderr.toString().slice(0, 500)}`); }
+    // ============================================================
+    // HARDENED VALIDATION: syntax + require resolution
+    //   - old check only caught syntax errors, not "Cannot find module"
+    //   - resolution base is path.dirname(targetFile), NOT the temp file's dir
+    //   - Module._resolveFilename does not execute the target (safe for evolve generate.js)
+    // ============================================================
+    await step('Validate Evolve Output', async () => {
+      const tempName = `.evolve-tmp-${Date.now()}.js`;
+      const absTemp = path.resolve(tempName);
+      fs.writeFileSync(tempName, newCode);
+      try {
+        // 1. Syntax
+        try { execSync(`node -c ${tempName}`, { stdio: 'pipe' }); }
+        catch (e) { throw new Error(`Invalid JS syntax. Blocked. ${(e.stderr || '').toString().slice(0, 400)}`); }
+
+        // 2. Require resolution (static scan of the new file, no execution)
+        const Module = require('module');
+        const baseFile = path.resolve(targetFile);
+        const basePaths = Module._nodeModulePaths(path.dirname(baseFile));
+        const unresolved = [];
+        let m;
+        const re = /require\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
+        while ((m = re.exec(newCode))) {
+          const spec = m[1];
+          if (!spec.startsWith('.')) continue; // bare specifiers resolved from node_modules, trusted
+          try {
+            Module._resolveFilename(spec, { filename: baseFile, paths: basePaths });
+          } catch (e) {
+            unresolved.push(`${spec} (${e.code || 'UNRESOLVED'})`);
+          }
+        }
+        if (unresolved.length) {
+          throw new Error(`Unresolved relative require(s) in ${targetFile}: ${unresolved.join(', ')}. Blocked.`);
+        }
+      } finally {
+        try { fs.unlinkSync(tempName); } catch { }
+      }
     });
 
     await step(`Commit ${targetFile}`, () => atomicCommit({ [targetFile]: newCode }, [], `feat(evolve): modify ${targetFile}`));
     await syncCheckout();
 
-    await finishStatus(issue, `🧬 **Evolution Successful.** \`${targetFile}\` updated.`, true);
+    await finishStatus(issue, `🧬 **Evolution Successful.** \`${targetFile}\` updated (syntax + require resolution verified).`, true);
     await pushProgress({ status: 'done' });
     return;
   }
+  // ------------------------------------
 
   let manifest = [];
   try { const raw = await readFile(MANIFEST_PATH); if (raw) manifest = JSON.parse(raw); if (!Array.isArray(manifest)) manifest = []; } catch { manifest = []; }
 
   // ============================================================
   // REVERT MODE
-  //   [revert]              → show version history
-  //   [revert] 1.0.1        → revert to v1.0.1 as a new forward commit
   // ============================================================
   if (mode === 'revert') {
     const targetVersion = (prompt || '').trim().replace(/^v/i, '');
 
-    // Show history
     if (!targetVersion) {
       const versions = await step('Reading version history', () => listVersions(slug));
       if (!versions.length) {
@@ -633,19 +667,16 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
       const rows = versions.slice(0, 10).map(v =>
         `| v${v.version} | ${formatDate(v.when)} | \`${v.commit}\` | ${v.mode}${v.revertedFrom ? ` (from v${v.revertedFrom})` : ''} |`
       ).join('\n');
-      // Suggest the *previous* version — the one a revert would actually land on.
-      // If there's only ever been one build, no valid target exists yet.
       const previousVersion = versions[1] ? versions[1].version : null;
       const hintLine = previousVersion
         ? `Reply with \`[revert] <version>\` to roll back, e.g. \`[revert] ${previousVersion}\`.`
         : `_Only one version exists so far — nothing to revert to yet. Run an \`[improve]\` first._`;
       const body = `📜 **\`${slug}\` — version history**\n\n| Version | When (UTC) | Commit | Mode |\n|---|---|---|---|\n${rows}\n\n${hintLine}`;
-      await finishStatus(issue, body + HINT, false); // don't close on history view
+      await finishStatus(issue, body + HINT, false);
       await pushProgress({ status: 'done' });
       return;
     }
 
-    // Revert to version
     const currentMeta = JSON.parse(await readFile(`${baseDir}/meta.json`) || '{}');
     if (!currentMeta.version) throw new Error(`Cannot revert: \`${slug}\` has no meta.json — has it been built?`);
     if (currentMeta.version === targetVersion) {
@@ -670,7 +701,6 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
       throw new Error(`v${targetVersion} has no index.html at commit ${target.commit}.`);
     }
 
-    // Bump version forward (monotonic; never reuse an old number)
     const newVersion = bumpVersion(currentMeta.version);
     const oldMeta = JSON.parse(revertedFiles['meta.json'] || '{}');
     oldMeta.version = newVersion;
@@ -678,7 +708,6 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
     oldMeta.revertedAt = new Date().toISOString();
     revertedFiles['meta.json'] = JSON.stringify(oldMeta, null, 2);
 
-    // Fresh receipt describing the revert
     const receipt = R.buildReceipt({
       repo: `${OWNER}/${REPO}`, slug, files: revertedFiles, mode: 'revert',
       runId: RUN_ID, commit: null, provider: 'revert', model: `from-v${targetVersion}`,
