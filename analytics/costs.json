@@ -258,5 +258,31 @@
         "tokensOut": 1810
       }
     ]
+  },
+  {
+    "ts": "2026-10-26T20:26:04.714Z",
+    "slug": "hello-ga",
+    "mode": "create",
+    "provider": "Groq",
+    "model": "openai/gpt-oss-120b",
+    "runId": "40395507155",
+    "cost": 0.0013959,
+    "tokensIn": 2096,
+    "tokensOut": 1442,
+    "score": 100,
+    "sec": 5,
+    "race": [
+      {
+        "provider": "Groq",
+        "model": "openai/gpt-oss-120b",
+        "sec": 5,
+        "ok": true,
+        "score": 100,
+        "reason": "",
+        "cost": 0.0013959,
+        "tokensIn": 2096,
+        "tokensOut": 1442
+      }
+    ]
   }
 ]

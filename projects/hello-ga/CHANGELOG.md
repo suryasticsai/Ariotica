@@ -1,8 +1,8 @@
 # Changelog
 
-## v1.0.0 — 2026-10-26 20:25 UTC — create
+## v1.0.0 — 2026-10-26 20:26 UTC — create
 
-**Model:** Groq/openai/gpt-oss-120b · **Cost:** $0.0000
+**Model:** Groq/openai/gpt-oss-120b · **Cost:** $0.0014
 
 ### What changed
 - ✨ Pure vanilla JavaScript with separate HTML, CSS, and JS files
