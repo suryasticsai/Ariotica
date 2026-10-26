@@ -146,12 +146,6 @@ function makeIconPNG(size, hsl) {
   ]);
 }
 
-function raceLine(report) {
-  const rows = (report || []).filter((r) => r.provider).slice(-6)
-    .map((r) => `${r.provider}${r.sec != null ? ` ${r.sec}s` : ''} ${r.reason === 'lost the race' ? '⏹️' : r.ok ? '✅' : '❌'}`);
-  return rows.length > 1 ? rows.join(' · ') : '';
-}
-
 // ============================================================
 // Web Scraper (Jina AI Reader)
 // ============================================================
@@ -659,8 +653,9 @@ async function runSkills(issue) {
 
 function resolveInputs() {
   const dProj = (process.env.DISPATCH_PROJECT || '').trim();
-  if (dProj) return { project: dProj, prompt: (process.env.DISPATCH_PROMPT || '').trim(), mode: (process.env.DISPATCH_MODE || 'create').toLowerCase(), issue: null, commentId: null };
   const num = parseInt(process.env.ISSUE_NUMBER || '0', 10) || null;
+  if (dProj) return { project: dProj, prompt: (process.env.DISPATCH_PROMPT || '').trim(), mode: (process.env.DISPATCH_MODE || 'create').toLowerCase(), issue: num, commentId: null };
+  
   const tm = T.parseTitle(process.env.ISSUE_TITLE || '');
   if (!tm) throw new Error('Title must be: [BUILD] name [mode]');
   if ((process.env.EVENT_NAME || '') === 'issue_comment') {
@@ -800,34 +795,19 @@ module.exports = {
   }
 
   if (mode === 'evolve') {
-    let parts = prompt.split(' ');
-    let targetFile = parts[0];
-    let instructions = parts.slice(1).join(' ');
+    const parts = prompt.split(' ');
+    const targetFile = parts[0];
+    const instructions = parts.slice(1).join(' ');
 
-    // --- THE DARWIN PROTOCOL (SELF-EVOLUTION) ---
-    if (targetFile === 'self') {
-      const S = require('./lib/singularity');
-      const mutation = S.generateMutation();
-      targetFile = `lib/plugins/${mutation.name}.js`;
-      instructions = `You are writing a standalone Ariotica Plugin.
-      
-${mutation.prompt}
-
-The context object has:
-- context.files: An object where keys are filenames (e.g., 'index.html') and values are the string content.
-- context.slug: The app name.
-
-You MUST export an object: module.exports = { name: '${mutation.name}', execute: async (context) => { ... } };
-Modify context.files in place.
-Return ONLY the JavaScript code. No markdown formatting.`;
-      
-      await step(`Auto-evolve target: ${targetFile}`, async () => {});
-      console.log(`[darwin] Writing new plugin: ${mutation.name}`);
+    if (!targetFile || !targetFile.includes('.')) {
+      throw new Error('Usage: [evolve] <filename> <instructions>. To let me analyze myself, use the Self-Evolve workflow in the Actions tab.');
     }
-    // --------------------------------------------
 
-    if (!targetFile || !targetFile.includes('.')) throw new Error('Usage: [evolve] <filename> <instructions> OR [evolve] self.');
     const original = await readFile(targetFile);
+    if (!original && !targetFile.includes('plugins/')) {
+      throw new Error(`Target file not found: ${targetFile}. (Unless you are creating a new plugin in lib/plugins/)`);
+    }
+    
     const originalContent = original || '';
 
     const evolvePrompt = `You are modifying the source code of an autonomous AI agent (Ariotica).
@@ -867,9 +847,9 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
       } finally { try { fs.unlinkSync(tempName); } catch { } }
     });
     
-    await step(`Commit ${targetFile}`, () => atomicCommit({ [targetFile]: newCode }, [], `feat(evolve): add ${targetFile}`));
+    await step(`Commit ${targetFile}`, () => atomicCommit({ [targetFile]: newCode }, [], `feat(evolve): update ${targetFile}`));
     await syncCheckout();
-    await finishStatus(issue, `🧬 **Evolution Successful.** \`${targetFile}\` created/updated and verified.`, true);
+    await finishStatus(issue, `🧬 **Evolution Successful.** \`${targetFile}\` updated and verified.`, true);
     await pushProgress({ status: 'done' });
     return;
   }
