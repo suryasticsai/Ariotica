@@ -43,7 +43,7 @@ try {
   'lib/providers.js',
   'lib/pricing.js',
   'lib/plugin-manager.js', 
-  'lib/singularity.js'    
+  'lib/evolve.js'    
 ];
   for (const f of files) {
     if (!fs.existsSync(f)) { bad(`${f} — missing`); continue; }
