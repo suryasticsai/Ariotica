@@ -2,7 +2,7 @@
 
 ## v1.0.0 — 2026-10-26 19:12 UTC — create
 
-**Model:** Groq/openai/gpt-oss-120b · **Cost:** $0.0000
+**Model:** Groq/openai/gpt-oss-120b · **Cost:** $0.0019
 
 ### What changed
 - ✨ Increment counter
