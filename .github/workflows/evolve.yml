@@ -23,14 +23,8 @@ jobs:
   evolve:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-
+    
     steps:
-      # 1. Reclaim disk space
-      - name: Free Disk Space
-        run: |
-          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
-          sudo apt-get clean
-
       - name: Checkout Repository
         uses: actions/checkout@v4
 
@@ -38,12 +32,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          
+
       - name: Install dependencies
         run: |
           if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
-      # 2. Synthesize the proposal
       - name: Generate Evolution Proposal
         id: evolve
         env:
@@ -56,7 +49,6 @@ jobs:
           EVOLVE_FOCUS: ${{ inputs.focus || 'auto' }}
         run: node lib/evolve.js
 
-      # 3. Commit the new proposal files
       - name: Commit Proposals
         if: success()
         run: |
@@ -68,7 +60,6 @@ jobs:
           git pull --rebase
           git push
 
-      # 4. Save Artifacts for offline review
       - name: Upload Proposals Artifact
         if: always()
         uses: actions/upload-artifact@v4
@@ -77,7 +68,6 @@ jobs:
           path: proposals/
           retention-days: 14
 
-      # 5. Generate Job Summary
       - name: Generate Job Summary
         if: always()
         run: |
@@ -86,7 +76,7 @@ jobs:
           echo "| :--- | :--- |" >> $GITHUB_STEP_SUMMARY
           echo "| ${{ job.status == 'success' && '✅ Success' || '❌ Failed' }} | \`${{ inputs.focus || 'auto-analysis' }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-
+          
           if [ "${{ job.status }}" = "success" ]; then
             echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
             echo "1. Check your GitHub Issues for a new \`[PROPOSAL]\`." >> $GITHUB_STEP_SUMMARY
@@ -95,6 +85,6 @@ jobs:
           else
             echo "❌ The AI failed to synthesize a valid proposal. Check the logs." >> $GITHUB_STEP_SUMMARY
           fi
-
+          
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "🔗 [View Run Logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
