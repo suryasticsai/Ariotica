@@ -1,0 +1,64 @@
+{
+  "schema": 1,
+  "app": "hello-ga",
+  "files": {
+    "index.html": "282a8abf01e5bec4e042f1b499607aad1411374349611b0d5d3441c343826d12",
+    "style.css": "f33f659366d9c551b9c70c930a0008c10db83bb5150bb8d54fa28b50d88d2966",
+    "script.js": "e81af774566e3600721e4a0c4efd7988bee7fc0b0c20b2aeaf2355dc6229234b",
+    "icon-192.png": "ed51fd9c2451615b400e94b4254295348a3de898d4607b391b13ff86cff0cfe9",
+    "icon-512.png": "ed51fd9c2451615b400e94b4254295348a3de898d4607b391b13ff86cff0cfe9",
+    "manifest.json": "3b3874faab572b4a1fc631b9652808f5e07c22b66cb521a3c68396f50bf4a418",
+    "sw.js": "da465d713dd9e92455358a23376d24fda4590d73ec6d54df453fba8e82ee30a5",
+    "meta.json": "2b4af5fd967dc26b8263d3c5689fe575844334990964d86c13e0a493b647aa3d",
+    "CHANGELOG.md": "647b5f125363d98336a8aabe6db7b5b3863619f9c2dd01f75fd0ad58a2127c5f"
+  },
+  "bytes": 56581,
+  "builtAt": "2026-10-26T20:25:58.847Z",
+  "mode": "create",
+  "repo": "suryasticsai/Ariotica",
+  "runId": "40395507155",
+  "commit": null,
+  "model": {
+    "provider": "Groq",
+    "name": "openai/gpt-oss-120b"
+  },
+  "race": [
+    {
+      "provider": "Groq",
+      "model": "openai/gpt-oss-120b",
+      "sec": 5,
+      "ok": true,
+      "score": 100,
+      "reason": "",
+      "cost": 0.0013959,
+      "tokensIn": 2096,
+      "tokensOut": 1442
+    }
+  ],
+  "sha256": "282a8abf01e5bec4e042f1b499607aad1411374349611b0d5d3441c343826d12",
+  "checks": {
+    "complete": true,
+    "vanilla": false,
+    "externalRefs": [
+      "https://www.googletagmanager.com/gtag/js?id=G-XXXXXXX"
+    ],
+    "zeroDeps": false,
+    "smoke": "pass",
+    "smokeErrors": [],
+    "scan": {
+      "total": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 0,
+      "byTool": {
+        "custom": 0,
+        "eslint": 0,
+        "sparrow": 0,
+        "externals": 0
+      }
+    }
+  },
+  "promptSha256": "343c91f2c5d45bc1fc1f7d8d27187c3a494849ad724a575b7e74f01b3fe1cbdc",
+  "prompt": "A simple Hello World page with a dark background.",
+  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js hello-ga"
+}
