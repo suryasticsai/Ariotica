@@ -8,7 +8,7 @@ on:
         type: string
         required: true
       prompt:
-        description: 'Instructions (optional for revert/delete/leaderboard/ask)'
+        description: 'Instructions (optional for revert/delete/leaderboard/ask/skills)'
         type: string
         required: false
         default: ''
@@ -23,6 +23,7 @@ on:
           - delete
           - revert
           - skill
+          - skills
           - inspire
           - evolve
           - ask
@@ -64,6 +65,7 @@ jobs:
         contains(github.event.comment.body, '[revert]') ||
         contains(github.event.comment.body, '[ask]') ||
         contains(github.event.comment.body, '[skill]') ||
+        contains(github.event.comment.body, '[skills]') ||
         contains(github.event.comment.body, '[inspire]') ||
         contains(github.event.comment.body, '[evolve]') ||
         contains(github.event.comment.body, '[leaderboard]')))
@@ -174,7 +176,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
 
           case "$MODE" in
-            ask|skill|evolve|leaderboard)
+            ask|skill|skills|evolve|leaderboard)
               echo "🔎 **Mode:** \`$MODE\` — see the issue thread for the result." >> $GITHUB_STEP_SUMMARY
               ;;
             delete)
