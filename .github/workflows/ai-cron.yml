@@ -72,12 +72,6 @@ jobs:
         contains(github.event.comment.body, '[leaderboard]')))
 
     steps:
-      - name: Free Disk Space
-        timeout-minutes: 2
-        run: |
-          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
-          sudo apt-get clean
-
       - name: Checkout
         uses: actions/checkout@v4
 
@@ -116,7 +110,6 @@ jobs:
         with:
           node-version: '20'
 
-      # Manual npm cache (works without a package-lock.json)
       - name: Cache npm
         uses: actions/cache@v4
         with:
