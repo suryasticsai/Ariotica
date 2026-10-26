@@ -58,15 +58,15 @@ async function fetchAILogo(slug, features) {
   const featureText = (features && features.length) ? features.slice(0, 2).join(', ') : 'utility tool';
   const prompt = encodeURIComponent(`A minimalist modern flat vector app icon for an app called "${slug}" that does ${featureText}. Simple shapes, solid vibrant colors, high contrast, no text, centered composition.`);
   const url = `https://image.pollinations.ai/prompt/${prompt}?width=512&height=512&nologo=true`;
-  
+
   console.log(`[logo] generating AI logo for ${slug}...`);
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
-    
+
     const res = await fetch(url, { signal: controller.signal });
     clearTimeout(timeoutId);
-    
+
     if (!res.ok) throw new Error(`Pollinations HTTP ${res.status}`);
     const buf = Buffer.from(await res.arrayBuffer());
     if (buf.length < 1000) throw new Error('Image too small, likely an error page');
@@ -215,14 +215,26 @@ async function updateStatusComment(force) {
   try { await octokit.issues.updateComment({ owner: OWNER, repo: REPO, comment_id: statusCommentId, body }); }
   catch (e) { console.log('[status] update failed:', e.message); }
 }
+
 async function startStatusComment(issue, header) {
   if (!issue) return;
   statusHeader = header;
+
+  // If the workflow already posted a "Spinning up..." comment, take it over.
+  const quickAckId = process.env.QUICK_ACK_ID;
+  if (quickAckId && !isNaN(parseInt(quickAckId, 10))) {
+    statusCommentId = parseInt(quickAckId, 10);
+    await updateStatusComment(true);
+    return;
+  }
+
+  // Fallback: create a new one (for local testing or workflow_dispatch)
   try {
     const { data } = await octokit.issues.createComment({ owner: OWNER, repo: REPO, issue_number: issue, body: `${header}\n\n_starting…_` });
     statusCommentId = data.id;
   } catch (e) { console.log('[status] create failed:', e.message); }
 }
+
 function writeJobSummary(extra) {
   const f = process.env.GITHUB_STEP_SUMMARY;
   if (!f) return;
@@ -837,7 +849,7 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
       atomicCommit(fullFiles, [], `revert: ${slug} to v${targetVersion} (as v${newVersion})`));
     receipt.commit = commitSha;
     revertedFiles[receiptPath] = JSON.stringify(receipt, null, 2) + '\n';
-    
+
     const commitSha2 = await atomicCommit({ [receiptPath]: revertedFiles[receiptPath] }, [], `chore: receipt ${slug}`);
     await syncCheckout();
 
@@ -1016,7 +1028,7 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
     const watermark = `\n<!-- Built by Ariotica AI -->\n<div style="position:fixed;bottom:12px;right:12px;opacity:0.35;font-size:11px;font-family:monospace;color:white;pointer-events:none;z-index:9999;">⚡ Ariotica</div>`;
     currentHtml = currentHtml.replace(/<\/body>/i, `${watermark}\n</body>`);
   }
-  
+
   const cspTag = `<meta http-equiv="Content-Security-Policy" content="${resolved.csp}">`;
   if (/http-equiv=["']Content-Security-Policy["']/i.test(currentHtml)) {
     currentHtml = currentHtml.replace(/<meta[^>]*http-equiv=["']Content-Security-Policy["'][^>]*>/i, cspTag);
