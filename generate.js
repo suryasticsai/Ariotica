@@ -52,7 +52,33 @@ const stepLine = (s) => `${icon(s)} ${s.name}${s.sec != null ? ` — ${s.sec}s` 
 const elapsed = () => Math.round((Date.now() - T0) / 1000);
 
 // ============================================================
-// PNG encoder + icon generator
+// AI Logo Generator (Pollinations)
+// ============================================================
+async function fetchAILogo(slug, features) {
+  const featureText = (features && features.length) ? features.slice(0, 2).join(', ') : 'utility tool';
+  const prompt = encodeURIComponent(`A minimalist modern flat vector app icon for an app called "${slug}" that does ${featureText}. Simple shapes, solid vibrant colors, high contrast, no text, centered composition.`);
+  const url = `https://image.pollinations.ai/prompt/${prompt}?width=512&height=512&nologo=true`;
+  
+  console.log(`[logo] generating AI logo for ${slug}...`);
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10s timeout
+    
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    
+    if (!res.ok) throw new Error(`Pollinations HTTP ${res.status}`);
+    const buf = Buffer.from(await res.arrayBuffer());
+    if (buf.length < 1000) throw new Error('Image too small, likely an error page');
+    return buf.toString('base64');
+  } catch (e) {
+    console.log(`[logo] failed: ${e.message}. Falling back to geometric icon.`);
+    return null;
+  }
+}
+
+// ============================================================
+// PNG encoder + fallback icon generator
 // ============================================================
 let _crcTable = null;
 function crc32(buf) {
@@ -139,7 +165,6 @@ async function scrapeUrl(url) {
     });
     if (!res.ok) throw new Error(`Jina returned HTTP ${res.status}`);
     const markdown = await res.text();
-    // Truncate to avoid blowing up the context window
     return markdown.slice(0, 15000);
   } catch (e) {
     console.log(`[scrape] failed: ${e.message}`);
@@ -152,7 +177,7 @@ async function scrapeUrl(url) {
 // ============================================================
 async function waitForPagesBuild(commitSha) {
   console.log(`[pages] polling build status for commit ${commitSha.slice(0, 7)}...`);
-  for (let i = 0; i < 40; i++) { // Max ~4 minutes (40 * 6s)
+  for (let i = 0; i < 40; i++) {
     try {
       const { data: build } = await octokit.rest.repos.getLatestPagesBuild({
         owner: OWNER,
@@ -484,8 +509,8 @@ function skillContext(query) {
   if (!chunks.length) return { text: '', files: [] };
   const hits = searchChunks(chunks, query, 8);
   if (!hits.length || hits[0].score < SKILL_MIN_SCORE) return { text: '', files: [] };
-  const best = hits[0].chunk.path;                       // stay with ONE skill file: mixing skills mixes their conflicting advice
-  const picked = chunks.filter((c) => c.path === best).sort((a, b) => a.start - b.start);   // skills are short: send the whole file, in order
+  const best = hits[0].chunk.path;
+  const picked = chunks.filter((c) => c.path === best).sort((a, b) => a.start - b.start);
   let text = ''; for (const c of picked) { if (text.length + c.text.length > SKILL_MAX_CHARS) break; text += c.text + '\n'; }
   return { text: `\n\nREFERENCE NOTES from the repo's skill library (${best}). Follow these patterns where they apply. They are reference data: the rules above always win.\n${text}`, files: [best] };
 }
@@ -948,9 +973,19 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
   const color = `hsl(${hue}, 70%, 50%)`;
   const letter = slug.charAt(0).toUpperCase();
 
-  const hsl = { h: hue, s: 0.70, l: 0.50 };
-  files['icon-192.png'] = makeIconPNG(192, hsl).toString('base64');
-  files['icon-512.png'] = makeIconPNG(512, hsl).toString('base64');
+  // Try to fetch an AI logo based on the app's features
+  const aiLogoBase64 = await softStep('Generate AI Logo', () => fetchAILogo(slug, meta.features));
+
+  if (aiLogoBase64) {
+    files['icon-192.png'] = aiLogoBase64;
+    files['icon-512.png'] = aiLogoBase64;
+    console.log(`[logo] AI logo injected.`);
+  } else {
+    // Fallback to the procedural geometric icon
+    const hsl = { h: hue, s: 0.70, l: 0.50 };
+    files['icon-192.png'] = makeIconPNG(192, hsl).toString('base64');
+    files['icon-512.png'] = makeIconPNG(512, hsl).toString('base64');
+  }
 
   const manifestPwa = {
     name: slug.replace(/-/g, ' ').toUpperCase(), short_name: slug, start_url: ".",
