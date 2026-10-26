@@ -34,15 +34,17 @@ try {
   // ── Layer 0: syntax ─────────────────────────────────────────
   section('Layer 0 — Syntax');
   const files = [
-    'generate.js',
-    'lib/text.js',
-    'lib/libraries.js',
-    'lib/scan.js',
-    'lib/diff.js',
-    'lib/report.js',
-    'lib/providers.js',
-    'lib/pricing.js',
-  ];
+  'generate.js',
+  'lib/text.js',
+  'lib/libraries.js',
+  'lib/scan.js',
+  'lib/diff.js',
+  'lib/report.js',
+  'lib/providers.js',
+  'lib/pricing.js',
+  'lib/plugin-manager.js', 
+  'lib/singularity.js'    
+];
   for (const f of files) {
     if (!fs.existsSync(f)) { bad(`${f} — missing`); continue; }
     try {
