@@ -11,6 +11,7 @@ const K = require('./lib/knowledge');
 const R = require('./lib/receipt');
 const Lib = require('./lib/libraries');
 const Rep = require('./lib/report');
+const PluginManager = require('./lib/plugin-manager');
 const { runAllScanners } = require('./lib/scan');
 const { smokeTest } = require('./lib/smoke');
 const { askAI } = require('./lib/providers');
@@ -340,7 +341,7 @@ Reply with ONLY the raw markdown text. No JSON. No conversational filler.`;
 
 const GEN_SYSTEM = 'You reply with a single valid JSON object only. No markdown fences, no other text.';
 const genMessages = (userText) => [{ role: 'system', content: GEN_SYSTEM }, { role: 'user', content: userText }];
-const HINT = '\n\n💬 Reply with `[improve] …`, `[fix] …`, `[audit]`, `[delete]`, `[revert] …`, `[ask] …`, `[leaderboard]`, `[skill] …`, `[skills]`, `[inspire] …`, or `[evolve] <file> …`.';
+const HINT = '\n\n💬 Reply with `[improve] …`, `[fix] …`, `[audit]`, `[delete]`, `[revert] …`, `[ask] …`, `[leaderboard]`, `[skill] …`, `[skills]`, `[forge] …`, `[inspire] …`, or `[evolve] <file> …`.';
 
 const LIB_PROMPT = Lib.buildPromptSection();
 const TRUSTED_DOMAINS = Lib.loadTrusted();
@@ -691,7 +692,7 @@ async function main() {
   await pushProgress({ status: 'running' });
   await step('Parse request', async () => inputs);
   const slug = T.slugify(project);
-  if (!slug && mode !== 'evolve' && mode !== 'skills') throw new Error('Project name needs at least one letter or digit');
+  if (!slug && mode !== 'evolve' && mode !== 'skills' && mode !== 'forge') throw new Error('Project name needs at least one letter or digit');
 
   const baseDir = `${PROJECTS_DIR}/${slug}`;
   const mainFile = `${baseDir}/index.html`;
@@ -700,13 +701,14 @@ async function main() {
 
   if (commentId) {
     try { await octokit.reactions.createForIssueComment({ owner: OWNER, repo: REPO, comment_id: commentId, content: 'eyes' }); } catch (e) { }
-    if (mode !== 'ask' && mode !== 'skill' && mode !== 'skills' && mode !== 'evolve' && mode !== 'leaderboard') { try { await octokit.issues.update({ owner: OWNER, repo: REPO, issue_number: issue, state: 'open' }); } catch { } }
+    if (mode !== 'ask' && mode !== 'skill' && mode !== 'skills' && mode !== 'evolve' && mode !== 'leaderboard' && mode !== 'forge') { try { await octokit.issues.update({ owner: OWNER, repo: REPO, issue_number: issue, state: 'open' }); } catch { } }
   }
   const quoted = prompt ? `\n> ${prompt.slice(0, 200).replace(/\n/g, ' ')}` : '';
   const header =
     mode === 'ask'         ? `🔎 **Searching the repo…**${quoted}` :
     mode === 'leaderboard' ? `📊 **Loading analytics…**` :
     mode === 'skills'      ? `🧠 **Loading skill library…**` :
+    mode === 'forge'       ? `⚒️ **Forging plugin for: \`${prompt.slice(0, 50)}…\`**` :
     mode === 'revert'      ? `↩️ **Handling revert for \`${slug || '?'}\`**${quoted}` :
                              `⏳ **Working on it** — \`${mode}\` on \`${slug || 'system'}\`${quoted}`;
   await startStatusComment(issue, header);
@@ -726,26 +728,123 @@ async function main() {
     return;
   }
 
+  if (mode === 'forge') {
+    const instruction = prompt.trim();
+    if (!instruction) throw new Error('Usage: `[forge] <capability to add>`');
+
+    const testContext = {
+      slug: 'test-app',
+      files: {
+        'index.html': '<!DOCTYPE html>\n<html>\n<head>\n<title>Test</title>\n</head>\n<body>\n<button>Click</button>\n</body>\n</html>',
+        'style.css': 'body { color: black; }',
+        'script.js': 'console.log("test");'
+      }
+    };
+
+    let success = false;
+    let finalCode = '';
+    let pluginName = '';
+
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      const sysPrompt = `You are an expert Node.js developer writing a plugin for the Ariotica AI platform.
+Your task: ${instruction}
+
+You must output ONLY raw JavaScript code. No markdown formatting.
+The file must export exactly this structure:
+module.exports = {
+  name: 'a-short-name',
+  execute: async (context) => {
+    // context.files['index.html'] is a string.
+    // context.files['style.css'] is a string.
+    // Modify the strings in place to apply your changes.
+    // Example: context.files['index.html'] = context.files['index.html'].replace('</head>', '<meta ...>\\n</head>');
+  }
+};`;
+
+      const r = await step(`Synthesize Plugin (Attempt ${attempt})`, () => askAI([{ role: 'system', content: sysPrompt }, { role: 'user', content: 'Write the code.' }], { maxTokens: 2000 }));
+      let code = r.text.trim().replace(/^```(?:javascript|js)?\s*\n?/, '').replace(/\n?```\s*$/, '');
+      
+      const validation = await step('Validate Plugin in Sandbox', async () => {
+        return await PluginManager.validatePlugin(code, testContext);
+      });
+
+      if (validation.ok) {
+        success = true;
+        finalCode = code;
+        pluginName = validation.name;
+        break;
+      } else {
+        console.log(`[forge] Attempt ${attempt} failed: ${validation.error}`);
+        steps.push({ name: `Validation failed (Attempt ${attempt})`, status: 'error', error: validation.error });
+        await pushProgress({}, true);
+      }
+    }
+
+    if (!success) {
+      await finishStatus(issue, `❌ **Forge Failed.** The AI could not synthesize a working plugin after 3 attempts. The repo was not modified.`, false);
+      await pushProgress({ status: 'error' });
+      process.exit(1);
+    }
+
+    const pluginPath = `lib/plugins/${pluginName}.js`;
+    await step(`Commit Plugin: ${pluginPath}`, () => atomicCommit({ [pluginPath]: finalCode }, [], `feat(forge): add plugin ${pluginName}`));
+    
+    // Write it to the local disk so the current runner can use it immediately
+    if (!fs.existsSync('lib/plugins')) fs.mkdirSync('lib/plugins', { recursive: true });
+    fs.writeFileSync(pluginPath, finalCode);
+
+    await syncCheckout();
+    await finishStatus(issue, `⚒️ **Forge Successful.** I synthesized a new capability: \`${pluginName}\`.\n\nI tested it in a safe sandbox and it successfully modified the HTML/CSS. It has been saved to \`${pluginPath}\` and will now be applied to all future builds!`, true);
+    await pushProgress({ status: 'done' });
+    return;
+  }
+
   if (mode === 'evolve') {
-    const parts = prompt.split(' ');
-    const targetFile = parts[0];
-    const instructions = parts.slice(1).join(' ');
-    if (!targetFile || !targetFile.includes('.')) throw new Error('Usage: [evolve] <filename> <instructions>.');
+    let parts = prompt.split(' ');
+    let targetFile = parts[0];
+    let instructions = parts.slice(1).join(' ');
+
+    // --- THE DARWIN PROTOCOL (SELF-EVOLUTION) ---
+    if (targetFile === 'self') {
+      const S = require('./lib/singularity');
+      const mutation = S.generateMutation();
+      targetFile = `lib/plugins/${mutation.name}.js`;
+      instructions = `You are writing a standalone Ariotica Plugin.
+      
+${mutation.prompt}
+
+The context object has:
+- context.files: An object where keys are filenames (e.g., 'index.html') and values are the string content.
+- context.slug: The app name.
+
+You MUST export an object: module.exports = { name: '${mutation.name}', execute: async (context) => { ... } };
+Modify context.files in place.
+Return ONLY the JavaScript code. No markdown formatting.`;
+      
+      await step(`Auto-evolve target: ${targetFile}`, async () => {});
+      console.log(`[darwin] Writing new plugin: ${mutation.name}`);
+    }
+    // --------------------------------------------
+
+    if (!targetFile || !targetFile.includes('.')) throw new Error('Usage: [evolve] <filename> <instructions> OR [evolve] self.');
     const original = await readFile(targetFile);
-    if (!original) throw new Error(`Target file not found: ${targetFile}`);
+    const originalContent = original || '';
+
     const evolvePrompt = `You are modifying the source code of an autonomous AI agent (Ariotica).
 Here is the current content of '${targetFile}':
 \`\`\`javascript
-${original}
+${originalContent}
 \`\`\`
 
 INSTRUCTIONS:
 ${instructions}
 
 Return ONLY the complete, modified file content. No markdown formatting, no conversational text. Keep all existing functionality intact.`;
+
     const r = await step(`Evolve ${targetFile}`, () => askAI([{ role: 'user', content: evolvePrompt }], { maxTokens: 8000 }));
     let newCode = r.text.trim();
     newCode = newCode.replace(/^```(?:javascript|js)?\s*\n?/, '').replace(/\n?```\s*$/, '');
+    
     await step('Validate Evolve Output', async () => {
       const tempName = `.evolve-tmp-${Date.now()}.js`;
       fs.writeFileSync(tempName, newCode);
@@ -767,9 +866,10 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
         if (unresolved.length) throw new Error(`Unresolved relative require(s) in ${targetFile}: ${unresolved.join(', ')}. Blocked.`);
       } finally { try { fs.unlinkSync(tempName); } catch { } }
     });
-    await step(`Commit ${targetFile}`, () => atomicCommit({ [targetFile]: newCode }, [], `feat(evolve): modify ${targetFile}`));
+    
+    await step(`Commit ${targetFile}`, () => atomicCommit({ [targetFile]: newCode }, [], `feat(evolve): add ${targetFile}`));
     await syncCheckout();
-    await finishStatus(issue, `🧬 **Evolution Successful.** \`${targetFile}\` updated (syntax + require resolution verified).`, true);
+    await finishStatus(issue, `🧬 **Evolution Successful.** \`${targetFile}\` created/updated and verified.`, true);
     await pushProgress({ status: 'done' });
     return;
   }
@@ -1072,6 +1172,17 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
     currentHtml = currentHtml.replace('</body>', `<script>if('serviceWorker' in navigator){addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}</script>\n</body>`);
   }
   files['index.html'] = currentHtml;
+
+  // ============================================================
+  // RUN EXTENSION PLUGINS
+  // ============================================================
+  const pluginCtx = { files, slug, prompt };
+  await softStep('Run extension plugins', async () => PluginManager.runPlugins(pluginCtx));
+  files = pluginCtx.files; // Update files with any modifications made by plugins
+
+  if (pluginCtx.pluginErrors && pluginCtx.pluginErrors.length) {
+    console.warn('[plugins] Some plugins failed:', pluginCtx.pluginErrors);
+  }
 
   const staticHash = (() => {
     const h = crypto.createHash('sha256');
