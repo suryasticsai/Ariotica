@@ -1090,19 +1090,6 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
     process.exit(1);
   }
 
-  let resolved;
-  try {
-    resolved = await Lib.resolveHtml(files['index.html']);
-  } catch (e) {
-    await finishStatus(issue, `❌ **Library verification failed:**\n\n\`\`\`\n${e.message}\n\`\`\`\n\nFix: if the CDN is intentional, add its host to \`trusted_domains.json\`. If it's a hallucinated URL, retry with an approved library.`, false);
-    await pushProgress({ status: 'error' });
-    process.exit(1);
-  }
-  if (resolved.discovered.length) {
-    for (const d of resolved.discovered) console.log(`[libraries] discovered ${d.url} (${d.bytes}B)`);
-  }
-  files['index.html'] = resolved.html;
-
   let currentHtml = files['index.html'];
   if (!currentHtml.includes('Built by Ariotica')) {
     const watermark = `\n<!-- Built by Ariotica AI -->\n<div style="position:fixed;bottom:12px;right:12px;opacity:0.35;font-size:11px;font-family:monospace;color:white;pointer-events:none;z-index:9999;">⚡ Ariotica</div>`;
@@ -1154,7 +1141,7 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
   files['index.html'] = currentHtml;
 
   // ============================================================
-  // RUN EXTENSION PLUGINS
+  // RUN EXTENSION PLUGINS (moved UP before resolveHtml)
   // ============================================================
   const pluginCtx = { files, slug, prompt };
   await softStep('Run extension plugins', async () => PluginManager.runPlugins(pluginCtx));
@@ -1163,6 +1150,22 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
   if (pluginCtx.pluginErrors && pluginCtx.pluginErrors.length) {
     console.warn('[plugins] Some plugins failed:', pluginCtx.pluginErrors);
   }
+
+  // ============================================================
+  // RESOLVE EXTERNAL LIBS & CSP (runs AFTER plugins)
+  // ============================================================
+  let resolved;
+  try {
+    resolved = await Lib.resolveHtml(files['index.html']);
+  } catch (e) {
+    await finishStatus(issue, `❌ **Library verification failed:**\n\n\`\`\`\n${e.message}\n\`\`\`\n\nFix: if the CDN is intentional, add its host to \`trusted_domains.json\`. If it's a hallucinated URL, retry with an approved library.`, false);
+    await pushProgress({ status: 'error' });
+    process.exit(1);
+  }
+  if (resolved.discovered.length) {
+    for (const d of resolved.discovered) console.log(`[libraries] discovered ${d.url} (${d.bytes}B)`);
+  }
+  files['index.html'] = resolved.html;
 
   const staticHash = (() => {
     const h = crypto.createHash('sha256');
