@@ -80,12 +80,45 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # 2. INSTANT FEEDBACK: Add reaction and post comment before heavy lifting
+      - name: Quick Acknowledge
+        id: quick_ack
+        if: github.event_name == 'issue_comment' || github.event_name == 'issues'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const issueNumber = context.issue.number;
+            if (issueNumber) {
+              // Add 👀 reaction if it's a comment
+              if (context.eventName === 'issue_comment') {
+                await github.rest.reactions.createForIssueComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  comment_id: context.payload.comment.id,
+                  content: 'eyes'
+                }).catch(() => {});
+              }
+              
+              // Drop the initial status comment
+              const body = `⏳ **Ariotica is spinning up...**\n\nFetching models, warming up the engines, and preparing to work on this. Stand by...`;
+              const res = await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issueNumber,
+                body: body
+              });
+              
+              // Export the comment ID so generate.js can edit it
+              core.setOutput('comment_id', res.data.id);
+            }
+
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      # 2. Cache npm downloads (falls back gracefully if no lockfile)
+      # 3. Cache npm downloads (falls back gracefully if no lockfile)
       - name: Cache npm
         uses: actions/cache@v4
         with:
@@ -102,11 +135,11 @@ jobs:
             npm install
           fi
 
-      # 3. Pre-flight: catch syntax errors before spending API tokens
+      # 4. Pre-flight: catch syntax errors before spending API tokens
       - name: Validate Agent Code
         run: node --check generate.js
 
-      # 4. Run the agent
+      # 5. Run the agent
       #    generate.js commits atomically via the Git Trees API and then
       #    `git reset --hard origin/main`, so HEAD here reflects the push.
       - name: Generate App with AI
@@ -116,8 +149,6 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          # Optional: pin a Groq model via repo variable (Settings → Variables).
-          # Falls back to the default in lib/providers.js if unset.
           GROQ_MODEL: ${{ vars.GROQ_MODEL }}
           EVENT_NAME: ${{ github.event_name }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
@@ -129,6 +160,7 @@ jobs:
           DISPATCH_PROMPT: ${{ inputs.prompt }}
           DISPATCH_MODE: ${{ inputs.mode }}
           RUN_ID: ${{ github.run_id }}
+          QUICK_ACK_ID: ${{ steps.quick_ack.outputs.comment_id }}
         run: |
           node generate.js
           echo "NEW_COMMIT=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
@@ -145,7 +177,7 @@ jobs:
           git pull --rebase
           git push
 
-      # 5. Upload everything that matters for offline inspection:
+      # 6. Upload everything that matters for offline inspection:
       #    the built apps, their receipts, the cost ledger, and the knowledge index
       - name: Upload Generated Artifacts
         if: always()
@@ -159,7 +191,7 @@ jobs:
             knowledge/
           retention-days: 7
 
-      # 6. Job summary — mode-aware
+      # 7. Job summary — mode-aware
       - name: Generate Job Summary
         if: always()
         run: |
