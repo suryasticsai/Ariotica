@@ -1,0 +1,62 @@
+{
+  "schema": 1,
+  "app": "runcounter",
+  "files": {
+    "index.html": "898c50becef8ccdca6738dccda9b6b778e5422ba510766d3007a9875903acf75",
+    "style.css": "0444f4ffadc2e32470bb41039e5c77fbb56c1f15bc336c85f1fdca99a25465b7",
+    "script.js": "873f1e36cdcc8bbf7bcd9c9a297d111b286aeb8a2dbc13cadb2e32b88e00f5a9",
+    "icon-192.png": "036fb3b809f912d40bda2aad0d5f6f94dd293214b487b73391a8654caf450d1b",
+    "icon-512.png": "036fb3b809f912d40bda2aad0d5f6f94dd293214b487b73391a8654caf450d1b",
+    "manifest.json": "23598da5ddced6fad3fd7bbce1f04006a329abd3933549ff109fe659b1f82422",
+    "sw.js": "dbb483378728bd336f14c14c9f81791aea8f412801bfba2435a948081b7ec9ef",
+    "meta.json": "7ba67b2b07fd71fc41fb4c750dc99cfa06b599efafae2db38f4964c64e33d1b9",
+    "CHANGELOG.md": "8d40e5e5380cd77986b30bf0146abea031903d2bc3c9ce492b851570ea717dbd"
+  },
+  "bytes": 54463,
+  "builtAt": "2026-10-26T19:12:31.577Z",
+  "mode": "create",
+  "repo": "suryasticsai/Ariotica",
+  "runId": "40384378694",
+  "commit": null,
+  "model": {
+    "provider": "Groq",
+    "name": "openai/gpt-oss-120b"
+  },
+  "race": [
+    {
+      "provider": "Groq",
+      "model": "openai/gpt-oss-120b",
+      "sec": 5,
+      "ok": true,
+      "score": 100,
+      "reason": "",
+      "cost": 0.0019474499999999999,
+      "tokensIn": 3933,
+      "tokensOut": 1810
+    }
+  ],
+  "sha256": "898c50becef8ccdca6738dccda9b6b778e5422ba510766d3007a9875903acf75",
+  "checks": {
+    "complete": true,
+    "vanilla": false,
+    "externalRefs": [],
+    "zeroDeps": false,
+    "smoke": "pass",
+    "smokeErrors": [],
+    "scan": {
+      "total": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 0,
+      "byTool": {
+        "custom": 0,
+        "eslint": 0,
+        "sparrow": 0,
+        "externals": 0
+      }
+    }
+  },
+  "promptSha256": "b85540800fc47e695cf3b818cf73db50a8ea166da0d900f10ceccb5a591feb56",
+  "prompt": "Create a simple counter app with a reset button.",
+  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js runcounter"
+}
