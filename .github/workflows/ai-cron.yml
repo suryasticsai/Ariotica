@@ -48,7 +48,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
-    # SECURITY GATE: Only trusted users can trigger
     if: |
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'issues' && 
@@ -73,7 +72,6 @@ jobs:
         contains(github.event.comment.body, '[leaderboard]')))
 
     steps:
-      # 1. Reclaim disk space on the runner (avoids ENOSPC on long builds)
       - name: Free Disk Space
         timeout-minutes: 2
         run: |
@@ -83,7 +81,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # 2. INSTANT FEEDBACK: Add reaction and post comment before heavy lifting
       - name: Quick Acknowledge
         id: quick_ack
         if: github.event_name == 'issue_comment' || github.event_name == 'issues'
@@ -93,7 +90,6 @@ jobs:
           script: |
             const issueNumber = context.issue.number;
             if (issueNumber) {
-              // Add 👀 reaction if it's a comment
               if (context.eventName === 'issue_comment') {
                 await github.rest.reactions.createForIssueComment({
                   owner: context.repo.owner,
@@ -104,8 +100,6 @@ jobs:
               }
               
               const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
-              
-              // Drop the initial status comment with a link to the live logs
               const body = `⏳ **Ariotica is spinning up...**\n\nFetching models, warming up the engines, and preparing to work on this. Stand by...\n\n[📊 View Live Logs](${runUrl})`;
               const res = await github.rest.issues.createComment({
                 owner: context.repo.owner,
@@ -114,7 +108,6 @@ jobs:
                 body: body
               });
               
-              // Export the comment ID so generate.js can edit it
               core.setOutput('comment_id', res.data.id);
             }
 
@@ -122,7 +115,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-          cache: 'npm' # Native, faster caching
+
+      # Manual npm cache (works without a package-lock.json)
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
 
       - name: Install dependencies
         timeout-minutes: 5
@@ -133,11 +134,9 @@ jobs:
             npm install
           fi
 
-      # 3. Pre-flight: catch syntax errors before spending API tokens
       - name: Validate Agent Code
         run: node --check generate.js
 
-      # 4. Run the agent
       - name: Generate App with AI
         id: run_agent
         env:
@@ -173,7 +172,6 @@ jobs:
           git pull --rebase
           git push
 
-      # 5. Upload everything that matters for offline inspection
       - name: Upload Generated Artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -186,7 +184,6 @@ jobs:
             knowledge/
           retention-days: 7
 
-      # 6. FATAL ERROR FALLBACK: If the script crashes so hard it can't comment, catch it here
       - name: Fatal Error Comment
         if: failure() && steps.run_agent.outcome == 'failure' && steps.quick_ack.outputs.comment_id != ''
         uses: actions/github-script@v7
@@ -204,7 +201,6 @@ jobs:
               }).catch(() => {});
             }
 
-      # 7. Job summary — mode-aware with more context
       - name: Generate Job Summary
         if: always()
         run: |
