@@ -70,7 +70,11 @@ async function fetchAILogo(slug, features) {
 
     if (!res.ok) throw new Error(`Pollinations HTTP ${res.status}`);
     const buf = Buffer.from(await res.arrayBuffer());
-    if (buf.length < 1000) throw new Error('Image too small, likely an error page');
+    
+    // Check if it's a valid PNG (starts with 0x89504E47)
+    if (buf.length < 8 || buf.readUInt32BE(0) !== 0x89504E47) {
+      throw new Error('Image is not a valid PNG (likely JPEG)');
+    }
     return buf.toString('base64');
   } catch (e) {
     console.log(`[logo] failed: ${e.message}. Falling back to geometric icon.`);
@@ -335,7 +339,7 @@ Reply with ONLY the raw markdown text. No JSON. No conversational filler.`;
 
 const GEN_SYSTEM = 'You reply with a single valid JSON object only. No markdown fences, no other text.';
 const genMessages = (userText) => [{ role: 'system', content: GEN_SYSTEM }, { role: 'user', content: userText }];
-const HINT = '\n\n💬 Reply with `[improve] …`, `[fix] …`, `[audit]`, `[delete]`, `[revert] …`, `[ask] …`, `[leaderboard]`, `[skill] …`, `[skills]`, `[forge] …`, `[inspire] …`, or `[evolve] <file> …`.';
+const HINT = '\n\n💬 Reply with `[improve] …`, `[fix] …`, `[audit]`, `[delete]`, `[revert] …`, `[ask] …`, `[leaderboard]`, `[skill] …`, `[skills]`, `[inspire] …`.';
 
 const LIB_PROMPT = Lib.buildPromptSection();
 const TRUSTED_DOMAINS = Lib.loadTrusted();
@@ -434,7 +438,12 @@ async function readFileAtRef(p, ref) {
   } catch (e) { if (e.status === 404) return null; throw e; }
 }
 function formatDate(iso) { try { return new Date(iso).toISOString().replace('T', ' ').slice(0, 16); } catch { return iso; } }
-function bumpVersion(v) { const parts = String(v || '1.0.0').split('.').map(Number); parts[2] = (parts[2] || 0) + 1; return parts.join('.'); }
+function bumpVersion(v, mode) { 
+  const parts = String(v || '1.0.0').split('.').map(Number);
+  if (mode === 'improve') parts[1] = (parts[1] || 0) + 1;
+  else parts[2] = (parts[2] || 0) + 1;
+  return parts.join('.'); 
+}
 
 async function listVersions(slug) {
   const escaped = slug.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -522,8 +531,8 @@ function skillContext(query) {
   const chunks = K.collectSkillChunks(process.cwd());
   if (!chunks.length) return { text: '', files: [] };
 
-  // Check if the user forced a specific skill (e.g., "use skill:webrtc")
-  const forceMatch = query.match(/skill:([a-z0-9-]+)/i) || query.match(/use\s+([a-z0-9-]+)\s+skill/i);
+  // Exact forcing syntax: skill:webrtc
+  const forceMatch = query.match(/\bskill:([a-z0-9-]+)\b/i);
   let best = null;
 
   if (forceMatch) {
@@ -617,7 +626,6 @@ async function runLeaderboard(issue) {
   await pushProgress({ status: 'done' });
 }
 
-// New mode: List all available skills
 async function runSkills(issue) {
   const dir = path.join(process.cwd(), 'knowledge', 'skills');
   let files = [];
@@ -644,7 +652,7 @@ async function runSkills(issue) {
       }
     }
     lines.push('');
-    lines.push('💡 **Pro-tip:** You can force me to use a specific skill by adding `use skill:name` to your prompt. (e.g., `[BUILD] app [create] use skill:webrtc`)');
+    lines.push('💡 **Pro-tip:** You can force me to use a specific skill by adding `skill:name` to your prompt. (e.g., `[BUILD] app [create] skill:webrtc`)');
   }
 
   await finishStatus(issue, lines.join('\n') + HINT, true);
@@ -680,14 +688,28 @@ function reportCtx({ slug, baseDir, mode, version, provider, model, raceReport, 
 
 async function main() {
   const inputs = resolveInputs();
-  if (!inputs) { console.log('Comment has no valid tag - ignoring.'); return; }
+  if (!inputs) { 
+    console.log('Comment has no valid tag - ignoring.'); 
+    // Clean up the "Spinning up" ghost comment
+    const quickAckId = process.env.QUICK_ACK_ID;
+    if (quickAckId) {
+      try {
+        await octokit.issues.updateComment({
+          owner: OWNER, repo: REPO, comment_id: parseInt(quickAckId, 10),
+          body: "⚠️ Ignored. The comment did not contain a valid command tag."
+        });
+      } catch(e) {}
+    }
+    return; 
+  }
+  
   const { project, prompt, mode, issue, commentId } = inputs;
   currentIssue = issue;
 
   await pushProgress({ status: 'running' });
   await step('Parse request', async () => inputs);
   const slug = T.slugify(project);
-  if (!slug && mode !== 'evolve' && mode !== 'skills' && mode !== 'forge') throw new Error('Project name needs at least one letter or digit');
+  if (!slug && mode !== 'skills' && mode !== 'forge') throw new Error('Project name needs at least one letter or digit');
 
   const baseDir = `${PROJECTS_DIR}/${slug}`;
   const mainFile = `${baseDir}/index.html`;
@@ -696,7 +718,7 @@ async function main() {
 
   if (commentId) {
     try { await octokit.reactions.createForIssueComment({ owner: OWNER, repo: REPO, comment_id: commentId, content: 'eyes' }); } catch (e) { }
-    if (mode !== 'ask' && mode !== 'skill' && mode !== 'skills' && mode !== 'evolve' && mode !== 'leaderboard' && mode !== 'forge') { try { await octokit.issues.update({ owner: OWNER, repo: REPO, issue_number: issue, state: 'open' }); } catch { } }
+    if (mode !== 'ask' && mode !== 'skill' && mode !== 'skills' && mode !== 'leaderboard' && mode !== 'forge') { try { await octokit.issues.update({ owner: OWNER, repo: REPO, issue_number: issue, state: 'open' }); } catch { } }
   }
   const quoted = prompt ? `\n> ${prompt.slice(0, 200).replace(/\n/g, ' ')}` : '';
   const header =
@@ -720,6 +742,11 @@ async function main() {
     await syncCheckout();
     await finishStatus(issue, `🧠 **Skill Learned:** \`${filePath}\``, true);
     await pushProgress({ status: 'done' });
+    return;
+  }
+
+  if (mode === 'evolve') {
+    await finishStatus(issue, `⚠️ **Evolve is disabled for security.** Please use the Darwin workflow (Actions -> Self-Evolve) to generate a proposal.`, true);
     return;
   }
 
@@ -781,75 +808,12 @@ module.exports = {
       process.exit(1);
     }
 
-    const pluginPath = `lib/plugins/${pluginName}.js`;
-    await step(`Commit Plugin: ${pluginPath}`, () => atomicCommit({ [pluginPath]: finalCode }, [], `feat(forge): add plugin ${pluginName}`));
+    // G1 Security Fix: Save to proposals/plugins instead of lib/plugins
+    const pluginPath = `proposals/plugins/${pluginName}.js`;
+    await step(`Commit Plugin Proposal: ${pluginPath}`, () => atomicCommit({ [pluginPath]: finalCode }, [], `docs(forge): add proposal ${pluginName}`));
     
-    // Write it to the local disk so the current runner can use it immediately
-    if (!fs.existsSync('lib/plugins')) fs.mkdirSync('lib/plugins', { recursive: true });
-    fs.writeFileSync(pluginPath, finalCode);
-
     await syncCheckout();
-    await finishStatus(issue, `⚒️ **Forge Successful.** I synthesized a new capability: \`${pluginName}\`.\n\nI tested it in a safe sandbox and it successfully modified the HTML/CSS. It has been saved to \`${pluginPath}\` and will now be applied to all future builds!`, true);
-    await pushProgress({ status: 'done' });
-    return;
-  }
-
-  if (mode === 'evolve') {
-    const parts = prompt.split(' ');
-    const targetFile = parts[0];
-    const instructions = parts.slice(1).join(' ');
-
-    if (!targetFile || !targetFile.includes('.')) {
-      throw new Error('Usage: [evolve] <filename> <instructions>. To let me analyze myself, use the Self-Evolve workflow in the Actions tab.');
-    }
-
-    const original = await readFile(targetFile);
-    if (!original && !targetFile.includes('plugins/')) {
-      throw new Error(`Target file not found: ${targetFile}. (Unless you are creating a new plugin in lib/plugins/)`);
-    }
-    
-    const originalContent = original || '';
-
-    const evolvePrompt = `You are modifying the source code of an autonomous AI agent (Ariotica).
-Here is the current content of '${targetFile}':
-\`\`\`javascript
-${originalContent}
-\`\`\`
-
-INSTRUCTIONS:
-${instructions}
-
-Return ONLY the complete, modified file content. No markdown formatting, no conversational text. Keep all existing functionality intact.`;
-
-    const r = await step(`Evolve ${targetFile}`, () => askAI([{ role: 'user', content: evolvePrompt }], { maxTokens: 8000 }));
-    let newCode = r.text.trim();
-    newCode = newCode.replace(/^```(?:javascript|js)?\s*\n?/, '').replace(/\n?```\s*$/, '');
-    
-    await step('Validate Evolve Output', async () => {
-      const tempName = `.evolve-tmp-${Date.now()}.js`;
-      fs.writeFileSync(tempName, newCode);
-      try {
-        try { execSync(`node -c ${tempName}`, { stdio: 'pipe' }); }
-        catch (e) { throw new Error(`Invalid JS syntax. Blocked. ${(e.stderr || '').toString().slice(0, 400)}`); }
-        const Module = require('module');
-        const baseFile = path.resolve(targetFile);
-        const basePaths = Module._nodeModulePaths(path.dirname(baseFile));
-        const unresolved = [];
-        let m;
-        const re = /require\s*\(\s*['"]([^'"]+)['"]\s*\)/g;
-        while ((m = re.exec(newCode))) {
-          const spec = m[1];
-          if (!spec.startsWith('.')) continue;
-          try { Module._resolveFilename(spec, { filename: baseFile, paths: basePaths }); }
-          catch (e) { unresolved.push(`${spec} (${e.code || 'UNRESOLVED'})`); }
-        }
-        if (unresolved.length) throw new Error(`Unresolved relative require(s) in ${targetFile}: ${unresolved.join(', ')}. Blocked.`);
-      } finally { try { fs.unlinkSync(tempName); } catch { } }
-    });
-    
-    await step(`Commit ${targetFile}`, () => atomicCommit({ [targetFile]: newCode }, [], `feat(evolve): update ${targetFile}`));
-    await syncCheckout();
-    await finishStatus(issue, `🧬 **Evolution Successful.** \`${targetFile}\` updated and verified.`, true);
+    await finishStatus(issue, `⚒️ **Forge Proposal Created.** I synthesized a new capability: \`${pluginName}\`.\n\nIt has been saved to \`${pluginPath}\`. Please review the code. If you approve it, move it to \`lib/plugins/\` and add its hash to \`lib/plugins/plugins.lock.json\`.`, true);
     await pushProgress({ status: 'done' });
     return;
   }
@@ -894,7 +858,7 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
     if (!revertedFiles['index.html']) throw new Error(`v${targetVersion} has no index.html.`);
 
     const diffReports = Rep.buildChangeReport(currentSnapshot, revertedFiles, false);
-    const newVersion = bumpVersion(currentMeta.version);
+    const newVersion = bumpVersion(currentMeta.version, 'revert');
     const oldMeta = JSON.parse(revertedFiles['meta.json'] || '{}');
     oldMeta.version = newVersion;
     oldMeta.revertedFrom = targetVersion;
@@ -1052,6 +1016,17 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
   let meta = cand.grade.meta;
   let provider = cand.provider; let model = cand.model;
 
+  // ============================================================
+  // RUN EXTENSION PLUGINS (Moved UP before smoke test)
+  // ============================================================
+  const pluginCtx = { files, slug, prompt };
+  await softStep('Run extension plugins', async () => PluginManager.runPlugins(pluginCtx));
+  files = pluginCtx.files; // Update files with any modifications made by plugins
+
+  if (pluginCtx.pluginErrors && pluginCtx.pluginErrors.length) {
+    console.warn('[plugins] Some plugins failed:', pluginCtx.pluginErrors);
+  }
+
   steps.push({ name: 'Smoke test', status: smoke.ok ? 'done' : 'error', at: new Date().toISOString(), note: 'ran during race', error: smoke.ok ? undefined : `${smoke.errors.length} runtime error(s)` });
   await pushProgress();
 
@@ -1087,8 +1062,21 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
     const secs = security.findings.length ? `\n**Security Issues:**\n${security.findings.map(f => `- [${f.sev}] ${f.msg}`).join('\n')}` : '';
     await finishStatus(issue, report + errors + secs + '\n\nThe broken code was **not** committed.', false);
     await pushProgress({ status: 'error' });
-    process.exit(1);
+    process.exit(2); // Handled failure
   }
+
+  let resolved;
+  try {
+    resolved = await Lib.resolveHtml(files['index.html']);
+  } catch (e) {
+    await finishStatus(issue, `❌ **Library verification failed:**\n\n\`\`\`\n${e.message}\n\`\`\`\n\nFix: if the CDN is intentional, add its host to \`trusted_domains.json\`. If it's a hallucinated URL, retry with an approved library.`, false);
+    await pushProgress({ status: 'error' });
+    process.exit(2); // Handled failure
+  }
+  if (resolved.discovered.length) {
+    for (const d of resolved.discovered) console.log(`[libraries] discovered ${d.url} (${d.bytes}B)`);
+  }
+  files['index.html'] = resolved.html;
 
   let currentHtml = files['index.html'];
   if (!currentHtml.includes('Built by Ariotica')) {
@@ -1140,33 +1128,6 @@ Return ONLY the complete, modified file content. No markdown formatting, no conv
   }
   files['index.html'] = currentHtml;
 
-  // ============================================================
-  // RUN EXTENSION PLUGINS (moved UP before resolveHtml)
-  // ============================================================
-  const pluginCtx = { files, slug, prompt };
-  await softStep('Run extension plugins', async () => PluginManager.runPlugins(pluginCtx));
-  files = pluginCtx.files; // Update files with any modifications made by plugins
-
-  if (pluginCtx.pluginErrors && pluginCtx.pluginErrors.length) {
-    console.warn('[plugins] Some plugins failed:', pluginCtx.pluginErrors);
-  }
-
-  // ============================================================
-  // RESOLVE EXTERNAL LIBS & CSP (runs AFTER plugins)
-  // ============================================================
-  let resolved;
-  try {
-    resolved = await Lib.resolveHtml(files['index.html']);
-  } catch (e) {
-    await finishStatus(issue, `❌ **Library verification failed:**\n\n\`\`\`\n${e.message}\n\`\`\`\n\nFix: if the CDN is intentional, add its host to \`trusted_domains.json\`. If it's a hallucinated URL, retry with an approved library.`, false);
-    await pushProgress({ status: 'error' });
-    process.exit(1);
-  }
-  if (resolved.discovered.length) {
-    for (const d of resolved.discovered) console.log(`[libraries] discovered ${d.url} (${d.bytes}B)`);
-  }
-  files['index.html'] = resolved.html;
-
   const staticHash = (() => {
     const h = crypto.createHash('sha256');
     for (const name of ['index.html', 'style.css', 'script.js', 'manifest.json'].sort()) {
@@ -1204,11 +1165,10 @@ self.addEventListener('fetch', (e) => {
   else if (score >= 60) grade = 'C';
 
   let version = '1.0.0';
-  if (meta.version) version = meta.version;
-  else if (!isNew) {
+  if (!isNew) {
     try {
       const oldMeta = JSON.parse(await readFile(`${baseDir}/meta.json`) || '{}');
-      if (oldMeta.version) { const parts = oldMeta.version.split('.').map(Number); parts[2] += 1; version = parts.join('.'); }
+      if (oldMeta.version) { version = bumpVersion(oldMeta.version, mode); }
     } catch {}
   }
 
@@ -1232,7 +1192,11 @@ self.addEventListener('fetch', (e) => {
   const receipt = R.buildReceipt({ repo: `${OWNER}/${REPO}`, slug, files, mode, runId: RUN_ID, commit: null, provider, model, race: raceReport, smoke, security: security.counts, prompt, vanilla: T.isVanilla(testHtml, TRUSTED_DOMAINS).ok });
   files[receiptPath] = JSON.stringify(receipt, null, 2) + '\n';
 
-  const idx = manifest.findIndex((e) => e.project === slug);
+  // G4 Fix: Re-read manifest right before writing to prevent race conditions
+  let freshManifest = [];
+  try { const raw = await readFile(MANIFEST_PATH); if (raw) freshManifest = JSON.parse(raw); if (!Array.isArray(freshManifest)) freshManifest = []; } catch { freshManifest = []; }
+
+  const idx = freshManifest.findIndex((e) => e.project === slug);
   const entry = {
     project: slug, file: mainFile, prompt: prompt.slice(0, 240), created: new Date().toISOString().slice(0, 19), mode, provider, model,
     findings: security.counts.total, smoke: smoke.ok ? 'pass' : `fail:${smoke.errors.length}`, size: Object.values(files).reduce((a, b) => a + b.length, 0),
@@ -1240,11 +1204,18 @@ self.addEventListener('fetch', (e) => {
     grade, percentile: metaJson.percentile, humanInvolvement: metaJson.humanInvolvement, libraries: metaJson.libraries,
     sha256: receipt.sha256, receipt: receiptPath
   };
-  if (idx === -1) manifest.push(entry); else manifest[idx] = Object.assign({}, manifest[idx], entry);
-  files[MANIFEST_PATH] = JSON.stringify(manifest, null, 2) + '\n';
+  if (idx === -1) freshManifest.push(entry); else freshManifest[idx] = Object.assign({}, freshManifest[idx], entry);
+  files[MANIFEST_PATH] = JSON.stringify(freshManifest, null, 2) + '\n';
+
+  // G3 Fix: Belt and braces file sanitization
+  const sanitized = T.sanitizeFiles(files);
+  if (sanitized.dropped.length > 0) {
+    console.warn('[security] Dropped malicious files:', sanitized.dropped);
+  }
+  const safeFiles = sanitized.files;
 
   const fullFiles = {};
-  for (const [filename, content] of Object.entries(files)) {
+  for (const [filename, content] of Object.entries(safeFiles)) {
     if (filename === MANIFEST_PATH || filename === receiptPath) fullFiles[filename] = content;
     else fullFiles[`${baseDir}/${filename}`] = content;
   }
@@ -1320,6 +1291,6 @@ main().catch(async (err) => {
   steps.push({ name: 'Error', status: 'error', error: currentError, at: new Date().toISOString() });
   await pushProgress({ status: 'error' }, true);
   const num = currentIssue || parseInt(process.env.ISSUE_NUMBER || '0', 10);
-  await finishStatus(num, `❌ **Failed**\n\n\`\`\`\n${currentError.slice(0, 1500)}\n\`\`\`${HINT}`, false);
+  await finishStatus(num, `❌ **Fatal System Error**\n\n\`\`\`\n${currentError.slice(0, 1500)}\n\`\`\`${HINT}`, false);
   process.exit(1);
 });
