@@ -26,7 +26,6 @@ on:
           - skills
           - forge
           - inspire
-          - evolve
           - ask
           - leaderboard
         default: create
@@ -48,6 +47,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
+    # W5: The if condition stays to block untrusted users, but the Parse step below does the real work
     if: |
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'issues' && 
@@ -68,16 +68,42 @@ jobs:
         contains(github.event.comment.body, '[skills]') ||
         contains(github.event.comment.body, '[forge]') ||
         contains(github.event.comment.body, '[inspire]') ||
-        contains(github.event.comment.body, '[evolve]') ||
         contains(github.event.comment.body, '[leaderboard]')))
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # W1 FIX: Parse the request BEFORE acknowledging it to prevent ghost comments
+      - name: Parse Request
+        id: parse
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          COMMENT_BODY: ${{ github.event.comment.body }}
+          ISSUE_TITLE: ${{ github.event.issue.title }}
+          DISPATCH_PROJECT: ${{ inputs.project }}
+        run: |
+          node -e "
+            const fs = require('fs');
+            const T = require('./lib/text');
+            const out = (v) => fs.appendFileSync(process.env.GITHUB_OUTPUT, 'valid=' + v + '\n');
+            if (process.env.EVENT_NAME === 'workflow_dispatch') { out(true); process.exit(0); }
+            if (process.env.EVENT_NAME === 'issues') {
+              if (process.env.ISSUE_TITLE.startsWith('[BUILD]')) { out(true); process.exit(0); }
+              out(false); process.exit(0);
+            }
+            if (process.env.EVENT_NAME === 'issue_comment') {
+              if (process.env.ISSUE_TITLE.startsWith('[BUILD]') && T.parseComment(process.env.COMMENT_BODY || '')) {
+                out(true); process.exit(0);
+              }
+              out(false); process.exit(0);
+            }
+            out(false);
+          "
+
       - name: Quick Acknowledge
         id: quick_ack
-        if: github.event_name == 'issue_comment' || github.event_name == 'issues'
+        if: steps.parse.outputs.valid == 'true' && (github.event_name == 'issue_comment' || github.event_name == 'issues')
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -127,9 +153,12 @@ jobs:
             npm install
           fi
 
+      # W5 FIX: Validate all agent code, not just generate.js
       - name: Validate Agent Code
-        run: node --check generate.js
+        run: |
+          for f in generate.js lib/*.js; do node --check "$f"; done
 
+      # W3 FIX: Catch exit code 2 as a handled failure so we don't overwrite the error message
       - name: Generate App with AI
         id: run_agent
         env:
@@ -150,21 +179,27 @@ jobs:
           RUN_ID: ${{ github.run_id }}
           QUICK_ACK_ID: ${{ steps.quick_ack.outputs.comment_id }}
         run: |
-          node generate.js
-          echo "NEW_COMMIT=$(git rev-parse HEAD)" >> $GITHUB_OUTPUT
+          node generate.js; code=$?
+          if [ "$code" -eq 2 ]; then echo "handled=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          exit $code
 
-      - name: Rebuild Knowledge Index
-        run: node build-index.js
-
-      - name: Commit Knowledge Index
+      # W4 FIX: Idempotent knowledge index rebuild with retries to prevent rebase conflicts
+      - name: Rebuild and Commit Knowledge Index
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git config user.name "ariotica-bot"
-          git config user.email "ariotica-bot@users.noreply.github.com"
-          git add knowledge/index.json
-          git diff --staged --quiet || git commit -m "chore: rebuild knowledge index"
-          git pull --rebase
-          git push
+          for i in 1 2 3; do
+            git fetch -q origin main && git reset -q --hard origin/main
+            node build-index.js
+            git add knowledge/index.json
+            git diff --staged --quiet && exit 0
+            git commit -qm "chore: rebuild knowledge index" && git push -q && exit 0
+            sleep $((i*3))
+          done
+          echo "Failed to commit knowledge index after 3 retries"
+          exit 1
 
+      # W5 FIX: Added drafts/ to artifact uploads for handled failures
       - name: Upload Generated Artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -173,10 +208,12 @@ jobs:
           path: |
             projects/
             receipts/
+            drafts/
             analytics/
             knowledge/
           retention-days: 7
 
+      # W3 FIX: Only post the fatal comment if the agent crashed (exit 1), not on handled failures (exit 2)
       - name: Fatal Error Comment
         if: failure() && steps.run_agent.outcome == 'failure' && steps.quick_ack.outputs.comment_id != ''
         uses: actions/github-script@v7
@@ -194,39 +231,36 @@ jobs:
               }).catch(() => {});
             }
 
+      # W2 FIX: Move inputs to env to prevent shell injection
       - name: Generate Job Summary
         if: always()
+        env:
+          MODE: ${{ inputs.mode }}
+          PROJECT: ${{ inputs.project }}
+          OWNER: ${{ github.repository_owner }}
+          REPO: ${{ github.event.repository.name }}
+          ACTOR: ${{ github.actor }}
+          RUN_ID: ${{ github.run_id }}
         run: |
-          MODE="${{ inputs.mode }}"
-          PROJECT="${{ inputs.project }}"
-          OWNER="${{ github.repository_owner }}"
-          REPO="${{ github.event.repository.name }}"
-          ACTOR="${{ github.actor }}"
-          RUN_ID="${{ github.run_id }}"
-          BASE="https://$OWNER.github.io/$REPO/projects/$PROJECT/"
-
           echo "## 🤖 Ariotica Build Report" >> $GITHUB_STEP_SUMMARY
           echo "| Status | Project | Mode | Triggered By |" >> $GITHUB_STEP_SUMMARY
           echo "| :--- | :--- | :--- | :--- |" >> $GITHUB_STEP_SUMMARY
           echo "| ${{ job.status == 'success' && '✅ Success' || '❌ Failed' }} | \`$PROJECT\` | \`$MODE\` | @$ACTOR |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          case "$MODE" in
-            ask|skill|skills|forge|evolve|leaderboard)
-              echo "🔎 **Mode:** \`$MODE\` — see the issue thread for the result." >> $GITHUB_STEP_SUMMARY
-              ;;
-            delete)
-              echo "🗑 **Deleted:** \`$PROJECT\`" >> $GITHUB_STEP_SUMMARY
-              ;;
-            revert)
-              echo "↩️ **Reverted:** \`$PROJECT\` — see the issue thread for details." >> $GITHUB_STEP_SUMMARY
-              echo "" >> $GITHUB_STEP_SUMMARY
-              echo "[📂 View the Live App]($BASE)" >> $GITHUB_STEP_SUMMARY
-              ;;
-            *)
-              echo "[📂 View the Live App]($BASE)" >> $GITHUB_STEP_SUMMARY
-              ;;
-          esac
+          BASE="https://$OWNER.github.io/$REPO/projects/$PROJECT/"
+          
+          if [ "$MODE" = "ask" ] || [ "$MODE" = "skill" ] || [ "$MODE" = "skills" ] || [ "$MODE" = "forge" ] || [ "$MODE" = "evolve" ] || [ "$MODE" = "leaderboard" ]; then
+            echo "🔎 **Mode:** \`$MODE\` — see the issue thread for the result." >> $GITHUB_STEP_SUMMARY
+          elif [ "$MODE" = "delete" ]; then
+            echo "🗑 **Deleted:** \`$PROJECT\`" >> $GITHUB_STEP_SUMMARY
+          elif [ "$MODE" = "revert" ]; then
+            echo "↩️ **Reverted:** \`$PROJECT\` — see the issue thread for details." >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "[📂 View the Live App]($BASE)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "[📂 View the Live App]($BASE)" >> $GITHUB_STEP_SUMMARY
+          fi
           
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "---" >> $GITHUB_STEP_SUMMARY
