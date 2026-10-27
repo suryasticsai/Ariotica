@@ -1,0 +1,77 @@
+{
+  "schema": 2,
+  "app": "cyclops-test",
+  "files": {
+    "index.html": "8e3f5795248a17ce2c418adea338641e654b8a9b19a04a3126f4e4aa5ef282b3",
+    "style.css": "810b27cd4dc140ecd6ca0e70b3e70ff076abc1ff9d0c493f15d0fdf8bc9aa747",
+    "script.js": "1c7136ff6dd3d9de8ec349bfd1270ebe473bb7bda4db710f31b47739e1040aa9",
+    "icon-192.png": "b4e95a8588514f10c47a4797c0ae4e492dbd8a71e3dd9dd4538f6a3a57aa00be",
+    "icon-512.png": "a20ef595b6bbbbc2c8d5aa60ca0616a402bcfcce8edfe5e521f3a84aec2521ac",
+    "manifest.json": "f014e54bf67d5623007becab1a2cfbf98e48477a58d9829d0e6cd8158ca75e86",
+    "sw.js": "8bff6c2e452211c5ab0110b0c523df936b0fb34468774335d61c25ab5a409b2a",
+    "meta.json": "58f5e38b309f26120be4c65c630baf1d136c5e0ad2842fec41399bc9adaf8262",
+    "CHANGELOG.md": "fe0a8ccf531fde0eddad730812106e23fe1fe0acfd8385963b87f782aa2d1d29"
+  },
+  "bytes": 14831,
+  "builtAt": "2026-10-27T10:00:09.693Z",
+  "mode": "create",
+  "repo": "suryasticsai/Ariotica",
+  "runId": "40484833303",
+  "commit": "7779d35007af915439a9b86ddee913b5a10b549d",
+  "model": {
+    "provider": "OpenRouter",
+    "name": "recursive/flint-v1.0:free"
+  },
+  "race": [
+    {
+      "provider": "Groq",
+      "model": "openai/gpt-oss-120b",
+      "sec": 12,
+      "ok": false,
+      "score": 80,
+      "reason": "2 runtime error(s)",
+      "cost": 0.0041997,
+      "tokensIn": 2978,
+      "tokensOut": 5004
+    },
+    {
+      "provider": "OpenRouter",
+      "model": "recursive/flint-v1.0:free",
+      "sec": 64,
+      "ok": true,
+      "score": 100,
+      "reason": "",
+      "cost": 0,
+      "tokensIn": 2867,
+      "tokensOut": 8235
+    }
+  ],
+  "sha256": "8e3f5795248a17ce2c418adea338641e654b8a9b19a04a3126f4e4aa5ef282b3",
+  "checks": {
+    "complete": true,
+    "vanilla": true,
+    "externalRefs": [],
+    "connectsTo": [],
+    "zeroDeps": true,
+    "smoke": "pass",
+    "smokeErrors": [],
+    "scan": {
+      "total": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 0,
+      "byTool": {
+        "custom": 0,
+        "eslint": 0,
+        "sparrow": 0,
+        "externals": 0
+      }
+    }
+  },
+  "promptSha256": "70e7e858f8ac2a860459c741f79f05d28d56a3fb06feb201784127168b4351fc",
+  "prompt": "A pricing page with 3 tiers. Keep it simple.",
+  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js cyclops-test",
+  "cost": 0.0041997,
+  "tokensIn": 5845,
+  "tokensOut": 13239
+}

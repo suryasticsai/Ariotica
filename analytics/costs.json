@@ -284,5 +284,42 @@
         "tokensOut": 1442
       }
     ]
+  },
+  {
+    "ts": "2026-10-27T10:00:16.013Z",
+    "slug": "cyclops-test",
+    "mode": "create",
+    "provider": "OpenRouter",
+    "model": "recursive/flint-v1.0:free",
+    "runId": "40484833303",
+    "cost": 0.0041997,
+    "tokensIn": 5845,
+    "tokensOut": 13239,
+    "score": 100,
+    "sec": 64,
+    "race": [
+      {
+        "provider": "Groq",
+        "model": "openai/gpt-oss-120b",
+        "sec": 12,
+        "ok": false,
+        "score": 80,
+        "reason": "2 runtime error(s)",
+        "cost": 0.0041997,
+        "tokensIn": 2978,
+        "tokensOut": 5004
+      },
+      {
+        "provider": "OpenRouter",
+        "model": "recursive/flint-v1.0:free",
+        "sec": 64,
+        "ok": true,
+        "score": 100,
+        "reason": "",
+        "cost": 0,
+        "tokensIn": 2867,
+        "tokensOut": 8235
+      }
+    ]
   }
 ]
