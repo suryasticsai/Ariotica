@@ -908,10 +908,29 @@ module.exports = {
     });
     revertedFiles['CHANGELOG.md'] = newChangelog;
 
+    // PATCH: Update the manifest entry for this project
+    const freshManifest = manifest.map((e) => {
+      if (e.project === slug) {
+        return {
+          ...e,
+          version: newVersion,
+          mode: 'revert',
+          sha256: receipt.sha256,
+          created: new Date().toISOString().slice(0, 19),
+        };
+      }
+      return e;
+    });
+    revertedFiles[MANIFEST_PATH] = JSON.stringify(freshManifest, null, 2) + '\n';
+
     const fullFiles = {};
     for (const [name, content] of Object.entries(revertedFiles)) {
-      if (name === receiptPath) fullFiles[name] = content;
-      else fullFiles[`${baseDir}/${name}`] = content;
+      // PATCH: Include MANIFEST_PATH at root level
+      if (name === receiptPath || name === MANIFEST_PATH) {
+        fullFiles[name] = content;
+      } else {
+        fullFiles[`${baseDir}/${name}`] = content;
+      }
     }
     const commitSha = await step(`Commit revert v${currentMeta.version} → v${newVersion}`, () =>
       atomicCommit(fullFiles, [], `revert: ${slug} to v${targetVersion} (as v${newVersion})`));
@@ -934,7 +953,8 @@ module.exports = {
     }));
     await finishStatus(issue, body + HINT, true);
 
-    const isDeployed = await waitForPagesBuild(commitSha2);
+    // PATCH: Poll first commit (which actually changes project files)
+    const isDeployed = await waitForPagesBuild(commitSha);
     if (isDeployed && issue) {
       const url = `https://${OWNER}.github.io/${REPO}/${baseDir}/`;
       const shot = `### 📸 Live Preview\n\n[![${slug} screenshot](https://image.thum.io/get/width/1200/crop/900/${url}?t=${Date.now()})](${url})\n\n_Click to open_`;
@@ -1368,7 +1388,8 @@ self.addEventListener('fetch', (e) => {
 
   await finishStatus(issue, body + HINT, false);
 
-  const isDeployed = await waitForPagesBuild(commitSha2);
+  // PATCH: Poll the first commit (which actually changes the live app)
+  const isDeployed = await waitForPagesBuild(commitSha);
   if (isDeployed && issue) {
     const url = `https://${OWNER}.github.io/${REPO}/${baseDir}/`;
     const shot = `### 📸 Live Preview\n\n[![${slug} screenshot](https://image.thum.io/get/width/1200/crop/900/${url}?t=${Date.now()})](${url})\n\n_Screenshot refreshes each build · click to open_`;
