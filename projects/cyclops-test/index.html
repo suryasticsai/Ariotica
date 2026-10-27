@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' ; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self';">
+  <meta charset='UTF-8'>
+  <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+  <title>Pricing — Simple Plans</title>
+  <link rel='stylesheet' href='style.css'>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+  <meta name="theme-color" content="hsl(172, 70%, 50%)">
+</head>
+<body>
+  <header class='site-header'>
+    <h1>Pricing</h1>
+    <p>Simple plans for every team.</p>
+  </header>
+  <main id='main'>
+    <section class='plans' aria-labelledby='plans-heading'>
+      <h2 id='plans-heading'>Choose your plan</h2>
+      <div class='plans-grid'>
+        <article class='plan-card'>
+          <h3>Basic</h3>
+          <p class='price'>$9<span>/user/month</span></p>
+          <ul>
+            <li>1 project</li>
+            <li>5 GB storage</li>
+            <li>Priority support</li>
+          </ul>
+          <button type='button' class='btn btn-primary' aria-label='Select Basic plan'>Select Basic</button>
+        </article>
+        <article class='plan-card'>
+          <h3>Pro</h3>
+          <p class='price'>$29<span>/user/month</span></p>
+          <ul>
+            <li>Unlimited projects</li>
+            <li>100 GB storage</li>
+            <li>Advanced analytics</li>
+            <li>24/7 support</li>
+          </ul>
+          <button type='button' class='btn btn-primary' aria-label='Select Pro plan'>Select Pro</button>
+        </article>
+        <article class='plan-card'>
+          <h3>Enterprise</h3>
+          <p class='price'>Custom</p>
+          <ul>
+            <li>Unlimited everything</li>
+            <li>SSO &amp; audit logs</li>
+            <li>Dedicated manager</li>
+          </ul>
+          <button type='button' class='btn btn-primary' aria-label='Select Enterprise plan'>Select Enterprise</button>
+        </article>
+      </div>
+    </section>
+  </main>
+  <footer>
+    <p>© 2025 Pricing.</p>
+  </footer>
+  <script src='script.js'></script>
+
+<!-- Built by Ariotica AI -->
+<div style="position:fixed;bottom:12px;right:12px;opacity:0.35;font-size:11px;font-family:monospace;color:white;pointer-events:none;z-index:9999;">⚡ Ariotica</div>
+<script>if('serviceWorker' in navigator){addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}</script>
+</body>
+</html>
