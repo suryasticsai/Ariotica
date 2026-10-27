@@ -2,7 +2,7 @@
   "name": "ariotica",
   "version": "5.0.0",
   "private": true,
-  "description": "A live AI developer that lives in your GitHub repo: issues in, working apps out.",
+  "description": "A live AI developer that lives in your GitHub repo.",
   "engines": { "node": ">=20" },
   "scripts": {
     "test": "node scripts/test-static.js",
@@ -11,6 +11,7 @@
   "dependencies": {
     "@octokit/rest": "^20.1.1",
     "eslint": "^9.0.0",
-    "jsdom": "^26.1.0"
+    "jsdom": "^26.1.0",
+    "playwright": "^1.48.0"
   }
 }
