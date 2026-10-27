@@ -47,7 +47,6 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
-    # W5: The if condition stays to block untrusted users, but the Parse step below does the real work
     if: |
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'issues' && 
@@ -74,7 +73,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # W1 FIX: Parse the request BEFORE acknowledging it to prevent ghost comments
       - name: Parse Request
         id: parse
         env:
@@ -154,18 +152,29 @@ jobs:
           fi
 
       # ============================================================
-      # CYCLOPS FIX: Install Chromium + system deps for the vision audit
+      # PLAYWRIGHT FIX: cache browser + non-interactive apt
       # ============================================================
-      - name: Install Playwright Chromium
-        timeout-minutes: 5
-        run: npx playwright install chromium --with-deps
+      - name: Cache Playwright Browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
 
-      # W5 FIX: Validate all agent code, not just generate.js
+      - name: Install Playwright Chromium
+        timeout-minutes: 15
+        env:
+          DEBIAN_FRONTEND: noninteractive
+          NEEDRESTART_MODE: a
+        run: |
+          sudo apt-get update
+          npx playwright install chromium --with-deps
+
       - name: Validate Agent Code
         run: |
           for f in generate.js lib/*.js; do node --check "$f"; done
 
-      # W3 FIX: Catch exit code 2 as a handled failure so we don't overwrite the error message
       - name: Generate App with AI
         id: run_agent
         env:
@@ -173,11 +182,6 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          # ============================================================
-          # NEMOTRON: fallback-only provider (NVIDIA content-safety model
-          # via OpenRouter). Its key is separate so it can be scoped and
-          # billed independently. Optional NEMOTRON_MODEL pin via repo var.
-          # ============================================================
           NEMOTRON_API_KEY: ${{ secrets.NEMOTRON_API_KEY }}
           NEMOTRON_MODEL: ${{ vars.NEMOTRON_MODEL }}
           GROQ_MODEL: ${{ vars.GROQ_MODEL }}
@@ -197,7 +201,6 @@ jobs:
           if [ "$code" -eq 2 ]; then echo "handled=true" >> "$GITHUB_OUTPUT"; exit 0; fi
           exit $code
 
-      # W4 FIX: Idempotent knowledge index rebuild with retries to prevent rebase conflicts
       - name: Rebuild and Commit Knowledge Index
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -213,7 +216,6 @@ jobs:
           echo "Failed to commit knowledge index after 3 retries"
           exit 1
 
-      # W5 FIX: Added drafts/ to artifact uploads for handled failures
       - name: Upload Generated Artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -227,7 +229,6 @@ jobs:
             knowledge/
           retention-days: 7
 
-      # W3 FIX: Only post the fatal comment if the agent crashed (exit 1), not on handled failures (exit 2)
       - name: Fatal Error Comment
         if: failure() && steps.run_agent.outcome == 'failure' && steps.quick_ack.outputs.comment_id != ''
         uses: actions/github-script@v7
@@ -245,7 +246,6 @@ jobs:
               }).catch(() => {});
             }
 
-      # W2 FIX: Move inputs to env to prevent shell injection
       - name: Generate Job Summary
         if: always()
         env:
