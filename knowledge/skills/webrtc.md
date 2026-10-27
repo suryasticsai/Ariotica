@@ -1,3 +1,7 @@
+---
+name: webrtc
+status: verified
+---
 # WebRTC peer-to-peer voice, video and chat (PeerJS, static hosting)
 
 Keywords: webrtc, peer2peer, p2p, peer-to-peer, peerjs, voice call, video call, audio call, chat messenger, text chat, data channel, room link, mute, hang up, camera toggle, video chat app
