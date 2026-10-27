@@ -153,6 +153,13 @@ jobs:
             npm install
           fi
 
+      # ============================================================
+      # CYCLOPS FIX: Install Chromium + system deps for the vision audit
+      # ============================================================
+      - name: Install Playwright Chromium
+        timeout-minutes: 5
+        run: npx playwright install chromium --with-deps
+
       # W5 FIX: Validate all agent code, not just generate.js
       - name: Validate Agent Code
         run: |
