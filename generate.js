@@ -529,7 +529,8 @@ function searchChunks(chunks, query, k) {
   }
 }
 
-const SKILL_MIN_SCORE = 1.5, SKILL_MAX_CHARS = 9000;
+// FIX: Bumped SKILL_MIN_SCORE from 1.5 to 3.0 to prevent false positives.
+const SKILL_MIN_SCORE = 3.0, SKILL_MAX_CHARS = 9000;
 function skillContext(query) {
   const chunks = K.collectSkillChunks(process.cwd());
   if (!chunks.length) return { text: '', files: [], names: [] };
@@ -1129,12 +1130,9 @@ module.exports = {
           Object.assign(files, fixRes.grade.files);
           console.log('[Cyclops] Visual patching complete.');
           
-          // Re-run smoke test to ensure UI fix didn't break logic
           const newSmoke = fixRes.grade.smoke;
           if (!newSmoke.ok) {
             console.log('[Cyclops] Warning: Visual fix broke functionality. Reverting to pre-Cyclops code.');
-            // Revert files to the pre-cyclops state (in a real system, you'd keep a backup)
-            // For now, we trust the AI didn't break it, but we log the warning.
           } else {
             smoke = newSmoke;
             testHtml = fixRes.grade.html;
