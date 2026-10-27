@@ -321,5 +321,80 @@
         "tokensOut": 8235
       }
     ]
+  },
+  {
+    "ts": "2026-10-27T16:59:42.162Z",
+    "slug": "skill-v2",
+    "mode": "create",
+    "provider": "Groq",
+    "model": "openai/gpt-oss-120b",
+    "runId": "40545461678",
+    "cost": 0.00955335,
+    "tokensIn": 10686,
+    "tokensOut": 22894,
+    "score": 90,
+    "sec": 10,
+    "race": [
+      {
+        "provider": "Groq",
+        "model": "openai/gpt-oss-120b",
+        "sec": 16,
+        "ok": false,
+        "score": 80,
+        "reason": "2 runtime error(s)",
+        "cost": 0.0056868000000000005,
+        "tokensIn": 2977,
+        "tokensOut": 6987
+      },
+      {
+        "provider": "OpenRouter",
+        "model": "recursive/flint-v1.0:free",
+        "sec": 97,
+        "ok": false,
+        "score": 0,
+        "reason": "invalid JSON or missing index.html",
+        "cost": 0,
+        "tokensIn": 2867,
+        "tokensOut": 11720
+      },
+      {
+        "provider": "Pollinations",
+        "sec": 27,
+        "ok": false,
+        "reason": "empty or very short response",
+        "cost": 0,
+        "tokensIn": 0,
+        "tokensOut": 0
+      },
+      {
+        "provider": "HuggingFace",
+        "sec": 0,
+        "ok": false,
+        "reason": "HTTP 402: {\"error\":\"You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.\"}",
+        "cost": 0,
+        "tokensIn": 0,
+        "tokensOut": 0
+      },
+      {
+        "provider": "Nemotron",
+        "sec": 6,
+        "ok": false,
+        "reason": "empty or very short response",
+        "cost": 0,
+        "tokensIn": 0,
+        "tokensOut": 0
+      },
+      {
+        "provider": "Groq",
+        "model": "openai/gpt-oss-120b",
+        "sec": 10,
+        "ok": true,
+        "score": 100,
+        "reason": "",
+        "cost": 0.0038665500000000003,
+        "tokensIn": 4842,
+        "tokensOut": 4187
+      }
+    ]
   }
 ]
