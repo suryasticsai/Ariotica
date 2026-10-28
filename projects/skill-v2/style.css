@@ -6,7 +6,8 @@
   --color-secondary: #6c757d;
   --color-text: #212529;
   --color-muted: #6c757d;
-  --radius: 8px;
+  --radius: 8px;               /* used for cards, inputs, etc. */
+  --btn-radius: 9999px;        /* makes buttons pill‑shaped */
   --transition: 0.3s ease;
   --max-width: 800px;
 }
@@ -73,7 +74,7 @@ html, body {
 .btn {
   padding: 0.5rem 1rem;
   border: none;
-  border-radius: var(--radius);
+  border-radius: var(--btn-radius);
   background: var(--color-secondary);
   color: #fff;
   cursor: pointer;

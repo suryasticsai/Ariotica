@@ -1,13 +1,27 @@
 {
-  "version": "1.0.0",
-  "features": [],
-  "fixes": [],
-  "suggestions": [],
+  "version": "1.1.0",
+  "features": [
+    "Peer‑to‑peer voice and video calls using PeerJS",
+    "Real‑time text chat over DataConnection",
+    "Room sharing via URL hash",
+    "Copy‑to‑clipboard share link",
+    "Responsive layout with Flexbox",
+    "Accessibility via semantic HTML, ARIA attributes",
+    "Automatic title and share‑link updates on hash change"
+  ],
+  "fixes": [
+    "Buttons are now pill‑shaped (rounded) by introducing --btn-radius and applying it to .btn"
+  ],
+  "suggestions": [
+    "Consider adding a dark‑mode toggle using CSS variables",
+    "Persist last used room ID in localStorage with a namespaced key (e.g., \"p2p_lastRoom\")",
+    "Add visual feedback for connection states (e.g., icons or colored status bar)"
+  ],
   "grade": "A+",
   "percentile": "Top 5%",
-  "humanInvolvement": "Low",
+  "humanInvolvement": "User requested rounder buttons; developer updated CSS to use a pill‑shaped radius while keeping other UI components unchanged.",
   "libraries": [
-    "None"
+    "peerjs"
   ],
   "_watermark": "⚡ Built by Ariotica AI"
 }

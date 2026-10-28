@@ -84,7 +84,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function copyLink() {
-    // Prefer Clipboard API, fallback to execCommand for older browsers
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(shareLink.value).catch(() => fallbackCopy());
     } else {
@@ -97,7 +96,7 @@ document.addEventListener('DOMContentLoaded', () => {
     try {
       document.execCommand('copy');
     } catch (e) {
-      // Silently ignore – copying is best‑effort
+      // ignore
     }
   }
 
