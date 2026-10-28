@@ -30,9 +30,17 @@ html, body {
 /* Layout */
 .header {
   padding: 1rem;
-  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
   background: var(--color-primary);
   color: #fff;
+}
+
+.logo {
+  height: 40px;
+  width: auto;
 }
 
 .main {

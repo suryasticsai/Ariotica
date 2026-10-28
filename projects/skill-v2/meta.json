@@ -1,27 +1,29 @@
 {
-  "version": "1.1.0",
+  "version": "1.2.0",
   "features": [
-    "Peer‑to‑peer voice and video calls using PeerJS",
-    "Real‑time text chat over DataConnection",
-    "Room sharing via URL hash",
+    "Peer‑to‑peer audio/video call using PeerJS",
+    "Real‑time text chat over the same PeerJS data channel",
+    "Dynamic room sharing via URL hash",
     "Copy‑to‑clipboard share link",
-    "Responsive layout with Flexbox",
-    "Accessibility via semantic HTML, ARIA attributes",
-    "Automatic title and share‑link updates on hash change"
+    "Responsive layout with Flexbox and CSS variables",
+    "Accessibility‑focused markup (ARIA live regions, labels, high contrast)"
   ],
   "fixes": [
-    "Buttons are now pill‑shaped (rounded) by introducing --btn-radius and applying it to .btn"
+    "Added a logo image to the header",
+    "Converted header to a flex container for proper logo + title alignment",
+    "Ensured logo has appropriate size and alt text for accessibility"
   ],
   "suggestions": [
-    "Consider adding a dark‑mode toggle using CSS variables",
-    "Persist last used room ID in localStorage with a namespaced key (e.g., \"p2p_lastRoom\")",
-    "Add visual feedback for connection states (e.g., icons or colored status bar)"
+    "Provide an actual logo file (logo.png) in the project root",
+    "Add dark‑mode support by extending CSS variables",
+    "Persist last used room in localStorage (prefixed with \"p2p_\") for quick re‑join",
+    "Implement a small settings panel (hash‑based routing) for toggling video‑only mode"
   ],
   "grade": "A+",
   "percentile": "Top 5%",
-  "humanInvolvement": "User requested rounder buttons; developer updated CSS to use a pill‑shaped radius while keeping other UI components unchanged.",
+  "humanInvolvement": "Create or supply a logo image (logo.png) that matches the app branding.",
   "libraries": [
-    "peerjs"
+    "https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"
   ],
   "_watermark": "⚡ Built by Ariotica AI"
 }
