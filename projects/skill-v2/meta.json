@@ -1,31 +1,30 @@
 {
-  "version": "1.3.0",
+  "version": "1.4.0",
   "features": [
-    "Pure vanilla JS peer‑to‑peer voice, video and text chat using PeerJS",
-    "Hash‑based room IDs with shareable link",
-    "Responsive layout with Flexbox and CSS variables",
-    "Accessible markup (semantic sections, aria‑live, aria‑pressed, role=\"log\")",
-    "Smooth 0.3s transition on all interactive elements",
-    "Keyboard‑friendly controls (Enter key on buttons and input)",
-    "Graceful empty states for chat and video placeholders",
-    "Focus‑visible outlines for better keyboard navigation"
+    "Peer-to-peer voice, video and text chat using PeerJS",
+    "Hash‑based room routing with dynamic title and share link",
+    "Responsive layout with Flexbox and CSS variables for theming",
+    "Accessibility via semantic HTML, ARIA attributes and focus outlines",
+    "Empty state messages for chat and video placeholders",
+    "Copy‑to‑clipboard with fallback",
+    "Graceful error handling and UI reset on hang‑up",
+    "PWA install button using beforeinstallprompt",
+    "iOS Safari fallback instruction button"
   ],
   "fixes": [
-    "Added focus-visible styling for buttons to improve accessibility",
-    "Provided placeholder styling when video streams are not yet attached",
-    "Ensured share link is cleared after hanging up",
-    "Improved media handling so existing audio track persists when adding video",
-    "Reset UI elements on hang‑up to avoid stale states",
-    "Handled clipboard fallback more robustly"
+    "Added hidden Install App button that appears when beforeinstallprompt fires",
+    "Implemented iOS Safari fallback button with alert guidance",
+    "Ensured buttons are accessible and have appropriate ARIA labels",
+    "Integrated install button logic without breaking existing functionality"
   ],
   "suggestions": [
-    "Persist the last used room in localStorage (prefixed with \"p2pchat_\") to allow quick re‑join",
-    "Add a small toast/notification system for copy‑link confirmation",
-    "Introduce a light/dark theme toggle using CSS custom properties"
+    "Add a manifest with display: standalone for better PWA experience",
+    "Include icons of multiple sizes for various devices",
+    "Consider persisting the last used room in localStorage (prefixed with app name)"
   ],
   "grade": "B",
   "percentile": "Top 50%",
-  "humanInvolvement": "Testing on mobile (375 px) and desktop browsers, verifying that each button can be pressed once without console errors, and confirming accessibility with a screen‑reader tool.",
+  "humanInvolvement": "Testing on both Android Chrome and iOS Safari to verify install prompts and fallback behavior; verify service worker registration and offline capabilities.",
   "libraries": [
     "peerjs"
   ],

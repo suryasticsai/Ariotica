@@ -13,6 +13,8 @@ document.addEventListener('DOMContentLoaded', () => {
   const msgInput = $('msg');
   const log = $('log');
   const shareLink = $('shareLink');
+  const installBtn = $('installBtn');
+  const iosInstallBtn = $('iosInstallBtn');
 
   let peer = null;
   let conn = null;
@@ -20,6 +22,7 @@ document.addEventListener('DOMContentLoaded', () => {
   let localStream = null;
   let micOn = true;
   let videoOn = false;
+  let deferredPrompt = null;
 
   const setStatus = (text) => (statusEl.textContent = text);
 
@@ -38,7 +41,7 @@ document.addEventListener('DOMContentLoaded', () => {
         audio: true,
         video: !!withVideo,
       });
-      // If we already have an audio track, keep it when adding video
+      // Preserve existing audio track if we already have one
       if (localStream && localStream.getAudioTracks().length) {
         const audioTrack = localStream.getAudioTracks()[0];
         stream.removeTrack(stream.getAudioTracks()[0]);
@@ -229,7 +232,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!localStream) {
       await getMedia(true);
     } else if (!videoOn) {
-      // Enable video track without renegotiating call – PeerJS will send updated stream automatically
+      // Enable video without renegotiating
       toggleCamera();
     } else {
       toggleCamera();
@@ -241,6 +244,38 @@ document.addEventListener('DOMContentLoaded', () => {
     if (e.key === 'Enter') sendMessage();
   });
   copyBtn.addEventListener('click', copyLink);
+
+  // PWA install handling
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    installBtn.hidden = false;
+    installBtn.disabled = false;
+  });
+
+  installBtn.addEventListener('click', async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      console.log('User accepted install');
+    } else {
+      console.log('User dismissed install');
+    }
+    deferredPrompt = null;
+    installBtn.hidden = true;
+  });
+
+  // iOS Safari fallback
+  const isIos = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+  const isInStandalone = ('standalone' in window.navigator) && window.navigator.standalone;
+  if (isIos && !isInStandalone) {
+    iosInstallBtn.hidden = false;
+    iosInstallBtn.disabled = false;
+    iosInstallBtn.addEventListener('click', () => {
+      alert('Tap Share -> Add to Home Screen');
+    });
+  }
 
   // Update title & share link on hash change (manual navigation)
   window.addEventListener('hashchange', () => {
