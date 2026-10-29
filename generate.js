@@ -285,6 +285,7 @@ STRICT RULES:
 - **WEBRTC**: If building a video/audio call app, use PeerJS. Always request media with navigator.mediaDevices.getUserMedia. Use window.location.hash for the room ID. Copy the current URL for the share link.
 - **SCRAPED DATA**: If the prompt includes a "SCRAPED REFERENCE" section, analyze the text, extract the core features, UI text, and design patterns, and use them as your primary blueprint for the new app.
 - **STORAGE NAMESPACING**: If you use localStorage, ALL keys MUST be prefixed with the app's name (e.g., "kanban_items" not "items").
+- **VARIABLE SCOPING**: You MUST declare all variables with 'let' or 'const' BEFORE using them. NEVER reference an undeclared variable. (e.g., if you use 'deferredPrompt', declare 'let deferredPrompt = null;' at the top of the script).
 - The app must run without console errors on load and when every button is pressed once.
 
 OUTPUT FORMAT: reply with ONLY one JSON object and nothing else.
