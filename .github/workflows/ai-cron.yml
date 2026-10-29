@@ -25,6 +25,7 @@ on:
           - skill
           - skills
           - inspire
+          - forge
           - ask
           - leaderboard
         default: create
