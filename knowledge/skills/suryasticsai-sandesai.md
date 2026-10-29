@@ -2,115 +2,114 @@
 name: suryasticsai-sandesai
 status: verified
 source: https://github.com/suryasticsai/sandesai
-created: 2026-10-29T07:55:03.642Z
+created: 2026-10-29T09:02:47.413Z
 ---
 
-# Refresh Connection (Vanilla JS)  
-Keywords: refresh, reconnect, PeerJS, Firebase, Firestore, vanilla, JavaScript, button, network  
+# Refresh Connection Button
+**Keywords:** reconnect, network, peerjs, firebase, refresh, button, vanilla js  
 
-## Requirements  
-- HTML must contain a button with `id="refreshConnectionBtn"` (already present in the UI).  
-- The app uses Firebase (app, auth, firestore) and PeerJS for real‑time connections.  
-- A global `peer` instance (created via `new Peer()`) and a Firebase Firestore listener should be re‑initialized on demand.  
-- UI feedback (e.g., status badge) should reflect reconnect attempts.  
+## Requirements
+- An HTML button with `id="refreshConnectionBtn"` (already present in the markup).  
+- A global or module‑scoped PeerJS instance named `peer` (created elsewhere in the app).  
+- Optional: a status badge element (`#statusBadge` / `#statusDot`) to show “Reconnecting…”.  
+- The script must run **after** the DOM is ready (e.g., placed at the end of `<body>` or wrapped in `DOMContentLoaded`).  
 
-## Pattern  
+## Pattern
 ```html
-<!-- Add a small spinner for feedback (optional) -->
-<span id="refreshSpinner" style="display:none;margin-left:8px;">
-    <i class="fas fa-spinner fa-pulse"></i>
-</span>
-```
+<!-- Include this script after the PeerJS initialization -->
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // -----------------------------------------------------------------
+  // 1️⃣ Grab UI elements
+  // -----------------------------------------------------------------
+  const btn   = document.getElementById('refreshConnectionBtn');
+  const badge = document.getElementById('statusBadge');
+  const dot   = document.getElementById('statusDot');
 
-```js
-/* ---------- 1. Core refresh logic ---------- */
-async function refreshConnection() {
-    const spinner = document.getElementById('refreshSpinner');
-    spinner.style.display = 'inline-block';
+  // -----------------------------------------------------------------
+  // 2️⃣ Helper: toggle UI while reconnecting
+  // -----------------------------------------------------------------
+  const setBusy = (busy) => {
+    btn.disabled = busy;
+    badge.style.display = busy ? 'inline-flex' : 'none';
+    if (dot) dot.style.background = busy ? '#ffb400' : '#4caf50';
+  };
 
-    try {
-        // ---- 1️⃣ Disconnect existing PeerJS connection ----
-        if (window.peer && !window.peer.destroyed) {
-            await new Promise((resolve) => {
-                window.peer.once('close', resolve);
-                window.peer.destroy();
-            });
-        }
-
-        // ---- 2️⃣ Re‑initialize PeerJS ----
-        window.peer = new Peer(undefined, {
-            host: 'your-peerjs-server.com', // replace with actual host
-            port: 443,
-            secure: true,
-        });
-
-        window.peer.on('open', (id) => {
-            console.log('Peer re‑connected with ID:', id);
-            // You may want to update UI with the new ID
-            document.getElementById('myNumberDisplay').textContent = id;
-        });
-
-        window.peer.on('error', (err) => console.error('Peer error:', err));
-
-        // ---- 3️⃣ Re‑attach Firestore listeners (example) ----
-        // Assume you have a function `attachChatListeners()` that sets up
-        // real‑time snapshots for the current chat collection.
-        if (window.detachChatListeners) window.detachChatListeners(); // clean old unsubscribes
-        window.detachChatListeners = attachChatListeners(); // returns an unsubscribe fn
-
-        // ---- 4️⃣ UI success state ----
-        showStatus('online', 'Reconnected');
-    } catch (e) {
-        console.error('Refresh failed:', e);
-        showStatus('offline', 'Refresh failed');
-    } finally {
-        spinner.style.display = 'none';
+  // -----------------------------------------------------------------
+  // 3️⃣ Core: attempt PeerJS reconnection
+  // -----------------------------------------------------------------
+  const reconnect = async () => {
+    if (!window.peer) {
+      console.warn('PeerJS instance not found – nothing to reconnect.');
+      return;
     }
-}
+    setBusy(true);
+    try {
+      // PeerJS 1.x provides .reconnect() – fallback to .destroy() + new Peer()
+      if (typeof peer.reconnect === 'function') {
+        await peer.reconnect();               // ✅ must‑have‑code
+      } else {
+        // Manual recreation (preserves original config)
+        const cfg = peer.options || {};
+        peer.destroy();
+        window.peer = new Peer(cfg);
+        await new Promise((res, rej) => {
+          peer.once('open', res);
+          peer.once('error', rej);
+        });
+      }
+      console.info('🔌 Reconnected successfully');
+    } catch (e) {
+      console.error('❌ Reconnect failed', e);
+      // Optional: retry after a back‑off
+    } finally {
+      setBusy(false);
+    }
+  };
 
-/* ---------- 2. Helper to toggle status badge ---------- */
-function showStatus(state, text) {
-    const badge = document.getElementById('statusBadge');
-    const dot   = document.getElementById('statusDot');
-
-    badge.style.display = 'inline-flex';
-    dot.style.backgroundColor = state === 'online' ? '#4ade80' : '#ef4444';
-    document.getElementById('statusText').textContent = text;
-}
-
-/* ---------- 3. Wire the button ---------- */
-document
-    .getElementById('refreshConnectionBtn')
-    .addEventListener('click', refreshConnection);
-
-/* ---------- 4. Example Firestore listener wrapper ---------- */
-function attachChatListeners() {
-    const userId = firebase.auth().currentUser?.uid;
-    if (!userId) return () => {};
-
-    const chatRef = firebase.firestore()
-        .collection('chats')
-        .where('participants', 'array-contains', userId);
-
-    const unsubscribe = chatRef.onSnapshot((snap) => {
-        // render chat list, messages, etc.
-        console.log('Chat snapshot:', snap.docs.map(d => d.id));
-    }, (err) => console.error('Firestore error:', err));
-
-    // Return a function that can be called to stop listening
-    return unsubscribe;
-}
+  // -----------------------------------------------------------------
+  // 4️⃣ Wire UI → logic
+  // -----------------------------------------------------------------
+  btn.addEventListener('click', (e) => {
+    e.preventDefault();
+    reconnect();
+  });
+});
+</script>
 ```
 
-## Gotchas  
-- **PeerJS cleanup**: Always wait for the `'close'` event before creating a new `Peer`; otherwise you may hit “Peer already exists” errors.  
-- **Firebase auth latency**: If the user is not yet authenticated when `refreshConnection` runs, `firebase.auth().currentUser` will be `null`. Guard against it or trigger a re‑login flow.  
-- **Multiple listeners**: `onSnapshot` returns an unsubscribe function; forgetting to call it will stack duplicate listeners, causing UI duplication and memory leaks.  
-- **Network‑flaky environments**: On mobile networks, rapid consecutive clicks can overwhelm the server. Debounce the button (e.g., 2 s) if needed.  
-- **CORS / host config**: PeerJS requires the correct `host`, `port`, and `secure` flags; mismatched values will reject the connection silently.  
-- **UI feedback**: The spinner (`#refreshSpinner`) is optional but recommended to avoid “dead” UI during async reconnection.  
+### Quick‑copy version
+```js
+document.getElementById('refreshConnectionBtn')
+  .addEventListener('click', async () => {
+    const btn = event.currentTarget;
+    btn.disabled = true;
+    try {
+      if (peer.reconnect) await peer.reconnect();
+      else {
+        const cfg = peer.options || {};
+        peer.destroy();
+        window.peer = new Peer(cfg);
+        await new Promise((res, rej) => {
+          peer.once('open', res);
+          peer.once('error', rej);
+        });
+      }
+      console.log('Reconnected');
+    } catch (err) { console.error(err); }
+    btn.disabled = false;
+  });
+```
 
-## Checks  
-- must-have-code: `refreshConnectionBtn.addEventListener`  
-- must-have-selector: `#refreshConnectionBtn`  
-- must-not-have: `$(`
+## Gotchas
+- **Undefined `peer`** – ensure the PeerJS instance is attached to `window.peer` (or import it) *before* this script runs.  
+- **Multiple rapid clicks** – the button is disabled during the async flow to avoid race conditions.  
+- **Browser‑level throttling** – some browsers limit reconnection attempts; implement an exponential back‑off if you need repeated retries.  
+- **Network offline** – `navigator.onLine` can be checked first; otherwise the promise will reject instantly.  
+- **Memory leaks** – calling `peer.destroy()` without recreating a new instance leaves old event listeners dangling.  
+- **Firebase listeners** – if you also rely on Firestore real‑time listeners, they survive a PeerJS reconnect; however, if you close the whole app socket, you may need to re‑subscribe after `peer.reconnect()`.  
+
+## Checks
+- **must-have-code:** `refreshConnectionBtn.addEventListener`  
+- **must-have-selector:** `#refreshConnectionBtn`  
+- **must-not-have:** `alert(`
