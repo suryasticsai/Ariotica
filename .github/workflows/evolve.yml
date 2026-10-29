@@ -23,15 +23,25 @@ jobs:
   evolve:
     runs-on: ubuntu-latest
     timeout-minutes: 15
-    
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
+
+      - name: Cache npm
+        uses: actions/cache@v4
+        with:
+          path: ~/.npm
+          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-node-
 
       - name: Install dependencies
         run: |
@@ -44,7 +54,15 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
+          NEMOTRON_API_KEY: ${{ secrets.NEMOTRON_API_KEY }}
+          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
+          
+          # Optional overrides to control the AI model race dynamically
+          PROVIDER_ORDER: ${{ vars.PROVIDER_ORDER }}
+          RACE_SIZE: ${{ vars.RACE_SIZE }}
+          NEMOTRON_MODEL: ${{ vars.NEMOTRON_MODEL }}
           GROQ_MODEL: ${{ vars.GROQ_MODEL }}
+          
           RUN_ID: ${{ github.run_id }}
           EVOLVE_FOCUS: ${{ inputs.focus || 'auto' }}
         run: node lib/evolve.js
@@ -52,17 +70,34 @@ jobs:
       - name: Commit Proposals
         if: success()
         run: |
-          git config user.name "ariotica-bot"
-          git config user.email "ariotica-bot@users.noreply.github.com"
+          # Standard GitHub Actions Bot Identity
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          
           git add proposals/
-          # [skip ci] prevents this push from triggering the Generate Project workflow
-          git diff --staged --quiet || git commit -m "docs: new evolution proposal [skip ci]"
-          git pull --rebase
-          git push
+          
+          # Check if there's anything to commit
+          if git diff --staged --quiet; then
+            echo "No new proposals generated."
+            exit 0
+          fi
+          
+          git commit -m "docs: new evolution proposal [skip ci]"
+          
+          # Retry logic for rebase/push in case main branch is active
+          for i in 1 2 3; do
+            git pull -q --rebase origin main && git push -q && echo "Proposals pushed successfully!" && exit 0
+            echo "Push failed (attempt $i/3). Retrying in 3s..."
+            sleep 3
+          done
+          
+          echo "Failed to push proposals after 3 retries."
+          exit 1
 
       - name: Upload Proposals Artifact
         if: always()
         uses: actions/upload-artifact@v4
+        continue-on-error: true
         with:
           name: evolution-proposals-${{ github.run_id }}
           path: proposals/
@@ -70,21 +105,28 @@ jobs:
 
       - name: Generate Job Summary
         if: always()
+        env:
+          FOCUS: ${{ inputs.focus || 'auto-analysis' }}
+          STATUS: ${{ job.status }}
+          OWNER: ${{ github.repository_owner }}
+          REPO: ${{ github.event.repository.name }}
+          RUN_ID: ${{ github.run_id }}
         run: |
           echo "## 🧬 Ariotica Self-Evolution Report" >> $GITHUB_STEP_SUMMARY
           echo "| Status | Focus |" >> $GITHUB_STEP_SUMMARY
           echo "| :--- | :--- |" >> $GITHUB_STEP_SUMMARY
-          echo "| ${{ job.status == 'success' && '✅ Success' || '❌ Failed' }} | \`${{ inputs.focus || 'auto-analysis' }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| ${{ job.status == 'success' && '✅ Success' || '❌ Failed' }} | \`$FOCUS\` |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           
-          if [ "${{ job.status }}" = "success" ]; then
+          if [ "$STATUS" = "success" ]; then
             echo "### Next Steps" >> $GITHUB_STEP_SUMMARY
             echo "1. Check your GitHub Issues for a new \`[PROPOSAL]\`." >> $GITHUB_STEP_SUMMARY
-            echo "2. Review the code in the \`proposals/\` folder." >> $GITHUB_STEP_SUMMARY
-            echo "3. If you like it, copy it to \`lib/plugins/\` and close the issue." >> $GITHUB_STEP_SUMMARY
+            echo "2. Review the code generated in the \`proposals/\` folder." >> $GITHUB_STEP_SUMMARY
+            echo "3. If you approve the change, copy it to \`lib/plugins/\` or merge it manually, then close the issue." >> $GITHUB_STEP_SUMMARY
           else
-            echo "❌ The AI failed to synthesize a valid proposal. Check the logs." >> $GITHUB_STEP_SUMMARY
+            echo "❌ The AI failed to synthesize a valid proposal. Check the logs below for details." >> $GITHUB_STEP_SUMMARY
           fi
           
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "🔗 [View Run Logs](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "🔗 [View Run Logs](https://github.com/$OWNER/$REPO/actions/runs/$RUN_ID)" >> $GITHUB_STEP_SUMMARY
