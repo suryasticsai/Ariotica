@@ -179,14 +179,21 @@ jobs:
 
       - name: Generate App with AI
         id: run_agent
+        timeout-minutes: 15
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           NEMOTRON_API_KEY: ${{ secrets.NEMOTRON_API_KEY }}
+          FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
+          
+          # Optional overrides to control the AI model race dynamically
+          PROVIDER_ORDER: ${{ vars.PROVIDER_ORDER }}
+          RACE_SIZE: ${{ vars.RACE_SIZE }}
           NEMOTRON_MODEL: ${{ vars.NEMOTRON_MODEL }}
           GROQ_MODEL: ${{ vars.GROQ_MODEL }}
+          
           EVENT_NAME: ${{ github.event_name }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
           ISSUE_BODY: ${{ github.event.issue.body }}
