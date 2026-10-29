@@ -474,5 +474,31 @@
         "tokensOut": 5201
       }
     ]
+  },
+  {
+    "ts": "2026-10-29T05:07:25.541Z",
+    "slug": "skill-v2",
+    "mode": "improve",
+    "provider": "Groq",
+    "model": "openai/gpt-oss-120b",
+    "runId": "40821412594",
+    "cost": 0.0049512,
+    "tokensIn": 5248,
+    "tokensOut": 5552,
+    "score": 70,
+    "sec": 13,
+    "race": [
+      {
+        "provider": "Groq",
+        "model": "openai/gpt-oss-120b",
+        "sec": 13,
+        "ok": true,
+        "score": 100,
+        "reason": "",
+        "cost": 0.0049512,
+        "tokensIn": 5248,
+        "tokensOut": 5552
+      }
+    ]
   }
 ]

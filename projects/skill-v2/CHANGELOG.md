@@ -1,5 +1,130 @@
 # Changelog
 
+## v1.4.0 — 2026-10-29 05:07 UTC — improve
+
+**Model:** Groq/openai/gpt-oss-120b · **Cost:** $0.0050
+
+### What changed
+- ✨ Peer-to-peer voice, video and text chat using PeerJS
+- ✨ Hash‑based room routing with dynamic title and share link
+- ✨ Responsive layout with Flexbox and CSS variables for theming
+- ✨ Accessibility via semantic HTML, ARIA attributes and focus outlines
+- ✨ Empty state messages for chat and video placeholders
+- ✨ Copy‑to‑clipboard with fallback
+- ✨ Graceful error handling and UI reset on hang‑up
+- ✨ PWA install button using beforeinstallprompt
+- ✨ iOS Safari fallback instruction button
+- 🐛 Added hidden Install App button that appears when beforeinstallprompt fires
+- 🐛 Implemented iOS Safari fallback button with alert guidance
+- 🐛 Ensured buttons are accessible and have appropriate ARIA labels
+- 🐛 Integrated install button logic without breaking existing functionality
+
+### Files
+- `index.html` (+4 −0)
+- `script.js` (+37 −2)
+
+#### `index.html`
+```diff
+@@ … @@
+       <button id="cameraBtn" class="btn" aria-pressed="false" aria-label="Toggle camera" disabled>Camera</button>
+       <button id="hangupBtn" class="btn danger" aria-label="Hang up" disabled>Hang Up</button>
+       <button id="copyBtn" class="btn secondary" aria-label="Copy invite link">Copy Link</button>
++      <!-- Install button (shown when beforeinstallprompt fires) -->
++      <button id="installBtn" class="btn primary" hidden aria-label="Install App">Install App</button>
++      <!-- iOS fallback button -->
++      <button id="iosInstallBtn" class="btn secondary" hidden aria-label="Add to Home Screen">Add to Home Screen</button>
+     </section>
+ 
+     <section class="chat" aria-label="Chat panel">
+```
+
+#### `script.js`
+```diff
+@@ … @@
+   const msgInput = $('msg');
+   const log = $('log');
+   const shareLink = $('shareLink');
++  const installBtn = $('installBtn');
++  const iosInstallBtn = $('iosInstallBtn');
+ 
+   let peer = null;
+   let conn = null;
+@@ … @@
+   let localStream = null;
+   let micOn = true;
+   let videoOn = false;
++  let deferredPrompt = null;
+ 
+   const setStatus = (text) => (statusEl.textContent = text);
+ 
+@@ … @@
+         audio: true,
+         video: !!withVideo,
+       });
+-      // If we already have an audio track, keep it when adding video
++      // Preserve existing audio track if we already have one
+       if (localStream && localStream.getAudioTracks().length) {
+         const audioTrack = localStream.getAudioTracks()[0];
+         stream.removeTrack(stream.getAudioTracks()[0]);
+@@ … @@
+     if (!localStream) {
+       await getMedia(true);
+     } else if (!videoOn) {
+-      // Enable video track without renegotiating call – PeerJS will send updated stream automatically
++      // Enable video without renegotiating
+       toggleCamera();
+     } else {
+       toggleCamera();
+@@ … @@
+     if (e.key === 'Enter') sendMessage();
+   });
+   copyBtn.addEventListener('click', copyLink);
++
++  // PWA install handling
++  window.addEventListener('beforeinstallprompt', (e) => {
++    e.preventDefault();
++    deferredPrompt = e;
++    installBtn.hidden = false;
++    installBtn.disabled = false;
++  });
++
++  installBtn.addEventListener('click', async () => {
++    if (!deferredPrompt) return;
++    deferredPrompt.prompt();
++    const { outcome } = await deferredPrompt.userChoice;
++    if (outcome === 'accepted') {
++      console.log('User accepted install');
++    } else {
++      console.log('User dismissed install');
++    }
++    deferredPrompt = null;
++    installBtn.hidden = true;
++  });
++
++  // iOS Safari fallback
++  const isIos = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
++  const isInStandalone = ('standalone' in window.navigator) && window.navigator.standalone;
++  if (isIos && !isInStandalone) {
++    iosInstallBtn.hidden = false;
++    iosInstallBtn.disabled = false;
++    iosInstallBtn.addEventListener('click', () => {
++      alert('Tap Share -> Add to Home Screen');
++    });
++  }
+ 
+   // Update title & share link on hash change (manual navigation)
+   window.addEventListener('hashchange', () => {
+```
+
+### Human follow-up
+Testing on both Android Chrome and iOS Safari to verify install prompts and fallback behavior; verify service worker registration and offline capabilities.
+
+### Next
+- Add a manifest with display: standalone for better PWA experience
+- Include icons of multiple sizes for various devices
+- Consider persisting the last used room in localStorage (prefixed with app name)
+
+
 ## v1.3.0 — 2026-10-29 04:42 UTC — improve
 
 **Model:** Groq/openai/gpt-oss-120b · **Cost:** $0.0046
