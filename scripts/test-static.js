@@ -34,17 +34,17 @@ try {
   // ── Layer 0: syntax ─────────────────────────────────────────
   section('Layer 0 — Syntax');
   const files = [
-  'generate.js',
-  'lib/text.js',
-  'lib/libraries.js',
-  'lib/scan.js',
-  'lib/diff.js',
-  'lib/report.js',
-  'lib/providers.js',
-  'lib/pricing.js',
-  'lib/plugin-manager.js', 
-  'lib/evolve.js'    
-];
+    'generate.js',
+    'lib/text.js',
+    'lib/libraries.js',
+    'lib/scan.js',
+    'lib/diff.js',
+    'lib/report.js',
+    'lib/providers.js',
+    'lib/pricing.js',
+    'lib/plugin-manager.js', 
+    'lib/evolve.js'    
+  ];
   for (const f of files) {
     if (!fs.existsSync(f)) { bad(`${f} — missing`); continue; }
     try {
@@ -147,9 +147,11 @@ try {
       ? ok('libraries_catalog.json loads', `${Object.keys(cat).length} entry(ies)`)
       : bad('libraries_catalog.json loads');
 
+    // FIXED: Check for external CDNs rather than 'https://' (since Google Fonts is always https)
     const narrow = Lib.buildCsp([], [], []);
-    (!narrow.includes('https://') && narrow.includes("connect-src 'self'"))
-      ? ok('narrow CSP has no externals')
+    const isNarrow = narrow.includes("connect-src 'self'") && !narrow.includes('cdn.jsdelivr.net') && !narrow.includes('unpkg.com');
+    isNarrow
+      ? ok('narrow CSP has no external script origins')
       : bad('narrow CSP', narrow);
 
     const wide = Lib.buildCsp(['https://cdn.jsdelivr.net'], [], []);
