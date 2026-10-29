@@ -2,114 +2,102 @@
 name: suryasticsai-sandesai
 status: verified
 source: https://github.com/suryasticsai/sandesai
-created: 2026-10-29T09:02:47.413Z
+created: 2026-10-29T09:27:50.137Z
 ---
 
-# Refresh Connection Button
-**Keywords:** reconnect, network, peerjs, firebase, refresh, button, vanilla js  
+# Refresh Connection Button  
+Keywords: refresh, reconnect, network, PeerJS, Firebase, button, offline, online  
 
-## Requirements
-- An HTML button with `id="refreshConnectionBtn"` (already present in the markup).  
-- A global or module‑scoped PeerJS instance named `peer` (created elsewhere in the app).  
-- Optional: a status badge element (`#statusBadge` / `#statusDot`) to show “Reconnecting…”.  
-- The script must run **after** the DOM is ready (e.g., placed at the end of `<body>` or wrapped in `DOMContentLoaded`).  
+## Requirements  
+- An element with `id="refreshConnectionBtn"` present in the HTML (the refresh button).  
+- A globally‑accessible Firebase app instance (`firebase.initializeApp`) and Firestore (`firebase.firestore()`).  
+- A PeerJS connection stored in a variable (e.g., `let peer = new Peer();`).  
+- Optional UI elements to show connection status (e.g., `#statusBadge`, `#statusDot`).  
 
-## Pattern
+## Pattern  
 ```html
-<!-- Include this script after the PeerJS initialization -->
-<script>
-document.addEventListener('DOMContentLoaded', () => {
-  // -----------------------------------------------------------------
-  // 1️⃣ Grab UI elements
-  // -----------------------------------------------------------------
-  const btn   = document.getElementById('refreshConnectionBtn');
-  const badge = document.getElementById('statusBadge');
-  const dot   = document.getElementById('statusDot');
-
-  // -----------------------------------------------------------------
-  // 2️⃣ Helper: toggle UI while reconnecting
-  // -----------------------------------------------------------------
-  const setBusy = (busy) => {
-    btn.disabled = busy;
-    badge.style.display = busy ? 'inline-flex' : 'none';
-    if (dot) dot.style.background = busy ? '#ffb400' : '#4caf50';
-  };
-
-  // -----------------------------------------------------------------
-  // 3️⃣ Core: attempt PeerJS reconnection
-  // -----------------------------------------------------------------
-  const reconnect = async () => {
-    if (!window.peer) {
-      console.warn('PeerJS instance not found – nothing to reconnect.');
-      return;
-    }
-    setBusy(true);
-    try {
-      // PeerJS 1.x provides .reconnect() – fallback to .destroy() + new Peer()
-      if (typeof peer.reconnect === 'function') {
-        await peer.reconnect();               // ✅ must‑have‑code
-      } else {
-        // Manual recreation (preserves original config)
-        const cfg = peer.options || {};
-        peer.destroy();
-        window.peer = new Peer(cfg);
-        await new Promise((res, rej) => {
-          peer.once('open', res);
-          peer.once('error', rej);
-        });
-      }
-      console.info('🔌 Reconnected successfully');
-    } catch (e) {
-      console.error('❌ Reconnect failed', e);
-      // Optional: retry after a back‑off
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  // -----------------------------------------------------------------
-  // 4️⃣ Wire UI → logic
-  // -----------------------------------------------------------------
-  btn.addEventListener('click', (e) => {
-    e.preventDefault();
-    reconnect();
-  });
-});
-</script>
+<!-- HTML (already present) -->
+<button class="reg-btn" id="refreshConnectionBtn" title="Reconnect to network">
+    <i class="fas fa-rotate-right"></i>
+</button>
 ```
 
-### Quick‑copy version
 ```js
-document.getElementById('refreshConnectionBtn')
-  .addEventListener('click', async () => {
-    const btn = event.currentTarget;
-    btn.disabled = true;
-    try {
-      if (peer.reconnect) await peer.reconnect();
-      else {
-        const cfg = peer.options || {};
-        peer.destroy();
-        window.peer = new Peer(cfg);
-        await new Promise((res, rej) => {
-          peer.once('open', res);
-          peer.once('error', rej);
+/* -------------------------------------------------
+   Refresh Connection Logic (vanilla JavaScript)
+   ------------------------------------------------- */
+(() => {
+    // 1️⃣ Grab UI refs
+    const btn = document.getElementById('refreshConnectionBtn');
+    const statusBadge = document.getElementById('statusBadge');
+    const statusDot   = document.getElementById('statusDot');
+    const statusText  = document.getElementById('statusText');
+
+    // 2️⃣ Helper to toggle UI
+    const setStatus = (online) => {
+        const cls = online ? 'online' : 'offline';
+        statusBadge.style.display = 'inline-flex';
+        statusDot.className = `status-dot-badge ${cls}`;
+        statusText.textContent = online ? 'Online' : 'Offline';
+    };
+
+    // 3️⃣ Re‑initialize Firebase (no re‑load)
+    const resetFirebase = async () => {
+        // Close existing listeners (if any)
+        if (window._firestoreUnsubscribe) {
+            window._firestoreUnsubscribe();
+        }
+        // Re‑create Firestore instance
+        const app = firebase.apps[0]; // assumes single app
+        window.db = app.firestore();
+        // Example: re‑attach a simple listener
+        window._firestoreUnsubscribe = window.db.collection('users')
+            .onSnapshot(() => setStatus(true), () => setStatus(false));
+    };
+
+    // 4️⃣ Re‑initialize PeerJS
+    const resetPeer = () => {
+        if (window.peer && !window.peer.destroyed) {
+            window.peer.disconnect();
+            window.peer.destroy();
+        }
+        window.peer = new Peer(undefined, {
+            host: 'your-peerjs-server.com',
+            port: 443,
+            path: '/myapp',
+            secure: true
         });
-      }
-      console.log('Reconnected');
-    } catch (err) { console.error(err); }
-    btn.disabled = false;
-  });
+
+        window.peer.on('open', () => setStatus(true));
+        window.peer.on('error', () => setStatus(false));
+        window.peer.on('close', () => setStatus(false));
+    };
+
+    // 5️⃣ Master reset function
+    const refreshConnection = async () => {
+        try {
+            setStatus(false);          // UI → offline while we work
+            await resetFirebase();     // async Firestore reconnect
+            resetPeer();               // sync PeerJS reconnect
+        } catch (e) {
+            console.error('Refresh failed:', e);
+            // keep UI in offline state
+        }
+    };
+
+    // 6️⃣ Wire button
+    btn.addEventListener('click', refreshConnection);
+})();
 ```
 
-## Gotchas
-- **Undefined `peer`** – ensure the PeerJS instance is attached to `window.peer` (or import it) *before* this script runs.  
-- **Multiple rapid clicks** – the button is disabled during the async flow to avoid race conditions.  
-- **Browser‑level throttling** – some browsers limit reconnection attempts; implement an exponential back‑off if you need repeated retries.  
-- **Network offline** – `navigator.onLine` can be checked first; otherwise the promise will reject instantly.  
-- **Memory leaks** – calling `peer.destroy()` without recreating a new instance leaves old event listeners dangling.  
-- **Firebase listeners** – if you also rely on Firestore real‑time listeners, they survive a PeerJS reconnect; however, if you close the whole app socket, you may need to re‑subscribe after `peer.reconnect()`.  
+## Gotchas  
+- **Firebase listeners** – if you have multiple `onSnapshot`/`onAuthStateChanged` callbacks, store the unsubscribe functions (`window._firestoreUnsubscribe`) and call them before creating a new Firestore instance; otherwise you’ll leak listeners.  
+- **PeerJS state** – calling `peer.disconnect()` **does not** destroy the underlying socket; you must also call `peer.destroy()` before creating a fresh instance, otherwise the old socket stays open and new connections fail.  
+- **Race conditions** – both Firebase and PeerJS reconnect asynchronously. If you need to guarantee that the UI shows *online* only after **both** are ready, wrap the two promises in `Promise.all([...])` and set the status inside the `.then`.  
+- **Browser limits** – some mobile browsers throttle background network activity; a quick UI flash (`setStatus(false)`) prevents the user from assuming the app is still online while the underlying sockets are being torn down.  
+- **CORS / TLS** – PeerJS must be served over HTTPS (`secure: true`) when the page is loaded via `https://`. Mixing protocols will silently fail and trigger the `error` event.  
 
-## Checks
-- **must-have-code:** `refreshConnectionBtn.addEventListener`  
-- **must-have-selector:** `#refreshConnectionBtn`  
-- **must-not-have:** `alert(`
+## Checks  
+- must-have-code: `refreshConnectionBtn.addEventListener`  
+- must-have-selector: `#refreshConnectionBtn`  
+- must-not-have: `debugger`
