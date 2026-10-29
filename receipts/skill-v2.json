@@ -2,22 +2,22 @@
   "schema": 2,
   "app": "skill-v2",
   "files": {
-    "index.html": "ec3ae4d8492600066b034f0739be0427a9a39e401efc86e7658ec681a64efdda",
-    "style.css": "8213e7920092aaf8507efd19b9b22db72e2613bba4f016763c8827fad8867c48",
+    "index.html": "2dc4b31d3d678558ba8ef0db59f2d52c956faabf8a3da40486d5b15e97bf2261",
+    "style.css": "c75df1667aa666c642b9b793bbc48712b8dc342f92212293876198a3bb87dd82",
     "script.js": "1b871e7277322fb69356f185135d6bd1e7cdee4e11268f2ab659d5aceb5b4d61",
     "icon-192.png": "fdae5c982770558bf55139b6c592fcf8616d6af4e38a5602731ad0f94a0540a3",
     "icon-512.png": "fdae5c982770558bf55139b6c592fcf8616d6af4e38a5602731ad0f94a0540a3",
     "manifest.json": "6db8500d1bfcd1da9034b2768ea4d94f57cb73283f8e3724950272cfc175017d",
-    "sw.js": "22ce57f535689513828d162b4bdeddcdeb35f3150adda6644fe7be677a6a4e36",
-    "meta.json": "bd65317c7d3e5b9c1e93b818cdc83f371b00d35b32bfb2857b82504e693399e1",
-    "CHANGELOG.md": "1f93bf642be8423f5b189a95429f654d318e2e79c80a9f54c3854967a41d9f61"
+    "sw.js": "c72c6afad43f26d90a7895fa2601c693b5c026e939b75c1627a217483606769a",
+    "meta.json": "041153ad5475a4c7a28083017c491e6ba54ee27d8b66a6d4ba0677ee3df74255",
+    "CHANGELOG.md": "050cadc5384c06a8dc51a4f5539a36152d59d0e47bf9971572e5bc7571738606"
   },
-  "bytes": 67464,
-  "builtAt": "2026-10-29T09:31:10.162Z",
+  "bytes": 69474,
+  "builtAt": "2026-10-29T11:05:36.814Z",
   "mode": "improve",
   "repo": "suryasticsai/Ariotica",
-  "runId": "40849706775",
-  "commit": "65a10f2ce98c5f84dcb81e2654e1a3802288edfc",
+  "runId": "40862572561",
+  "commit": "6c5ab48240f3f57fa21dcb415307929272c2bcc1",
   "model": {
     "provider": "Groq",
     "name": "openai/gpt-oss-120b"
@@ -26,92 +26,28 @@
     {
       "provider": "Groq",
       "model": "openai/gpt-oss-120b",
-      "sec": 30,
-      "ok": true,
-      "score": 100,
-      "reason": "",
-      "cost": 0.00473355,
-      "tokensIn": 5832,
-      "tokensOut": 5145
-    },
-    {
-      "provider": "Groq",
-      "sec": 10,
-      "ok": false,
-      "reason": "HTTP 400: {\"error\":{\"message\":\"The model `llama3-70b-8192` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to u"
-    },
-    {
-      "provider": "OpenRouter",
-      "model": "recursive/flint-v1.0:free",
-      "sec": 59,
-      "ok": false,
-      "score": 80,
-      "reason": "2 runtime error(s)",
-      "cost": 0,
-      "tokensIn": 5803,
-      "tokensOut": 5338
-    },
-    {
-      "provider": "Pollinations",
-      "sec": 4,
-      "ok": false,
-      "reason": "HTTP 402: {\"status\":402,\"success\":false,\"error\":{\"code\":\"FREE_LIMIT\",\"message\":\"Free limit reached: 1 reply every 30 seconds per IP. Retry after 27s, or get unlimited replies with a pollen key at https://enter."
-    },
-    {
-      "provider": "HuggingFace",
-      "sec": 0,
-      "ok": false,
-      "reason": "HTTP 402: {\"error\":\"You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.\"}"
-    },
-    {
-      "provider": "Nemotron",
-      "sec": 0,
-      "ok": false,
-      "reason": "HTTP 403: {\"error\":{\"message\":\"Key limit exceeded (total limit). Manage it using https://openrouter.ai/workspaces/default/keys/f116907d5b2973b7034d21f5aa9b25a26942fd59a0284d8b5cc6022e80fabc53 $0.00 of $0.00 use"
-    },
-    {
-      "provider": "Groq",
-      "model": "openai/gpt-oss-120b",
       "sec": 13,
       "ok": true,
       "score": 100,
       "reason": "",
-      "cost": 0.0049584,
-      "tokensIn": 5921,
-      "tokensOut": 5427
-    },
-    {
-      "provider": "Groq",
-      "sec": 0,
-      "ok": false,
-      "reason": "HTTP 400: {\"error\":{\"message\":\"The model `llama3-70b-8192` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to u"
-    },
-    {
-      "provider": "OpenRouter",
-      "model": "recursive/flint-v1.0:free",
-      "sec": 70,
-      "ok": true,
-      "score": 100,
-      "reason": "",
-      "cost": 0,
-      "tokensIn": 5803,
-      "tokensOut": 5442
+      "cost": 0.00466665,
+      "tokensIn": 4916,
+      "tokensOut": 5239
     }
   ],
-  "sha256": "ec3ae4d8492600066b034f0739be0427a9a39e401efc86e7658ec681a64efdda",
+  "sha256": "2dc4b31d3d678558ba8ef0db59f2d52c956faabf8a3da40486d5b15e97bf2261",
+  "skillsUsed": [],
   "checks": {
     "complete": true,
     "vanilla": true,
     "externalRefs": [
+      "https://ariotica.com",
       "https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"
     ],
     "connectsTo": [],
     "zeroDeps": false,
-    "smoke": "fail",
-    "smokeErrors": [
-      "[suryasticsai-sandesai] Skill requirement not met: must-have-code \"`refreshConnectionBtn.addEventListener`\"",
-      "[suryasticsai-sandesai] Skill requirement not met: must-have-selector \"`#refreshConnectionBtn`\""
-    ],
+    "smoke": "pass",
+    "smokeErrors": [],
     "scan": {
       "total": 2,
       "high": 0,
@@ -125,10 +61,10 @@
       }
     }
   },
-  "promptSha256": "89691c6121ece7372bb2532c676248c325b6446104bc16251bce75695ae51fa2",
-  "prompt": "Scrape my existing app at https://github.com/suryasticsai/sandesai Extract its architecture, layout, and state management patterns, and use them to improve the current app.",
+  "promptSha256": "ac4c23db6c7a135042673f7f5cf3ae84926121c5ad3506e2578ef391f52bb46f",
+  "prompt": "Add a small \"Made with Ariotica\" footer",
   "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js skill-v2",
-  "cost": 0.009691950000000001,
-  "tokensIn": 23359,
-  "tokensOut": 21352
+  "cost": 0.00466665,
+  "tokensIn": 4916,
+  "tokensOut": 5239
 }

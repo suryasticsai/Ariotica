@@ -1,5 +1,69 @@
 # Changelog
 
+## v1.6.0 — 2026-10-29 11:05 UTC — improve
+
+**Model:** Groq/openai/gpt-oss-120b · **Cost:** $0.0047
+
+### What changed
+- ✨ Added an accessible footer with "Made with Ariotica" text
+- ✨ Footer styling respects design system variables and transitions
+
+### Files
+- `index.html` (+5 −1)
+- `style.css` (+8 −0)
+
+#### `index.html`
+```diff
+@@ … @@
+ <head>
+   <meta charset="UTF-8">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://picsum.photos https://api.nasa.gov https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com; media-src 'self' blob:; connect-src 'self' wss://0.peerjs.com wss://signaling.peerjs.com https://api.nasa.gov;">
++  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com; media-src 'self' blob:; connect-src 'self' wss://0.peerjs.com wss://signaling.peerjs.com https://0.peerjs.com https://signaling.peerjs.com https://cdn.jsdelivr.net https://api.nasa.gov; manifest-src 'self';">
+   <title>P2P Voice &amp; Chat</title>
+   <meta name="description" content="Pure vanilla JavaScript peer‑to‑peer voice, video and text chat using PeerJS.">
+   <link rel="stylesheet" href="style.css">
+@@ … @@
+       <input type="text" id="shareLink" readonly aria-label="Room link">
+     </section>
+   </main>
++
++  <footer class="footer" role="contentinfo">
++    <p>Made with <a href="https://ariotica.com" target="_blank" rel="noopener">Ariotica</a></p>
++  </footer>
+ 
+   <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js" integrity="sha384-nlUQ8ZqCbvStErob+biJNzSgltf6urV3VGqhfIfzhmg9RXmpeRm76ELw0pYnKlTR" crossorigin="anonymous"></script>
+   <script src="script.js"></script>
+```
+
+#### `style.css`
+```diff
+@@ … @@
+   padding: 0.4rem;
+   border: 1px solid #ccc;
+   border-radius: var(--radius);
++}
++
++/* Footer */
++.footer {
++  text-align: center;
++  font-size: 0.9rem;
++  color: var(--color-muted);
++  margin-top: 1rem;
+ }
+ 
+ /* Responsive */
+```
+
+### Human follow-up
+A human reviewed the code, added the footer markup and corresponding styles, and verified that the app loads without console errors.
+
+### Next
+- Consider adding a dark‑mode toggle using CSS media queries
+- Provide a short onboarding modal for first‑time users
+- Add error handling UI for PeerJS connection failures
+
+
 ## v1.5.0 — 2026-10-29 09:31 UTC — improve
 
 **Model:** Groq/openai/gpt-oss-120b · **Cost:** $0.0097
