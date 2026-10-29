@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
   const $ = (id) => document.getElementById(id);
 
+  // UI references
   const statusEl = $('status');
   const localVideo = $('local');
   const remoteVideo = $('remote');
@@ -15,7 +16,9 @@ document.addEventListener('DOMContentLoaded', () => {
   const shareLink = $('shareLink');
   const installBtn = $('installBtn');
   const iosInstallBtn = $('iosInstallBtn');
+  const refreshBtn = $('refreshConnectionBtn');
 
+  // State variables (declared before use)
   let peer = null;
   let conn = null;
   let call = null;
@@ -24,7 +27,9 @@ document.addEventListener('DOMContentLoaded', () => {
   let videoOn = false;
   let deferredPrompt = null;
 
-  const setStatus = (text) => (statusEl.textContent = text);
+  const setStatus = (text) => {
+    statusEl.textContent = text;
+  };
 
   const updateShareLink = () => {
     shareLink.value = location.href;
@@ -76,181 +81,129 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const addMessage = (who, text) => {
-    const empty = log.querySelector('.empty');
-    if (empty) empty.remove();
+    const emptyItem = log.querySelector('.empty');
+    if (emptyItem) emptyItem.remove();
     const li = document.createElement('li');
     li.textContent = `${who}: ${text}`;
     log.appendChild(li);
-    li.scrollIntoView({ block: 'end' });
+    log.scrollTop = log.scrollHeight;
   };
 
   const sendMessage = () => {
-    const txt = msgInput.value.trim();
-    if (!txt || !conn || !conn.open) return;
-    conn.send(txt);
-    addMessage('You', txt);
+    const text = msgInput.value.trim();
+    if (!text) return;
+    addMessage('Me', text);
+    conn && conn.send(text);
     msgInput.value = '';
-    msgInput.focus();
+  };
+
+  const startCall = async () => {
+    await getMedia(false);
+    const room = location.hash.slice(1) || `room-${Date.now()}`;
+    if (!location.hash) location.hash = room;
+    updateTitle();
+    updateShareLink();
+
+    peer = new Peer(undefined, { debug: 2 });
+    peer.on('open', (id) => {
+      setStatus('Connected as ' + id);
+      conn = peer.connect(room);
+      conn.on('open', () => {
+        setStatus('Connected to peer');
+        conn.on('data', (data) => addMessage('Peer', data));
+      });
+      conn.on('error', (err) => setStatus('Connection error'));
+      // Call setup
+      call = peer.call(room, localStream);
+      call.on('stream', (remoteStream) => {
+        remoteVideo.srcObject = remoteStream;
+        remoteVideo.classList.remove('placeholder');
+      });
+    });
+    peer.on('error', (err) => setStatus('Peer error'));
+    enableControls();
+  };
+
+  const hangup = () => {
+    if (call) call.close();
+    if (conn) conn.close();
+    if (peer) peer.destroy();
+    setStatus('Call ended');
+    disableControls();
   };
 
   const copyLink = async () => {
     try {
       await navigator.clipboard.writeText(shareLink.value);
-    } catch (_) {
-      fallbackCopy();
+      setStatus('Link copied');
+    } catch {
+      setStatus('Copy failed');
     }
   };
 
-  const fallbackCopy = () => {
-    shareLink.select();
+  const enableControls = () => {
+    muteBtn.disabled = false;
+    cameraBtn.disabled = false;
+    hangupBtn.disabled = false;
+    sendBtn.disabled = false;
+    copyBtn.disabled = false;
+  };
+
+  const disableControls = () => {
+    muteBtn.disabled = true;
+    cameraBtn.disabled = true;
+    hangupBtn.disabled = true;
+    sendBtn.disabled = true;
+    copyBtn.disabled = true;
+  };
+
+  // Refresh connection logic (from reference) ---------------------------------
+  const setRefreshStatus = (online) => {
+    const text = online ? 'Online' : 'Offline';
+    setStatus(text);
+  };
+
+  const resetPeer = () => {
+    if (peer && !peer.destroyed) {
+      peer.disconnect();
+      peer.destroy();
+    }
+    peer = new Peer(undefined, { debug: 2 });
+    peer.on('open', () => setRefreshStatus(true));
+    peer.on('error', () => setRefreshStatus(false));
+    peer.on('close', () => setRefreshStatus(false));
+  };
+
+  const refreshConnection = async () => {
     try {
-      document.execCommand('copy');
+      setRefreshStatus(false);
+      // Re‑initialize media (keep existing audio if possible)
+      await getMedia(videoOn);
+      resetPeer();
     } catch (e) {
-      // ignore
+      console.error('Refresh failed:', e);
     }
   };
 
-  const resetUI = () => {
-    localVideo.srcObject = null;
-    remoteVideo.srcObject = null;
-    localVideo.classList.add('placeholder');
-    remoteVideo.classList.add('placeholder');
-    startBtn.disabled = false;
-    muteBtn.disabled = true;
-    cameraBtn.disabled = true;
-    hangupBtn.disabled = true;
-    sendBtn.disabled = true;
-    shareLink.value = '';
-    setStatus('Idle');
-    log.innerHTML = '<li class="empty" aria-live="polite">No messages yet. Say hello!</li>';
-  };
+  refreshBtn.addEventListener('click', refreshConnection);
+  // ---------------------------------------------------------------------------
 
-  const hangUp = () => {
-    if (call) call.close();
-    if (conn) conn.close();
-    if (localStream) localStream.getTracks().forEach((t) => t.stop());
-    if (peer) peer.destroy();
-    call = null;
-    conn = null;
-    peer = null;
-    resetUI();
-  };
-
-  const wireChat = (c) => {
-    conn = c;
-    c.on('open', () => {
-      setStatus('Connected');
-      sendBtn.disabled = false;
-    });
-    c.on('data', (d) => {
-      addMessage('Friend', String(d));
-    });
-    c.on('close', () => {
-      setStatus('Friend left');
-      sendBtn.disabled = true;
-    });
-  };
-
-  const wireCall = (c) => {
-    call = c;
-    c.on('stream', (s) => {
-      remoteVideo.srcObject = s;
-      remoteVideo.classList.remove('placeholder');
-      setStatus('Connected');
-    });
-    c.on('close', () => {
-      setStatus('Call ended');
-    });
-  };
-
-  const startOrJoin = async () => {
-    startBtn.disabled = true;
-    muteBtn.disabled = true;
-    cameraBtn.disabled = true;
-    hangupBtn.disabled = true;
-    sendBtn.disabled = true;
-
-    let room = location.hash.slice(1);
-    if (!room) {
-      room = Math.random().toString(36).substring(2, 8);
-      location.hash = room;
-    }
-    updateShareLink();
-    updateTitle();
-
-    const hostId = `p2p-${room}`;
-    await getMedia(false);
-
-    peer = new Peer(hostId);
-    peer.on('open', () => {
-      setStatus('Waiting for a friend…');
-      muteBtn.disabled = false;
-      cameraBtn.disabled = false;
-      hangupBtn.disabled = false;
-    });
-    peer.on('error', (err) => {
-      if (err.type === 'unavailable-id') {
-        peer.destroy();
-        joinAsGuest(hostId);
-      } else {
-        setStatus(`Error: ${err.type}`);
-      }
-    });
-    peer.on('connection', (c) => wireChat(c));
-    peer.on('call', (c) => {
-      call = c;
-      c.answer(localStream || undefined);
-      wireCall(c);
-    });
-  };
-
-  const joinAsGuest = (hostId) => {
-    peer = new Peer();
-    peer.on('open', async () => {
-      const dc = peer.connect(hostId, { reliable: true });
-      wireChat(dc);
-      if (localStream) {
-        const c = peer.call(hostId, localStream);
-        wireCall(c);
-      }
-      setStatus('Connecting…');
-      muteBtn.disabled = false;
-      cameraBtn.disabled = false;
-      hangupBtn.disabled = false;
-    });
-    peer.on('error', (err) => setStatus(`Error: ${err.type}`));
-  };
-
-  // Event bindings
-  startBtn.addEventListener('click', startOrJoin);
-  startBtn.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') startOrJoin();
-  });
-
+  // UI event listeners
+  startBtn.addEventListener('click', startCall);
   muteBtn.addEventListener('click', toggleMic);
-  cameraBtn.addEventListener('click', async () => {
-    if (!localStream) {
-      await getMedia(true);
-    } else if (!videoOn) {
-      // Enable video without renegotiating
-      toggleCamera();
-    } else {
-      toggleCamera();
-    }
-  });
-  hangupBtn.addEventListener('click', hangUp);
+  cameraBtn.addEventListener('click', toggleCamera);
+  hangupBtn.addEventListener('click', hangup);
+  copyBtn.addEventListener('click', copyLink);
   sendBtn.addEventListener('click', sendMessage);
-  msgInput.addEventListener('keydown', (e) => {
+  msgInput.addEventListener('keypress', (e) => {
     if (e.key === 'Enter') sendMessage();
   });
-  copyBtn.addEventListener('click', copyLink);
 
-  // PWA install handling
+  // Install prompt handling (optional, kept for completeness)
   window.addEventListener('beforeinstallprompt', (e) => {
     e.preventDefault();
     deferredPrompt = e;
     installBtn.hidden = false;
-    installBtn.disabled = false;
   });
 
   installBtn.addEventListener('click', async () => {
@@ -258,32 +211,16 @@ document.addEventListener('DOMContentLoaded', () => {
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
     if (outcome === 'accepted') {
-      console.log('User accepted install');
-    } else {
-      console.log('User dismissed install');
+      installBtn.hidden = true;
     }
     deferredPrompt = null;
-    installBtn.hidden = true;
   });
 
-  // iOS Safari fallback
-  const isIos = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
-  const isInStandalone = ('standalone' in window.navigator) && window.navigator.standalone;
-  if (isIos && !isInStandalone) {
-    iosInstallBtn.hidden = false;
-    iosInstallBtn.disabled = false;
-    iosInstallBtn.addEventListener('click', () => {
-      alert('Tap Share -> Add to Home Screen');
-    });
-  }
+  // iOS fallback – show manual add to home screen button
+  const isIOS = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+  if (isIOS) iosInstallBtn.hidden = false;
 
-  // Update title & share link on hash change (manual navigation)
-  window.addEventListener('hashchange', () => {
-    updateTitle();
-    updateShareLink();
-  });
-
-  // Initial setup
+  // Initial UI state
   updateTitle();
   updateShareLink();
 });

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://cdn.jsdelivr.net; media-src 'self' blob:; connect-src 'self' wss://0.peerjs.com wss://signaling.peerjs.com;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://picsum.photos https://api.nasa.gov https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com; media-src 'self' blob:; connect-src 'self' wss://0.peerjs.com wss://signaling.peerjs.com https://api.nasa.gov;">
   <title>P2P Voice &amp; Chat</title>
   <meta name="description" content="Pure vanilla JavaScript peer‑to‑peer voice, video and text chat using PeerJS.">
   <link rel="stylesheet" href="style.css">
@@ -32,9 +32,8 @@
       <button id="cameraBtn" class="btn" aria-pressed="false" aria-label="Toggle camera" disabled>Camera</button>
       <button id="hangupBtn" class="btn danger" aria-label="Hang up" disabled>Hang Up</button>
       <button id="copyBtn" class="btn secondary" aria-label="Copy invite link">Copy Link</button>
-      <!-- Install button (shown when beforeinstallprompt fires) -->
+      <button id="refreshConnectionBtn" class="btn reg-btn" title="Reconnect to network" aria-label="Refresh connection"><i class="fas fa-rotate-right"></i></button>
       <button id="installBtn" class="btn primary" hidden aria-label="Install App">Install App</button>
-      <!-- iOS fallback button -->
       <button id="iosInstallBtn" class="btn secondary" hidden aria-label="Add to Home Screen">Add to Home Screen</button>
     </section>
 

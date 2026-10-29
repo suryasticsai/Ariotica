@@ -1,30 +1,32 @@
 {
-  "version": "1.4.0",
+  "version": "1.5.0",
   "features": [
-    "Peer-to-peer voice, video and text chat using PeerJS",
-    "Hash‑based room routing with dynamic title and share link",
+    "Pure vanilla JavaScript P2P voice, video, and text chat using PeerJS",
     "Responsive layout with Flexbox and CSS variables for theming",
-    "Accessibility via semantic HTML, ARIA attributes and focus outlines",
+    "Accessible markup with ARIA attributes and high‑contrast colors",
     "Empty state messages for chat and video placeholders",
-    "Copy‑to‑clipboard with fallback",
-    "Graceful error handling and UI reset on hang‑up",
-    "PWA install button using beforeinstallprompt",
-    "iOS Safari fallback instruction button"
+    "Copy‑to‑clipboard share link and automatic room hash handling",
+    "Install‑prompt support for Progressive Web App installation",
+    "Refresh Connection button that safely tears down and re‑creates the PeerJS connection",
+    "Graceful error handling and status updates"
   ],
   "fixes": [
-    "Added hidden Install App button that appears when beforeinstallprompt fires",
-    "Implemented iOS Safari fallback button with alert guidance",
-    "Ensured buttons are accessible and have appropriate ARIA labels",
-    "Integrated install button logic without breaking existing functionality"
+    "Added missing #refreshConnectionBtn element and wired its click handler",
+    "Implemented resetPeer logic to avoid duplicate sockets",
+    "Declared all variables before first use and avoided undeclared references",
+    "Ensured all buttons have appropriate aria‑labels and focus styles",
+    "Provided responsive video sizing for mobile screens",
+    "Removed duplicate PeerJS destroy calls from reference code"
   ],
   "suggestions": [
-    "Add a manifest with display: standalone for better PWA experience",
-    "Include icons of multiple sizes for various devices",
-    "Consider persisting the last used room in localStorage (prefixed with app name)"
+    "Consider moving repeated PeerJS configuration (debug level, server options) to a constant for easier maintenance",
+    "Persist room ID in localStorage (prefixed with \"p2pvoice_\") to auto‑rejoin after a page refresh",
+    "Add visual feedback (e.g., spinner) while media devices are being acquired",
+    "Implement a simple user list for multi‑peer group calls if future expansion is desired"
   ],
-  "grade": "B",
+  "grade": "F",
   "percentile": "Top 50%",
-  "humanInvolvement": "Testing on both Android Chrome and iOS Safari to verify install prompts and fallback behavior; verify service worker registration and offline capabilities.",
+  "humanInvolvement": "A developer should review the PeerJS server configuration (host, port, path) to match your deployment and optionally replace the debug flag with production settings.",
   "libraries": [
     "peerjs"
   ],
