@@ -8,7 +8,7 @@ on:
         type: string
         required: true
       prompt:
-        description: 'Instructions (optional for revert/delete/leaderboard/ask/skills)'
+        description: 'Instructions (optional)'
         type: string
         required: false
         default: ''
@@ -24,7 +24,6 @@ on:
           - revert
           - skill
           - skills
-          - forge
           - inspire
           - ask
           - leaderboard
@@ -65,7 +64,6 @@ jobs:
         contains(github.event.comment.body, '[ask]') ||
         contains(github.event.comment.body, '[skill]') ||
         contains(github.event.comment.body, '[skills]') ||
-        contains(github.event.comment.body, '[forge]') ||
         contains(github.event.comment.body, '[inspire]') ||
         contains(github.event.comment.body, '[leaderboard]')))
 
@@ -73,7 +71,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # Required for the knowledge index rebase
+          fetch-depth: 0
 
       - name: Parse Request
         id: parse
@@ -112,22 +110,16 @@ jobs:
             if (issueNumber) {
               if (context.eventName === 'issue_comment') {
                 await github.rest.reactions.createForIssueComment({
-                  owner: context.repo.owner,
-                  repo: context.repo.repo,
-                  comment_id: context.payload.comment.id,
-                  content: 'eyes'
+                  owner: context.repo.owner, repo: context.repo.repo,
+                  comment_id: context.payload.comment.id, content: 'eyes'
                 }).catch(() => {});
               }
-              
               const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
               const body = `⏳ **Ariotica is spinning up...**\n\nFetching models, warming up the engines, and preparing to work on this. Stand by...\n\n[📊 View Live Logs](${runUrl})`;
               const res = await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: issueNumber,
-                body: body
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: issueNumber, body: body
               });
-              
               core.setOutput('comment_id', res.data.id);
             }
 
@@ -147,16 +139,11 @@ jobs:
       - name: Install dependencies
         timeout-minutes: 10
         run: |
-          if [ -f package-lock.json ]; then
-            npm ci
-          else
-            npm install
-          fi
+          if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
-      # ============================================================
-      # PLAYWRIGHT: cache browser + non-interactive apt
-      # ============================================================
+      # Only install Playwright if we are actually generating code
       - name: Cache Playwright Browsers
+        if: contains(github.event.comment.body, '[create]') || contains(github.event.comment.body, '[inspire]') || inputs.mode == 'create' || inputs.mode == 'inspire'
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
@@ -165,6 +152,7 @@ jobs:
             ${{ runner.os }}-playwright-
 
       - name: Install Playwright Chromium
+        if: contains(github.event.comment.body, '[create]') || contains(github.event.comment.body, '[inspire]') || inputs.mode == 'create' || inputs.mode == 'inspire'
         timeout-minutes: 15
         env:
           DEBIAN_FRONTEND: noninteractive
@@ -185,15 +173,10 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          NEMOTRON_API_KEY: ${{ secrets.NEMOTRON_API_KEY }}
           FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
-          
-          # Optional overrides to control the AI model race dynamically
           PROVIDER_ORDER: ${{ vars.PROVIDER_ORDER }}
           RACE_SIZE: ${{ vars.RACE_SIZE }}
-          NEMOTRON_MODEL: ${{ vars.NEMOTRON_MODEL }}
           GROQ_MODEL: ${{ vars.GROQ_MODEL }}
-          
           EVENT_NAME: ${{ github.event_name }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
           ISSUE_BODY: ${{ github.event.issue.body }}
@@ -206,7 +189,8 @@ jobs:
           RUN_ID: ${{ github.run_id }}
           QUICK_ACK_ID: ${{ steps.quick_ack.outputs.comment_id }}
         run: |
-          node generate.js; code=$?
+          code=0
+          node generate.js || code=$?
           if [ "$code" -eq 2 ]; then echo "handled=true" >> "$GITHUB_OUTPUT"; exit 0; fi
           exit $code
 
@@ -214,7 +198,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # Configure Git Identity (Fixes the Author Identity Unknown error)
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
@@ -224,8 +207,6 @@ jobs:
             node build-index.js
             git add knowledge/index.json
             git diff --staged --quiet && echo "No index changes to commit." && exit 0
-            
-            # Commit and push (with rebase fallback just in case)
             git commit -qm "chore: rebuild knowledge index"
             git pull -q --rebase origin main && git push -q && exit 0
             sleep $((i*3))
@@ -248,7 +229,7 @@ jobs:
           retention-days: 7
 
       - name: Fatal Error Comment
-        if: failure() && steps.run_agent.outcome == 'failure' && steps.quick_ack.outputs.comment_id != ''
+        if: failure() && steps.run_agent.outcome == 'failure' && steps.quick_ack.outputs.comment_id != '' && steps.run_agent.outputs.handled != 'true'
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -257,9 +238,7 @@ jobs:
             if (commentId) {
               const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
               await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: commentId,
+                owner: context.repo.owner, repo: context.repo.repo, comment_id: commentId,
                 body: `❌ **Fatal System Error**\n\nThe AI agent crashed before it could finish. This is usually caused by an out-of-memory error or a corrupted prompt.\n\n[🔍 Check the logs to debug](${runUrl})`
               }).catch(() => {});
             }
@@ -267,14 +246,16 @@ jobs:
       - name: Generate Job Summary
         if: always()
         env:
-          # Fallback to Issue data if inputs.mode is empty (e.g. issue-triggered runs)
           MODE: ${{ inputs.mode || 'issue_command' }}
-          PROJECT: ${{ inputs.project || github.event.issue.title }}
+          RAW_PROJECT: ${{ inputs.project || github.event.issue.title }}
           OWNER: ${{ github.repository_owner }}
           REPO: ${{ github.event.repository.name }}
           ACTOR: ${{ github.actor }}
           RUN_ID: ${{ github.run_id }}
         run: |
+          # Clean the project string to extract the slug (e.g. "[BUILD] skill-v2 [create]" -> "skill-v2")
+          PROJECT=$(echo "$RAW_PROJECT" | sed 's/\[BUILD\] //i' | awk '{print $1}' | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z0-9-')
+          
           echo "## 🤖 Ariotica Build Report" >> $GITHUB_STEP_SUMMARY
           echo "| Status | Project | Mode | Triggered By |" >> $GITHUB_STEP_SUMMARY
           echo "| :--- | :--- | :--- | :--- |" >> $GITHUB_STEP_SUMMARY
@@ -283,7 +264,7 @@ jobs:
 
           BASE="https://$OWNER.github.io/$REPO/projects/$PROJECT/"
           
-          if [ "$MODE" = "ask" ] || [ "$MODE" = "skill" ] || [ "$MODE" = "skills" ] || [ "$MODE" = "forge" ] || [ "$MODE" = "evolve" ] || [ "$MODE" = "leaderboard" ]; then
+          if [ "$MODE" = "ask" ] || [ "$MODE" = "skill" ] || [ "$MODE" = "skills" ] || [ "$MODE" = "evolve" ] || [ "$MODE" = "leaderboard" ]; then
             echo "🔎 **Mode:** \`$MODE\` — see the issue thread for the result." >> $GITHUB_STEP_SUMMARY
           elif [ "$MODE" = "delete" ]; then
             echo "🗑 **Deleted:** \`$PROJECT\`" >> $GITHUB_STEP_SUMMARY
