@@ -3,6 +3,10 @@
     "cdn.jsdelivr.net",
     "unpkg.com",
     "cdnjs.cloudflare.com",
-    "esm.sh"
+    "esm.sh",
+    "fonts.googleapis.com",
+    "fonts.gstatic.com",
+    "picsum.photos",
+    "api.nasa.gov"
   ]
 }
