@@ -72,6 +72,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Required for the knowledge index rebase
 
       - name: Parse Request
         id: parse
@@ -143,7 +145,7 @@ jobs:
             ${{ runner.os }}-node-
 
       - name: Install dependencies
-        timeout-minutes: 5
+        timeout-minutes: 10
         run: |
           if [ -f package-lock.json ]; then
             npm ci
@@ -152,7 +154,7 @@ jobs:
           fi
 
       # ============================================================
-      # PLAYWRIGHT FIX: cache browser + non-interactive apt
+      # PLAYWRIGHT: cache browser + non-interactive apt
       # ============================================================
       - name: Cache Playwright Browsers
         uses: actions/cache@v4
@@ -205,12 +207,20 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # Configure Git Identity (Fixes the Author Identity Unknown error)
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
           for i in 1 2 3; do
-            git fetch -q origin main && git reset -q --hard origin/main
+            git fetch -q origin main 
+            git reset -q --hard origin/main
             node build-index.js
             git add knowledge/index.json
-            git diff --staged --quiet && exit 0
-            git commit -qm "chore: rebuild knowledge index" && git push -q && exit 0
+            git diff --staged --quiet && echo "No index changes to commit." && exit 0
+            
+            # Commit and push (with rebase fallback just in case)
+            git commit -qm "chore: rebuild knowledge index"
+            git pull -q --rebase origin main && git push -q && exit 0
             sleep $((i*3))
           done
           echo "Failed to commit knowledge index after 3 retries"
@@ -219,6 +229,7 @@ jobs:
       - name: Upload Generated Artifacts
         if: always()
         uses: actions/upload-artifact@v4
+        continue-on-error: true
         with:
           name: ariotica-build-${{ github.run_id }}
           path: |
@@ -249,8 +260,9 @@ jobs:
       - name: Generate Job Summary
         if: always()
         env:
-          MODE: ${{ inputs.mode }}
-          PROJECT: ${{ inputs.project }}
+          # Fallback to Issue data if inputs.mode is empty (e.g. issue-triggered runs)
+          MODE: ${{ inputs.mode || 'issue_command' }}
+          PROJECT: ${{ inputs.project || github.event.issue.title }}
           OWNER: ${{ github.repository_owner }}
           REPO: ${{ github.event.repository.name }}
           ACTOR: ${{ github.actor }}
