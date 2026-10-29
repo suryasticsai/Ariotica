@@ -800,7 +800,7 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
 
       // Autonomously learn a skill from it!
       await softStep('R&D: Synthesize Skill', async () => {
-        const skillPrompt = `SOURCE DATA:\n${scraped.slice(0, 15000)}\n\nWrite a skill file for this.`;
+        const skillPrompt = `SOURCE DATA:\n${scraped.slice(0, 15000)}\n\nWrite a skill file for this. Do not include placeholder hosts, credentials, or services (Firebase, custom servers) unless the user's request names them.`;
         const r = await askAI([{ role: 'system', content: SKILL_RULES }, { role: 'user', content: skillPrompt }]);
         if (r && r.text && r.text.length > 500) {
           let skillName = 'researched-skill';
@@ -815,7 +815,7 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
           } catch {}
 
           const filePath = `knowledge/skills/${skillName}.md`;
-          const finalContent = `---\nname: ${skillName}\nstatus: verified\nsource: ${targetUrl}\ncreated: ${new Date().toISOString()}\n---\n\n${r.text}`;
+          const finalContent = `---\nname: ${skillName}\nstatus: draft\nsource: ${targetUrl}\ncreated: ${new Date().toISOString()}\n---\n\n${r.text}`;
           await Git.atomicCommit({ [filePath]: finalContent }, [], `docs(research): add auto-skill ${skillName} from ${targetUrl}`);
           console.log(`[R&D] Successfully learned and saved skill: ${skillName}`);
           await Git.syncCheckout();
@@ -824,13 +824,30 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
     }
   }
 
+  // 🧠 SKILL MATCHING: Load receipt skills first, then BM25
   let skillCtx = ''; let skillNames = [];
   if (mode === 'create' || mode === 'improve' || mode === 'fix' || mode === 'inspire') {
+    if (!isNew) {
+      try {
+        const oldReceipt = JSON.parse(await readFile(receiptPath) || '{}');
+        if (oldReceipt.skillsUsed && oldReceipt.skillsUsed.length > 0) {
+          console.log(`[skills] restoring ${oldReceipt.skillsUsed.length} skills from previous receipt`);
+          const sk = await softStep(`Load receipt skills`, async () => skillContext(`skill:${oldReceipt.skillsUsed[0]}`));
+          if (sk && sk.text) { skillCtx += sk.text; skillNames.push(...sk.names); }
+        }
+      } catch (e) { }
+    }
+
     const sk = await softStep('Match skills (BM25)', async () => skillContext(`${slug} ${prompt}`));
-    if (sk && sk.text) { skillCtx = sk.text; skillNames = sk.names || []; const st = steps[steps.length - 1]; if (st) st.note = sk.files.join(', '); }
+    if (sk && sk.text) {
+      // Prevent duplicate injection if the receipt skill is the same as the BM25 match
+      if (!skillNames.includes(sk.names[0])) {
+        skillCtx += sk.text; skillNames.push(...sk.names);
+      }
+    }
   }
 
-  // REDUCED BUDGET to strictly fit Groq's 8k token limit (approx 32k chars max, target 24k to be safe)
+  // REDUCED BUDGET to strictly fit Groq's 8k token limit
   const BUDGET = { total: 24000, skill: 6000, rag: 4000, catalog: 2000, inspire: 2000 };
   const fit = (text, max) => (text.length <= max ? text : text.slice(0, max) + '\n[...trimmed]');
   let filesCtx = '';
@@ -839,9 +856,8 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
   }
 
   let fullPrompt = RULES + fit(LIB_PROMPT, BUDGET.catalog) + ask + fit(inspirationCtx, BUDGET.inspire) + fit(scrapedContext, BUDGET.rag) + fit(skillCtx, BUDGET.skill) + filesCtx;
-  
+
   // If the prompt is too big, drop the raw scraped context FIRST.
-  // The R&D agent already synthesized it into the skillCtx anyway!
   if (fullPrompt.length > BUDGET.total && scrapedContext) {
     console.log(`[budget] Prompt too large (${fullPrompt.length}). Dropping scrapedContext because it was synthesized into a skill.`);
     scrapedContext = '';
@@ -853,7 +869,7 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
     console.log(`[budget] Prompt STILL too large (${fullPrompt.length}). Trimming skill and inspiration.`);
     fullPrompt = RULES + fit(LIB_PROMPT, BUDGET.catalog) + ask + filesCtx;
   }
-  
+
   console.log(`[budget] Final prompt size: ${fullPrompt.length} chars`);
 
   let cand = await step('Generate with AI (model race)', () => generate(fullPrompt), { promptChars: fullPrompt.length });
@@ -943,19 +959,19 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
 
   let grade = 'F'; if (score >= 90) grade = 'A+'; else if (score >= 80) grade = 'A'; else if (score >= 70) grade = 'B'; else if (score >= 60) grade = 'C';
   let version = '1.0.0'; if (!isNew) { try { const oldMeta = JSON.parse(await readFile(`${baseDir}/meta.json`) || '{}'); if (oldMeta.version) { version = bumpVersion(oldMeta.version, mode); } } catch {} }
-  const metaJson = { version, features: Array.isArray(meta.features) ? meta.features : [], fixes: Array.isArray(meta.fixes) ? meta.fixes : [], suggestions: Array.isArray(meta.suggestions) ? meta.suggestions : [], grade, percentile: score >= 90 ? 'Top 5%' : score >= 80 ? 'Top 20%' : 'Top 50%', humanInvolvement: meta.humanInvolvement || 'None', libraries: Array.isArray(meta.libraries) ? meta.libraries : ['None'], _watermark: "⚡ Built by Ariotica AI" };
+  const metaJson = { version, features: Array.isArray(meta.features) ? meta.features : [], fixes: Array.isArray(meta.fixes) ? meta.fixes : [], suggestions: Array.isArray(meta.suggestions) ? meta.suggestions : [], grade, percentile: score >= 90 ? 'Top 5%' : score >= 80 ? 'Top 20%' : 'Top 50%', humanInvolvement: meta.humanInvolvement || 'None', libraries: Array.isArray(meta.libraries) ? meta.libraries : ['None'], _watermark: "⚡ Built by Ariotica AI", skillsUsed: skillNames };
   files['meta.json'] = JSON.stringify(metaJson, null, 2);
 
   const diffReports = isNew ? [] : Rep.buildChangeReport(oldForDiff, files, false);
   const oldChangelog = await readFile(changelogPath) || '';
   files['CHANGELOG.md'] = Rep.buildChangelogEntry({ version, mode, when: new Date().toISOString(), provider, model, totalCost: 0, diffReports, metaJson, oldChangelog, isNew });
 
-  const receipt = R.buildReceipt({ repo: `${OWNER}/${REPO}`, slug, files, mode, runId: RUN_ID, commit: null, provider, model, race: raceReport, smoke, security: security.counts, prompt, vanilla: T.isVanilla(testHtml, TRUSTED_DOMAINS).ok });
+  const receipt = R.buildReceipt({ repo: `${OWNER}/${REPO}`, slug, files, mode, runId: RUN_ID, commit: null, provider, model, race: raceReport, smoke, security: security.counts, prompt, vanilla: T.isVanilla(testHtml, TRUSTED_DOMAINS).ok, skillsUsed: skillNames });
   files[receiptPath] = JSON.stringify(receipt, null, 2) + '\n';
 
   let freshManifest = []; try { const raw = await readFile(MANIFEST_PATH); if (raw) freshManifest = JSON.parse(raw); } catch { freshManifest = []; }
   const idx = freshManifest.findIndex((e) => e.project === slug);
-  const entry = { project: slug, file: mainFile, prompt: prompt.slice(0, 240), created: new Date().toISOString().slice(0, 19), mode, provider, model, findings: security.counts.total, smoke: smoke.ok ? 'pass' : `fail:${smoke.errors.length}`, size: Object.values(files).reduce((a, b) => a + b.length, 0), version, features: metaJson.features, fixes: metaJson.fixes, suggestions: metaJson.suggestions, grade, percentile: metaJson.percentile, humanInvolvement: metaJson.humanInvolvement, libraries: metaJson.libraries, sha256: receipt.sha256, receipt: receiptPath };
+  const entry = { project: slug, file: mainFile, prompt: prompt.slice(0, 240), created: new Date().toISOString().slice(0, 19), mode, provider, model, findings: security.counts.total, smoke: smoke.ok ? 'pass' : `fail:${smoke.errors.length}`, size: Object.values(files).reduce((a, b) => a + b.length, 0), version, features: metaJson.features, fixes: metaJson.fixes, suggestions: metaJson.suggestions, grade, percentile: metaJson.percentile, humanInvolvement: metaJson.humanInvolvement, libraries: metaJson.libraries, sha256: receipt.sha256, receipt: receiptPath, skillsUsed: skillNames };
   if (idx === -1) freshManifest.push(entry); else freshManifest[idx] = Object.assign({}, freshManifest[idx], entry);
   files[MANIFEST_PATH] = JSON.stringify(freshManifest, null, 2) + '\n';
 
