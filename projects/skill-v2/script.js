@@ -21,26 +21,32 @@ document.addEventListener('DOMContentLoaded', () => {
   let micOn = true;
   let videoOn = false;
 
-  function setStatus(text) {
-    statusEl.textContent = text;
-  }
+  const setStatus = (text) => (statusEl.textContent = text);
 
-  function updateShareLink() {
+  const updateShareLink = () => {
     shareLink.value = location.href;
-  }
+  };
 
-  function updateTitle() {
+  const updateTitle = () => {
     const room = location.hash.slice(1);
     document.title = room ? `P2P Voice & Chat - ${room}` : 'P2P Voice & Chat';
-  }
+  };
 
-  async function getMedia(withVideo) {
+  const getMedia = async (withVideo) => {
     try {
-      localStream = await navigator.mediaDevices.getUserMedia({
+      const stream = await navigator.mediaDevices.getUserMedia({
         audio: true,
         video: !!withVideo,
       });
-      localVideo.srcObject = localStream;
+      // If we already have an audio track, keep it when adding video
+      if (localStream && localStream.getAudioTracks().length) {
+        const audioTrack = localStream.getAudioTracks()[0];
+        stream.removeTrack(stream.getAudioTracks()[0]);
+        stream.addTrack(audioTrack);
+      }
+      localStream = stream;
+      localVideo.srcObject = stream;
+      localVideo.classList.remove('placeholder');
       videoOn = !!withVideo;
       cameraBtn.textContent = videoOn ? 'Camera Off' : 'Camera On';
       cameraBtn.setAttribute('aria-pressed', String(videoOn));
@@ -48,59 +54,75 @@ document.addEventListener('DOMContentLoaded', () => {
       localStream = null;
       setStatus(`Microphone unavailable (${e.name}). Chat only.`);
     }
-  }
+  };
 
-  function toggleMic() {
+  const toggleMic = () => {
     if (!localStream) return;
     micOn = !micOn;
     localStream.getAudioTracks().forEach((t) => (t.enabled = micOn));
     muteBtn.textContent = micOn ? 'Mute' : 'Unmute';
     muteBtn.setAttribute('aria-pressed', String(!micOn));
-  }
+  };
 
-  function toggleCamera() {
+  const toggleCamera = () => {
     if (!localStream) return;
     videoOn = !videoOn;
     localStream.getVideoTracks().forEach((t) => (t.enabled = videoOn));
     cameraBtn.textContent = videoOn ? 'Camera Off' : 'Camera On';
     cameraBtn.setAttribute('aria-pressed', String(videoOn));
-  }
+  };
 
-  function addMessage(who, text) {
+  const addMessage = (who, text) => {
     const empty = log.querySelector('.empty');
     if (empty) empty.remove();
     const li = document.createElement('li');
     li.textContent = `${who}: ${text}`;
     log.appendChild(li);
     li.scrollIntoView({ block: 'end' });
-  }
+  };
 
-  function sendMessage() {
+  const sendMessage = () => {
     const txt = msgInput.value.trim();
     if (!txt || !conn || !conn.open) return;
     conn.send(txt);
     addMessage('You', txt);
     msgInput.value = '';
-  }
+    msgInput.focus();
+  };
 
-  function copyLink() {
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(shareLink.value).catch(() => fallbackCopy());
-    } else {
+  const copyLink = async () => {
+    try {
+      await navigator.clipboard.writeText(shareLink.value);
+    } catch (_) {
       fallbackCopy();
     }
-  }
+  };
 
-  function fallbackCopy() {
+  const fallbackCopy = () => {
     shareLink.select();
     try {
       document.execCommand('copy');
     } catch (e) {
       // ignore
     }
-  }
+  };
 
-  function hangUp() {
+  const resetUI = () => {
+    localVideo.srcObject = null;
+    remoteVideo.srcObject = null;
+    localVideo.classList.add('placeholder');
+    remoteVideo.classList.add('placeholder');
+    startBtn.disabled = false;
+    muteBtn.disabled = true;
+    cameraBtn.disabled = true;
+    hangupBtn.disabled = true;
+    sendBtn.disabled = true;
+    shareLink.value = '';
+    setStatus('Idle');
+    log.innerHTML = '<li class="empty" aria-live="polite">No messages yet. Say hello!</li>';
+  };
+
+  const hangUp = () => {
     if (call) call.close();
     if (conn) conn.close();
     if (localStream) localStream.getTracks().forEach((t) => t.stop());
@@ -108,15 +130,10 @@ document.addEventListener('DOMContentLoaded', () => {
     call = null;
     conn = null;
     peer = null;
-    setStatus('Call ended');
-    startBtn.disabled = false;
-    muteBtn.disabled = true;
-    cameraBtn.disabled = true;
-    hangupBtn.disabled = true;
-    sendBtn.disabled = true;
-  }
+    resetUI();
+  };
 
-  function wireChat(c) {
+  const wireChat = (c) => {
     conn = c;
     c.on('open', () => {
       setStatus('Connected');
@@ -129,20 +146,21 @@ document.addEventListener('DOMContentLoaded', () => {
       setStatus('Friend left');
       sendBtn.disabled = true;
     });
-  }
+  };
 
-  function wireCall(c) {
+  const wireCall = (c) => {
     call = c;
     c.on('stream', (s) => {
       remoteVideo.srcObject = s;
+      remoteVideo.classList.remove('placeholder');
       setStatus('Connected');
     });
     c.on('close', () => {
       setStatus('Call ended');
     });
-  }
+  };
 
-  async function startOrJoin() {
+  const startOrJoin = async () => {
     startBtn.disabled = true;
     muteBtn.disabled = true;
     cameraBtn.disabled = true;
@@ -181,9 +199,9 @@ document.addEventListener('DOMContentLoaded', () => {
       c.answer(localStream || undefined);
       wireCall(c);
     });
-  }
+  };
 
-  function joinAsGuest(hostId) {
+  const joinAsGuest = (hostId) => {
     peer = new Peer();
     peer.on('open', async () => {
       const dc = peer.connect(hostId, { reliable: true });
@@ -198,14 +216,21 @@ document.addEventListener('DOMContentLoaded', () => {
       hangupBtn.disabled = false;
     });
     peer.on('error', (err) => setStatus(`Error: ${err.type}`));
-  }
+  };
 
   // Event bindings
   startBtn.addEventListener('click', startOrJoin);
+  startBtn.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') startOrJoin();
+  });
+
   muteBtn.addEventListener('click', toggleMic);
   cameraBtn.addEventListener('click', async () => {
-    if (!localStream || !videoOn) {
-      await getMedia(!videoOn);
+    if (!localStream) {
+      await getMedia(true);
+    } else if (!videoOn) {
+      // Enable video track without renegotiating call – PeerJS will send updated stream automatically
+      toggleCamera();
     } else {
       toggleCamera();
     }
@@ -217,13 +242,13 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   copyBtn.addEventListener('click', copyLink);
 
-  // Update title on hash change (supports manual navigation)
+  // Update title & share link on hash change (manual navigation)
   window.addEventListener('hashchange', () => {
     updateTitle();
     updateShareLink();
   });
 
-  // Initial title & share link setup
+  // Initial setup
   updateTitle();
   updateShareLink();
 });

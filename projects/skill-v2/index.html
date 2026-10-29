@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://cdn.jsdelivr.net; media-src 'self' blob:; connect-src 'self' wss://0.peerjs.com wss://signaling.peerjs.com;">
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://cdn.jsdelivr.net; media-src 'self' blob:; connect-src 'self' wss://0.peerjs.com wss://signaling.peerjs.com;">
   <title>P2P Voice &amp; Chat</title>
+  <meta name="description" content="Pure vanilla JavaScript peer‑to‑peer voice, video and text chat using PeerJS.">
   <link rel="stylesheet" href="style.css">
   <link rel="manifest" href="manifest.json">
   <link rel="icon" type="image/png" href="icon-192.png">
@@ -12,39 +13,39 @@
   <meta name="theme-color" content="hsl(64, 70%, 50%)">
 </head>
 <body>
-  <header class="header">
+  <header class="header" role="banner">
     <img src="icon-512.png" alt="P2P Voice &amp; Chat logo" class="logo" aria-hidden="true">
     <h1>P2P Voice &amp; Chat</h1>
   </header>
 
-  <main class="main">
+  <main class="main" role="main">
     <section class="status" aria-live="polite" id="status">Idle</section>
 
-    <section class="videos">
-      <video id="local" autoplay muted playsinline aria-label="Local video"></video>
-      <video id="remote" autoplay playsinline aria-label="Remote video"></video>
+    <section class="videos" aria-label="Video streams">
+      <video id="local" autoplay muted playsinline aria-label="Your video" class="placeholder"></video>
+      <video id="remote" autoplay playsinline aria-label="Friend's video" class="placeholder"></video>
     </section>
 
-    <section class="controls">
+    <section class="controls" aria-label="Call controls">
       <button id="startBtn" class="btn primary" aria-label="Start / Join call">Start / Join</button>
-      <button id="muteBtn" class="btn" aria-pressed="false" aria-label="Mute microphone">Mute</button>
-      <button id="cameraBtn" class="btn" aria-pressed="false" aria-label="Toggle camera">Camera</button>
-      <button id="hangupBtn" class="btn danger" aria-label="Hang up">Hang Up</button>
+      <button id="muteBtn" class="btn" aria-pressed="false" aria-label="Mute microphone" disabled>Mute</button>
+      <button id="cameraBtn" class="btn" aria-pressed="false" aria-label="Toggle camera" disabled>Camera</button>
+      <button id="hangupBtn" class="btn danger" aria-label="Hang up" disabled>Hang Up</button>
       <button id="copyBtn" class="btn secondary" aria-label="Copy invite link">Copy Link</button>
     </section>
 
-    <section class="chat">
+    <section class="chat" aria-label="Chat panel">
       <h2>Chat</h2>
-      <ul id="log" class="chat-log" aria-live="polite">
-        <li class="empty">No messages yet. Say hello!</li>
+      <ul id="log" class="chat-log" role="log" aria-live="polite">
+        <li class="empty" aria-live="polite">No messages yet. Say hello!</li>
       </ul>
       <div class="chat-input">
-        <input type="text" id="msg" placeholder="Type a message" aria-label="Message text">
+        <input type="text" id="msg" placeholder="Type a message" aria-label="Message text" autocomplete="off">
         <button id="sendBtn" class="btn primary" disabled aria-label="Send message">Send</button>
       </div>
     </section>
 
-    <section class="share">
+    <section class="share" aria-label="Share link">
       <p>Share this link:</p>
       <input type="text" id="shareLink" readonly aria-label="Room link">
     </section>
@@ -53,8 +54,14 @@
   <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js" integrity="sha384-nlUQ8ZqCbvStErob+biJNzSgltf6urV3VGqhfIfzhmg9RXmpeRm76ELw0pYnKlTR" crossorigin="anonymous"></script>
   <script src="script.js"></script>
 
-<!-- Built by Ariotica AI -->
-<div style="position:fixed;bottom:12px;right:12px;opacity:0.35;font-size:11px;font-family:monospace;color:white;pointer-events:none;z-index:9999;">⚡ Ariotica</div>
-<script>if('serviceWorker' in navigator){addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}</script>
+  <!-- Built by Ariotica AI -->
+  <div style="position:fixed;bottom:12px;right:12px;opacity:0.35;font-size:11px;font-family:monospace;color:white;pointer-events:none;z-index:9999;">⚡ Ariotica</div>
+  <script>
+    if ('serviceWorker' in navigator) {
+      addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+      });
+    }
+  </script>
 </body>
 </html>

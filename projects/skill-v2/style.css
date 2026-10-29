@@ -4,10 +4,10 @@
   --color-primary-dark: #004bbb;
   --color-danger: #d9534f;
   --color-secondary: #6c757d;
-  --color-text: #212529;
   --color-muted: #6c757d;
-  --radius: 8px;               /* used for cards, inputs, etc. */
-  --btn-radius: 9999px;        /* makes buttons pill‑shaped */
+  --color-text: #212529;
+  --radius: 8px;
+  --btn-radius: 9999px;
   --transition: 0.3s ease;
   --max-width: 800px;
 }
@@ -65,11 +65,26 @@ html, body {
   gap: 0.5rem;
   justify-content: center;
 }
+
 .videos video {
   width: 100%;
   max-width: 360px;
   border-radius: var(--radius);
   background: #000;
+  object-fit: cover;
+}
+
+/* Placeholder when no stream */
+.placeholder::after {
+  content: "No Stream";
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--color-muted);
+  font-size: 0.9rem;
+  background: #222;
+  border-radius: var(--radius);
 }
 
 /* Controls */
@@ -79,6 +94,7 @@ html, body {
   gap: 0.5rem;
   justify-content: center;
 }
+
 .btn {
   padding: 0.5rem 1rem;
   border: none;
@@ -87,25 +103,38 @@ html, body {
   color: #fff;
   cursor: pointer;
   transition: var(--transition);
+  font-size: 0.95rem;
 }
+
+.btn:focus-visible {
+  outline: 3px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 .btn:hover {
   background: #5a6268;
 }
+
 .btn.primary {
   background: var(--color-primary);
 }
+
 .btn.primary:hover {
   background: var(--color-primary-dark);
 }
+
 .btn.danger {
   background: var(--color-danger);
 }
+
 .btn.danger:hover {
   background: #c9302c;
 }
+
 .btn.secondary {
   background: var(--color-muted);
 }
+
 .btn.secondary:hover {
   background: #5a6268;
 }
@@ -116,27 +145,33 @@ html, body {
   border-radius: var(--radius);
   padding: 0.5rem;
 }
+
 .chat h2 {
   margin-bottom: 0.5rem;
   font-size: 1.2rem;
 }
+
 .chat-log {
   list-style: none;
   max-height: 150px;
   overflow-y: auto;
   margin-bottom: 0.5rem;
 }
+
 .chat-log li {
   padding: 0.25rem 0;
 }
+
 .chat-log .empty {
   color: var(--color-muted);
   text-align: center;
 }
+
 .chat-input {
   display: flex;
   gap: 0.5rem;
 }
+
 .chat-input input {
   flex: 1;
   padding: 0.5rem;
@@ -148,6 +183,7 @@ html, body {
 .share {
   text-align: center;
 }
+
 .share input {
   width: 100%;
   max-width: 400px;
