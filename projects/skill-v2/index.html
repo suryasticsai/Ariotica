@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://picsum.photos https://api.nasa.gov https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com; media-src 'self' blob:; connect-src 'self' wss://0.peerjs.com wss://signaling.peerjs.com https://api.nasa.gov;">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://cdn.jsdelivr.net; font-src 'self' https://fonts.gstatic.com; media-src 'self' blob:; connect-src 'self' wss://0.peerjs.com wss://signaling.peerjs.com https://0.peerjs.com https://signaling.peerjs.com https://cdn.jsdelivr.net https://api.nasa.gov; manifest-src 'self';">
   <title>P2P Voice &amp; Chat</title>
   <meta name="description" content="Pure vanilla JavaScript peer‑to‑peer voice, video and text chat using PeerJS.">
   <link rel="stylesheet" href="style.css">
@@ -53,6 +53,10 @@
       <input type="text" id="shareLink" readonly aria-label="Room link">
     </section>
   </main>
+
+  <footer class="footer" role="contentinfo">
+    <p>Made with <a href="https://ariotica.com" target="_blank" rel="noopener">Ariotica</a></p>
+  </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js" integrity="sha384-nlUQ8ZqCbvStErob+biJNzSgltf6urV3VGqhfIfzhmg9RXmpeRm76ELw0pYnKlTR" crossorigin="anonymous"></script>
   <script src="script.js"></script>

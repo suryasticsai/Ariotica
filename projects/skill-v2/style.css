@@ -196,6 +196,14 @@ html, body {
   border-radius: var(--radius);
 }
 
+/* Footer */
+.footer {
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--color-muted);
+  margin-top: 1rem;
+}
+
 /* Responsive */
 @media (max-width: 480px) {
   .videos video {
