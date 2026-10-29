@@ -2,22 +2,22 @@
   "schema": 2,
   "app": "skill-v2",
   "files": {
-    "index.html": "3341d75934541320307131bb418380a1ec4cb0a42510ecaa03b90a17d02da064",
-    "style.css": "50881dffbae198cd8208084e3a5b5a07187d9d18054c8eb0a5ccad3974f7ea99",
-    "script.js": "b5fb031331bab7e289f25f1b7dbf2ed195970e0a48d4d64012ad92f178c5f1a5",
+    "index.html": "ec3ae4d8492600066b034f0739be0427a9a39e401efc86e7658ec681a64efdda",
+    "style.css": "8213e7920092aaf8507efd19b9b22db72e2613bba4f016763c8827fad8867c48",
+    "script.js": "1b871e7277322fb69356f185135d6bd1e7cdee4e11268f2ab659d5aceb5b4d61",
     "icon-192.png": "fdae5c982770558bf55139b6c592fcf8616d6af4e38a5602731ad0f94a0540a3",
     "icon-512.png": "fdae5c982770558bf55139b6c592fcf8616d6af4e38a5602731ad0f94a0540a3",
-    "manifest.json": "7d2b24d92be4cce3ae5ce349a7c2c15f06f64263171666986bb441aa7a7aeb75",
-    "sw.js": "43ed9f6b322ae495e5e058c0e339946a29b62a1b4a17c697e155d21c94ca0b59",
-    "meta.json": "44d6b3d115fe2bb1773e8a71b49ca8fc2fbfab608aff632d9e1d8e1f5bff88a8",
-    "CHANGELOG.md": "b0d837df43608f5ba0bdfa4c261a71c325519437b0482e81fcd5ac6780199e1e"
+    "manifest.json": "6db8500d1bfcd1da9034b2768ea4d94f57cb73283f8e3724950272cfc175017d",
+    "sw.js": "22ce57f535689513828d162b4bdeddcdeb35f3150adda6644fe7be677a6a4e36",
+    "meta.json": "bd65317c7d3e5b9c1e93b818cdc83f371b00d35b32bfb2857b82504e693399e1",
+    "CHANGELOG.md": "1f93bf642be8423f5b189a95429f654d318e2e79c80a9f54c3854967a41d9f61"
   },
-  "bytes": 56680,
-  "builtAt": "2026-10-29T05:07:19.998Z",
+  "bytes": 67464,
+  "builtAt": "2026-10-29T09:31:10.162Z",
   "mode": "improve",
   "repo": "suryasticsai/Ariotica",
-  "runId": "40821412594",
-  "commit": "b26c724fb5e054837aba8b6e0ff13285e9051cf2",
+  "runId": "40849706775",
+  "commit": "65a10f2ce98c5f84dcb81e2654e1a3802288edfc",
   "model": {
     "provider": "Groq",
     "name": "openai/gpt-oss-120b"
@@ -26,16 +26,79 @@
     {
       "provider": "Groq",
       "model": "openai/gpt-oss-120b",
+      "sec": 30,
+      "ok": true,
+      "score": 100,
+      "reason": "",
+      "cost": 0.00473355,
+      "tokensIn": 5832,
+      "tokensOut": 5145
+    },
+    {
+      "provider": "Groq",
+      "sec": 10,
+      "ok": false,
+      "reason": "HTTP 400: {\"error\":{\"message\":\"The model `llama3-70b-8192` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to u"
+    },
+    {
+      "provider": "OpenRouter",
+      "model": "recursive/flint-v1.0:free",
+      "sec": 59,
+      "ok": false,
+      "score": 80,
+      "reason": "2 runtime error(s)",
+      "cost": 0,
+      "tokensIn": 5803,
+      "tokensOut": 5338
+    },
+    {
+      "provider": "Pollinations",
+      "sec": 4,
+      "ok": false,
+      "reason": "HTTP 402: {\"status\":402,\"success\":false,\"error\":{\"code\":\"FREE_LIMIT\",\"message\":\"Free limit reached: 1 reply every 30 seconds per IP. Retry after 27s, or get unlimited replies with a pollen key at https://enter."
+    },
+    {
+      "provider": "HuggingFace",
+      "sec": 0,
+      "ok": false,
+      "reason": "HTTP 402: {\"error\":\"You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.\"}"
+    },
+    {
+      "provider": "Nemotron",
+      "sec": 0,
+      "ok": false,
+      "reason": "HTTP 403: {\"error\":{\"message\":\"Key limit exceeded (total limit). Manage it using https://openrouter.ai/workspaces/default/keys/f116907d5b2973b7034d21f5aa9b25a26942fd59a0284d8b5cc6022e80fabc53 $0.00 of $0.00 use"
+    },
+    {
+      "provider": "Groq",
+      "model": "openai/gpt-oss-120b",
       "sec": 13,
       "ok": true,
       "score": 100,
       "reason": "",
-      "cost": 0.0049512,
-      "tokensIn": 5248,
-      "tokensOut": 5552
+      "cost": 0.0049584,
+      "tokensIn": 5921,
+      "tokensOut": 5427
+    },
+    {
+      "provider": "Groq",
+      "sec": 0,
+      "ok": false,
+      "reason": "HTTP 400: {\"error\":{\"message\":\"The model `llama3-70b-8192` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to u"
+    },
+    {
+      "provider": "OpenRouter",
+      "model": "recursive/flint-v1.0:free",
+      "sec": 70,
+      "ok": true,
+      "score": 100,
+      "reason": "",
+      "cost": 0,
+      "tokensIn": 5803,
+      "tokensOut": 5442
     }
   ],
-  "sha256": "3341d75934541320307131bb418380a1ec4cb0a42510ecaa03b90a17d02da064",
+  "sha256": "ec3ae4d8492600066b034f0739be0427a9a39e401efc86e7658ec681a64efdda",
   "checks": {
     "complete": true,
     "vanilla": true,
@@ -44,25 +107,28 @@
     ],
     "connectsTo": [],
     "zeroDeps": false,
-    "smoke": "pass",
-    "smokeErrors": [],
+    "smoke": "fail",
+    "smokeErrors": [
+      "[suryasticsai-sandesai] Skill requirement not met: must-have-code \"`refreshConnectionBtn.addEventListener`\"",
+      "[suryasticsai-sandesai] Skill requirement not met: must-have-selector \"`#refreshConnectionBtn`\""
+    ],
     "scan": {
-      "total": 3,
-      "high": 1,
+      "total": 2,
+      "high": 0,
       "medium": 2,
       "low": 0,
       "byTool": {
-        "custom": 1,
+        "custom": 0,
         "eslint": 2,
         "sparrow": 0,
         "externals": 0
       }
     }
   },
-  "promptSha256": "9400d824c6c5de9b6377f4469e5e9f987b4fa5424d57976e98c6ef68bd52b960",
-  "prompt": "Add a custom \"Install App\" button to the UI. Use the 'beforeinstallprompt' event to capture the browser prompt and save it. Show the button only when the prompt is available. If the user clicks the button, call prompt() on the saved event. ",
+  "promptSha256": "89691c6121ece7372bb2532c676248c325b6446104bc16251bce75695ae51fa2",
+  "prompt": "Scrape my existing app at https://github.com/suryasticsai/sandesai Extract its architecture, layout, and state management patterns, and use them to improve the current app.",
   "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js skill-v2",
-  "cost": 0.0049512,
-  "tokensIn": 5248,
-  "tokensOut": 5552
+  "cost": 0.009691950000000001,
+  "tokensIn": 23359,
+  "tokensOut": 21352
 }

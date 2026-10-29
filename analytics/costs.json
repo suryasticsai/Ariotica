@@ -500,5 +500,109 @@
         "tokensOut": 5552
       }
     ]
+  },
+  {
+    "ts": "2026-10-29T09:31:16.345Z",
+    "slug": "skill-v2",
+    "mode": "improve",
+    "provider": "Groq",
+    "model": "openai/gpt-oss-120b",
+    "runId": "40849706775",
+    "cost": 0.009691950000000001,
+    "tokensIn": 23359,
+    "tokensOut": 21352,
+    "score": 50,
+    "sec": 30,
+    "race": [
+      {
+        "provider": "Groq",
+        "model": "openai/gpt-oss-120b",
+        "sec": 30,
+        "ok": true,
+        "score": 100,
+        "reason": "",
+        "cost": 0.00473355,
+        "tokensIn": 5832,
+        "tokensOut": 5145
+      },
+      {
+        "provider": "Groq",
+        "sec": 10,
+        "ok": false,
+        "reason": "HTTP 400: {\"error\":{\"message\":\"The model `llama3-70b-8192` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to u",
+        "cost": 0,
+        "tokensIn": 0,
+        "tokensOut": 0
+      },
+      {
+        "provider": "OpenRouter",
+        "model": "recursive/flint-v1.0:free",
+        "sec": 59,
+        "ok": false,
+        "score": 80,
+        "reason": "2 runtime error(s)",
+        "cost": 0,
+        "tokensIn": 5803,
+        "tokensOut": 5338
+      },
+      {
+        "provider": "Pollinations",
+        "sec": 4,
+        "ok": false,
+        "reason": "HTTP 402: {\"status\":402,\"success\":false,\"error\":{\"code\":\"FREE_LIMIT\",\"message\":\"Free limit reached: 1 reply every 30 seconds per IP. Retry after 27s, or get unlimited replies with a pollen key at https://enter.",
+        "cost": 0,
+        "tokensIn": 0,
+        "tokensOut": 0
+      },
+      {
+        "provider": "HuggingFace",
+        "sec": 0,
+        "ok": false,
+        "reason": "HTTP 402: {\"error\":\"You have no remaining credits. Purchase pre-paid credits to continue using Inference Providers. Alternatively, subscribe to PRO to get monthly included credits.\"}",
+        "cost": 0,
+        "tokensIn": 0,
+        "tokensOut": 0
+      },
+      {
+        "provider": "Nemotron",
+        "sec": 0,
+        "ok": false,
+        "reason": "HTTP 403: {\"error\":{\"message\":\"Key limit exceeded (total limit). Manage it using https://openrouter.ai/workspaces/default/keys/f116907d5b2973b7034d21f5aa9b25a26942fd59a0284d8b5cc6022e80fabc53 $0.00 of $0.00 use",
+        "cost": 0,
+        "tokensIn": 0,
+        "tokensOut": 0
+      },
+      {
+        "provider": "Groq",
+        "model": "openai/gpt-oss-120b",
+        "sec": 13,
+        "ok": true,
+        "score": 100,
+        "reason": "",
+        "cost": 0.0049584,
+        "tokensIn": 5921,
+        "tokensOut": 5427
+      },
+      {
+        "provider": "Groq",
+        "sec": 0,
+        "ok": false,
+        "reason": "HTTP 400: {\"error\":{\"message\":\"The model `llama3-70b-8192` has been decommissioned and is no longer supported. Please refer to https://console.groq.com/docs/deprecations for a recommendation on which model to u",
+        "cost": 0,
+        "tokensIn": 0,
+        "tokensOut": 0
+      },
+      {
+        "provider": "OpenRouter",
+        "model": "recursive/flint-v1.0:free",
+        "sec": 70,
+        "ok": true,
+        "score": 100,
+        "reason": "",
+        "cost": 0,
+        "tokensIn": 5803,
+        "tokensOut": 5442
+      }
+    ]
   }
 ]
