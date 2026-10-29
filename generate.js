@@ -829,13 +829,31 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
     if (sk && sk.text) { skillCtx = sk.text; skillNames = sk.names || []; const st = steps[steps.length - 1]; if (st) st.note = sk.files.join(', '); }
   }
 
-  const BUDGET = { total: 32000, skill: 9000, rag: 6000, catalog: 3000, inspire: 4000 };
+  // REDUCED BUDGET to strictly fit Groq's 8k token limit (approx 32k chars max, target 24k to be safe)
+  const BUDGET = { total: 24000, skill: 6000, rag: 4000, catalog: 2000, inspire: 2000 };
   const fit = (text, max) => (text.length <= max ? text : text.slice(0, max) + '\n[...trimmed]');
   let filesCtx = '';
-  if (existingHtml) { filesCtx = `\n\nCURRENT FILES:\n[index.html]:\n${fit(existingHtml, EXISTING_LIMIT)}\n\n[style.css]:\n${fit(existingCss, CSS_JS_LIMIT)}\n\n[script.js]:\n${fit(existingJs, CSS_JS_LIMIT)}`; }
+  if (existingHtml) { 
+    filesCtx = `\n\nCURRENT FILES:\n[index.html]:\n${fit(existingHtml, 10000)}\n\n[style.css]:\n${fit(existingCss, 2500)}\n\n[script.js]:\n${fit(existingJs, 2500)}`; 
+  }
 
   let fullPrompt = RULES + fit(LIB_PROMPT, BUDGET.catalog) + ask + fit(inspirationCtx, BUDGET.inspire) + fit(scrapedContext, BUDGET.rag) + fit(skillCtx, BUDGET.skill) + filesCtx;
-  console.log(`[budget] Prompt size: ${fullPrompt.length} chars`);
+  
+  // If the prompt is too big, drop the raw scraped context FIRST.
+  // The R&D agent already synthesized it into the skillCtx anyway!
+  if (fullPrompt.length > BUDGET.total && scrapedContext) {
+    console.log(`[budget] Prompt too large (${fullPrompt.length}). Dropping scrapedContext because it was synthesized into a skill.`);
+    scrapedContext = '';
+    fullPrompt = RULES + fit(LIB_PROMPT, BUDGET.catalog) + ask + fit(inspirationCtx, BUDGET.inspire) + fit(scrapedContext, BUDGET.rag) + fit(skillCtx, BUDGET.skill) + filesCtx;
+  }
+
+  // If STILL too big, aggressively trim the skill and inspiration
+  if (fullPrompt.length > BUDGET.total) {
+    console.log(`[budget] Prompt STILL too large (${fullPrompt.length}). Trimming skill and inspiration.`);
+    fullPrompt = RULES + fit(LIB_PROMPT, BUDGET.catalog) + ask + filesCtx;
+  }
+  
+  console.log(`[budget] Final prompt size: ${fullPrompt.length} chars`);
 
   let cand = await step('Generate with AI (model race)', () => generate(fullPrompt), { promptChars: fullPrompt.length });
   let raceReport = cand.race.slice();
