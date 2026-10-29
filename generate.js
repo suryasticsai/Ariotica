@@ -179,8 +179,7 @@ async function updateStatusComment(force) {
   if (!statusCommentId || statusDone) return;
   if (!force && Date.now() - lastStatus < STATUS_EVERY) return;
   lastStatus = Date.now();
-  
-  // Increased expectedSteps to account for R&D scraping
+
   const expectedSteps = 12; 
   const percent = Math.min(95, Math.round((steps.length / expectedSteps) * 100));
   const progressBar = getProgressBar(percent);
@@ -561,26 +560,193 @@ async function main() {
     return;
   }
 
+  if (mode === 'evolve') {
+    await finishStatus(issue, `⚠️ **Evolve is disabled for security.** Please use the Darwin workflow (Actions -> Self-Evolve) to generate a proposal.`, true);
+    return;
+  }
+
+  if (mode === 'forge') {
+    const instruction = prompt.trim();
+    if (!instruction) throw new Error('Usage: `[forge] <capability to add>`');
+
+    const testContext = {
+      slug: 'test-app',
+      files: {
+        'index.html': '<!DOCTYPE html>\n<html>\n<head>\n<title>Test</title>\n</head>\n<body>\n<button>Click</button>\n</body>\n</html>',
+        'style.css': 'body { color: black; }',
+        'script.js': 'console.log("test");'
+      }
+    };
+
+    let success = false;
+    let finalCode = '';
+    let pluginName = '';
+
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      const sysPrompt = `You are an expert Node.js developer writing a plugin for the Ariotica AI platform.
+Your task: ${instruction}
+
+You must output ONLY raw JavaScript code. No markdown formatting.
+The file must export exactly this structure:
+module.exports = {
+  name: 'a-short-name',
+  execute: async (context) => {
+    // context.files['index.html'] is a string.
+    // context.files['style.css'] is a string.
+    // Modify the strings in place to apply your changes.
+    // Example: context.files['index.html'] = context.files['index.html'].replace('</head>', '<meta ...>\\n</head>');
+  }
+};`;
+
+      const r = await step(`Synthesize Plugin (Attempt ${attempt})`, () => askAI([{ role: 'system', content: sysPrompt }, { role: 'user', content: 'Write the code.' }], { maxTokens: 2000 }));
+      let code = r.text.trim().replace(/^```(?:javascript|js)?\s*\n?/, '').replace(/\n?```\s*$/, '');
+
+      const validation = await step('Validate Plugin in Sandbox', async () => {
+        return await PluginManager.validatePlugin(code, testContext);
+      });
+
+      if (validation.ok) {
+        success = true;
+        finalCode = code;
+        pluginName = validation.name;
+        break;
+      } else {
+        console.log(`[forge] Attempt ${attempt} failed: ${validation.error}`);
+        steps.push({ name: `Validation failed (Attempt ${attempt})`, status: 'error', error: validation.error });
+        await pushProgress({}, true);
+      }
+    }
+
+    if (!success) {
+      await finishStatus(issue, `❌ **Forge Failed.** The AI could not synthesize a working plugin after 3 attempts. The repo was not modified.`, false);
+      await pushProgress({ status: 'error' });
+      process.exit(2);
+    }
+
+    const pluginPath = `proposals/plugins/${pluginName}.js`;
+    await step(`Commit Plugin Proposal: ${pluginPath}`, () => Git.atomicCommit({ [pluginPath]: finalCode }, [], `docs(forge): add proposal ${pluginName}`));
+
+    await Git.syncCheckout();
+    await finishStatus(issue, `⚒️ **Forge Proposal Created.** I synthesized a new capability: \`${pluginName}\`.\n\nIt has been saved to \`${pluginPath}\`. Please review the code. If you approve it, move it to \`lib/plugins/\` and add its hash to \`lib/plugins/plugins.lock.json\`.`, true);
+    await pushProgress({ status: 'done' });
+    return;
+  }
+
+  let manifest = []; try { const raw = await readFile(MANIFEST_PATH); if (raw) manifest = JSON.parse(raw); } catch { manifest = []; }
+
   if (mode === 'revert') {
     const targetVersion = (prompt || '').trim().replace(/^v/i, '');
-    if (!targetVersion) { /* ... list versions logic ... */ await finishStatus(issue, `📜 Use [revert] <version>`, true); return; }
+    if (!targetVersion) {
+      const versions = await step('Reading version history', () => listVersions(slug));
+      if (!versions.length) { await finishStatus(issue, `📜 No history for \`${slug}\`.`, true); await pushProgress({ status: 'done' }); return; }
+      const rows = versions.slice(0, 10).map(v => `| v${v.version} | ${formatDate(v.when)} | \`${v.commit}\` | ${v.mode}${v.revertedFrom ? ` (from v${v.revertedFrom})` : ''} |`).join('\n');
+      const previousVersion = versions[1] ? versions[1].version : null;
+      const hintLine = previousVersion
+        ? `Reply with \`[revert] <version>\` to roll back, e.g. \`[revert] ${previousVersion}\`.`
+        : `_Only one version exists so far — nothing to revert to yet. Run an \`[improve]\` first._`;
+      const body = `📜 **\`${slug}\` — version history**\n\n| Version | When (UTC) | Commit | Mode |\n|---|---|---|---|\n${rows}\n\n${hintLine}`;
+      await finishStatus(issue, body + HINT, false); await pushProgress({ status: 'done' }); return;
+    }
     const currentMeta = JSON.parse(await readFile(`${baseDir}/meta.json`) || '{}');
-    if (!currentMeta.version) throw new Error(`No meta.json`);
+    if (!currentMeta.version) throw new Error(`Cannot revert: \`${slug}\` has no meta.json.`);
+    if (currentMeta.version === targetVersion) throw new Error(`Already at v${targetVersion} — nothing to revert.`);
     const target = await step(`Locating v${targetVersion}`, () => findVersion(slug, targetVersion));
-    if (!target) throw new Error(`Version not found.`);
-    const revertedFiles = await step(`Fetching files`, async () => {
-      const files = {}; for (const name of Object.keys(target.receipt.files)) { const content = await readFileAtRef(`${baseDir}/${name}`, target.commitSha); if (content !== null) files[name] = content; } return files;
+    if (!target) throw new Error(`Version v${targetVersion} not found for \`${slug}\`.`);
+    if (!target.receipt || !target.receipt.files) throw new Error(`Receipt for v${targetVersion} is missing.`);
+
+    const currentSnapshot = {
+      'index.html': await readFile(`${baseDir}/index.html`) || '',
+      'style.css': await readFile(`${baseDir}/style.css`) || '',
+      'script.js': await readFile(`${baseDir}/script.js`) || '',
+    };
+
+    const revertedFiles = await step(`Fetching files from v${targetVersion}`, async () => {
+      const files = {};
+      for (const name of Object.keys(target.receipt.files)) {
+        const content = await readFileAtRef(`${baseDir}/${name}`, target.commitSha);
+        if (content !== null) files[name] = content;
+      }
+      return files;
     });
+    if (!revertedFiles['index.html']) throw new Error(`v${targetVersion} has no index.html.`);
+
+    const diffReports = Rep.buildChangeReport(currentSnapshot, revertedFiles, false);
     const newVersion = bumpVersion(currentMeta.version, 'revert');
-    revertedFiles['meta.json'] = JSON.stringify({ ...JSON.parse(revertedFiles['meta.json'] || '{}'), version: newVersion, revertedFrom: targetVersion }, null, 2);
-    const receipt = R.buildReceipt({ repo: `${OWNER}/${REPO}`, slug, files: revertedFiles, mode: 'revert', runId: RUN_ID, commit: null, provider: 'revert', model: `from-v${targetVersion}`, race: [], smoke: { ok: true, errors: [], skipped: true }, security: { total: 0, high: 0, medium: 0, low: 0, byTool: {} }, prompt: `revert to v${targetVersion}`, vanilla: true });
+    const oldMeta = JSON.parse(revertedFiles['meta.json'] || '{}');
+    oldMeta.version = newVersion;
+    oldMeta.revertedFrom = targetVersion;
+    oldMeta.revertedAt = new Date().toISOString();
+    revertedFiles['meta.json'] = JSON.stringify(oldMeta, null, 2);
+
+    const receipt = R.buildReceipt({
+      repo: `${OWNER}/${REPO}`, slug, files: revertedFiles, mode: 'revert',
+      runId: RUN_ID, commit: null, provider: 'revert', model: `from-v${targetVersion}`,
+      race: [], smoke: { ok: true, errors: [], skipped: true },
+      security: { total: 0, high: 0, medium: 0, low: 0, byTool: {} },
+      prompt: `revert to v${targetVersion}`, vanilla: T.isVanilla(revertedFiles['index.html'] || '', TRUSTED_DOMAINS).ok,
+    });
     revertedFiles[receiptPath] = JSON.stringify(receipt, null, 2) + '\n';
-    const fullFiles = {}; for (const [name, content] of Object.entries(revertedFiles)) { if (name === receiptPath || name === MANIFEST_PATH) fullFiles[name] = content; else fullFiles[`${baseDir}/${name}`] = content; }
-    const commitSha = await step(`Commit revert`, () => Git.atomicCommit(fullFiles, [], `revert: ${slug} to v${targetVersion}`));
-    receipt.commit = commitSha; revertedFiles[receiptPath] = JSON.stringify(receipt, null, 2) + '\n';
-    await Git.atomicCommit({ [receiptPath]: revertedFiles[receiptPath] }, [], `chore: receipt`);
+
+    const oldChangelog = await readFile(changelogPath) || '';
+    const newChangelog = Rep.buildChangelogEntry({
+      version: newVersion, mode: 'revert', when: new Date().toISOString(),
+      provider: 'revert', model: `from-v${targetVersion}`, totalCost: 0,
+      diffReports, metaJson: { features: [], fixes: [], suggestions: [], humanInvolvement: 'None' },
+      oldChangelog, isNew: false,
+      extraNotes: `**Reverted to content of v${targetVersion}** (\`${target.commit}\`, ${formatDate(target.when)}).`,
+    });
+    revertedFiles['CHANGELOG.md'] = newChangelog;
+
+    const freshManifest = manifest.map((e) => {
+      if (e.project === slug) {
+        return {
+          ...e,
+          version: newVersion,
+          mode: 'revert',
+          sha256: receipt.sha256,
+          created: new Date().toISOString().slice(0, 19),
+        };
+      }
+      return e;
+    });
+    revertedFiles[MANIFEST_PATH] = JSON.stringify(freshManifest, null, 2) + '\n';
+
+    const fullFiles = {};
+    for (const [name, content] of Object.entries(revertedFiles)) {
+      if (name === receiptPath || name === MANIFEST_PATH) {
+        fullFiles[name] = content;
+      } else {
+        fullFiles[`${baseDir}/${name}`] = content;
+      }
+    }
+    const commitSha = await step(`Commit revert v${currentMeta.version} → v${newVersion}`, () =>
+      Git.atomicCommit(fullFiles, [], `revert: ${slug} to v${targetVersion} (as v${newVersion})`));
+    receipt.commit = commitSha;
+    revertedFiles[receiptPath] = JSON.stringify(receipt, null, 2) + '\n';
+
+    const commitSha2 = await Git.atomicCommit({ [receiptPath]: revertedFiles[receiptPath] }, [], `chore: receipt ${slug}`);
     await Git.syncCheckout();
-    await finishStatus(issue, `↩️ **Reverted to v${targetVersion}**`, true);
+
+    const body = Rep.buildSummaryComment(reportCtx({
+      slug, baseDir, mode: 'revert', version: newVersion,
+      provider: 'revert', model: `from-v${targetVersion}`, raceReport: [],
+      smoke: { ok: true, errors: [], skipped: true },
+      security: { findings: [], counts: { total: 0, high: 0, medium: 0, low: 0, byTool: {} } },
+      metaJson: { features: [], fixes: [], suggestions: [], humanInvolvement: 'None' },
+      resolved: { discovered: [] },
+      totalCost: 0, totalIn: 0, totalOut: 0,
+      receipt, receiptPath, diffReports, newFiles: revertedFiles,
+      extraNotes: `Restored content of **v${targetVersion}** (\`${target.commit}\`).`,
+    }));
+    await finishStatus(issue, body + HINT, true);
+
+    const isDeployed = await waitForPagesBuild(commitSha2);
+    if (isDeployed && issue) {
+      const url = `https://${OWNER}.github.io/${REPO}/${baseDir}/`;
+      const shot = `### 📸 Live Preview\n\n[![${slug} screenshot](https://image.thum.io/get/width/1200/crop/900/${url}?t=${Date.now()})](${url})\n\n_Click to open_`;
+      await appendToStatus(issue, shot);
+    }
+    await pushProgress({ status: 'done' });
     return;
   }
 
@@ -599,7 +765,6 @@ async function main() {
   // ============================================================
   // THE INLINE R&D & BUILDER LOGIC
   // ============================================================
-  let manifest = []; try { const raw = await readFile(MANIFEST_PATH); if (raw) manifest = JSON.parse(raw); } catch { manifest = []; }
   let existingHtml = await readFile(mainFile); let existingCss = await readFile(`${baseDir}/style.css`) || ''; let existingJs = await readFile(`${baseDir}/script.js`) || '';
   const isNew = !existingHtml;
   const oldForDiff = { 'index.html': existingHtml || '', 'style.css': existingCss, 'script.js': existingJs };
@@ -631,13 +796,12 @@ async function main() {
     if (scraped) {
       scrapedContext = `\n\n--- WORKING BLUEPRINT FROM ${targetUrl} ---\n${scraped}\n
 INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use the exact same CDN URL. If it configures a server, copy that configuration exactly.\n--- END BLUEPRINT ---`;
-      
+
       // Autonomously learn a skill from it!
       await softStep('R&D: Synthesize Skill', async () => {
         const skillPrompt = `SOURCE DATA:\n${scraped.slice(0, 15000)}\n\nWrite a skill file for this.`;
         const r = await askAI([{ role: 'system', content: SKILL_RULES }, { role: 'user', content: skillPrompt }]);
         if (r && r.text && r.text.length > 500) {
-          // BUG FIX: Extract the actual repo name instead of just "github-com"
           let skillName = 'researched-skill';
           try {
             const u = new URL(targetUrl);
@@ -653,7 +817,7 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
           const finalContent = `---\nname: ${skillName}\nstatus: verified\nsource: ${targetUrl}\ncreated: ${new Date().toISOString()}\n---\n\n${r.text}`;
           await Git.atomicCommit({ [filePath]: finalContent }, [], `docs(research): add auto-skill ${skillName} from ${targetUrl}`);
           console.log(`[R&D] Successfully learned and saved skill: ${skillName}`);
-          await Git.syncCheckout(); // Sync so BM25 can find the new file immediately
+          await Git.syncCheckout();
         }
       });
     }
@@ -741,7 +905,7 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
   if (!currentHtml.includes('Built by Ariotica')) currentHtml = currentHtml.replace(/<\/body>/i, `\n<!-- Built by Ariotica AI -->\n<div style="position:fixed;bottom:12px;right:12px;opacity:0.35;font-size:11px;font-family:monospace;color:white;pointer-events:none;z-index:9999;">⚡ Ariotica</div>\n</body>`);
   const cspTag = `<meta http-equiv="Content-Security-Policy" content="${resolved.csp}">`;
   if (/http-equiv=["']Content-Security-Policy["']/i.test(currentHtml)) currentHtml = currentHtml.replace(/<meta[^>]*http-equiv=["']Content-Security-Policy["'][^>]*>/i, cspTag); else currentHtml = currentHtml.replace('<head>', `<head>\n  ${cspTag}`);
-  
+
   let hash = 0; for (let i = 0; i < slug.length; i++) hash = slug.charCodeAt(i) + ((hash << 5) - hash);
   const hue = Math.abs(hash % 360); const color = `hsl(${hue}, 70%, 50%)`; const letter = slug.charAt(0).toUpperCase();
   const aiLogoBase64 = await softStep('Generate AI Logo', () => fetchAILogo(slug, meta.features));
