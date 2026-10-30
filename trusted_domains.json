@@ -4,9 +4,17 @@
     "unpkg.com",
     "cdnjs.cloudflare.com",
     "esm.sh",
+    "cdn.tailwindcss.com",
+    "cdn.socket.io",
+    "webrtc.github.io",
+    "cdn.babylonjs.com",
+    "aframe.io",
+    "vjs.zencdn.net",
+    "cdn.plyr.io",
+    "cdn.quilljs.com",
     "fonts.googleapis.com",
     "fonts.gstatic.com",
-    "picsum.photos",
-    "api.nasa.gov"
+    "api.nasa.gov",
+    "image.pollinations.ai"
   ]
 }
