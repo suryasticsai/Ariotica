@@ -65,6 +65,7 @@ jobs:
         contains(github.event.comment.body, '[ask]') ||
         contains(github.event.comment.body, '[skill]') ||
         contains(github.event.comment.body, '[skills]') ||
+        contains(github.event.comment.body, '[forge]') ||
         contains(github.event.comment.body, '[inspire]') ||
         contains(github.event.comment.body, '[leaderboard]')))
 
@@ -175,9 +176,15 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
+          
+          # Skritimai Private Backend Integration
+          SKRITIMAI_BASE_URL: ${{ vars.SKRITIMAI_BASE_URL }}
+          SKRITIMAI_TIMEOUT_MS: ${{ vars.SKRITIMAI_TIMEOUT_MS }}
+          
           PROVIDER_ORDER: ${{ vars.PROVIDER_ORDER }}
           RACE_SIZE: ${{ vars.RACE_SIZE }}
           GROQ_MODEL: ${{ vars.GROQ_MODEL }}
+          
           EVENT_NAME: ${{ github.event_name }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
           ISSUE_BODY: ${{ github.event.issue.body }}
@@ -227,6 +234,7 @@ jobs:
             drafts/
             analytics/
             knowledge/
+            lib/plugins/
           retention-days: 7
 
       - name: Fatal Error Comment
