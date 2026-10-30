@@ -300,4 +300,11 @@
     "usage": "Include before </body>. Use the window.RAGina class to ingest text and query it.",
     "example": "<script src=\"https://cdn.jsdelivr.net/gh/suryasticsai/RAGina@main/ragina-t1.js\"></script>"
   }
+}, 
+"tonejs": {
+  "name": "Tone.js",
+  "purpose": "Web Audio framework for creating interactive music.",
+  "cdn": ["https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"],
+  "usage": "Include before </body>. Use new Tone.Synth().toDestination().",
+  "example": "<script src=\"https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js\"></script>"
 }
