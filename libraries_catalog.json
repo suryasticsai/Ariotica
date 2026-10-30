@@ -1,310 +1,286 @@
 {
   "_meta": {
     "version": "1.0.0",
-    "description": "Approved CDN libraries for Ariotica. The AI uses this catalog to inject the right tools into generated apps."
+    "description": "Approved CDN libraries for Ariotica."
   },
   "bootstrap": {
     "name": "Bootstrap 5",
-    "purpose": "Comprehensive UI framework for responsive layouts and components.",
-    "cdn": [
-      "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css",
-      "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
-    ],
-    "usage": "Include CSS in <head>, JS before </body>. Use standard Bootstrap classes.",
-    "example": "<link href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css\" rel=\"stylesheet\">\n<script src=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js\"></script>"
+    "purpose": "Comprehensive UI framework.",
+    "cdn": ["https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css", "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"],
+    "usage": "Include CSS in <head>, JS before </body>.",
+    "example": "<link href=\"https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css\" rel=\"stylesheet\">"
   },
   "tailwind": {
     "name": "Tailwind CSS",
-    "purpose": "Utility-first CSS framework for rapid custom designs.",
+    "purpose": "Utility-first CSS.",
     "cdn": ["https://cdn.tailwindcss.com"],
-    "usage": "Include in <head>. Use utility classes directly in HTML.",
+    "usage": "Include in <head>.",
     "example": "<script src=\"https://cdn.tailwindcss.com\"></script>"
   },
   "bulma": {
     "name": "Bulma",
-    "purpose": "Modern CSS framework based on Flexbox.",
+    "purpose": "Modern CSS framework.",
     "cdn": ["https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css"],
-    "usage": "Include in <head>. Use standard Bulma classes.",
+    "usage": "Include in <head>.",
     "example": "<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/bulma@1.0.2/css/bulma.min.css\">"
   },
   "pico": {
     "name": "Pico.css",
-    "purpose": "Minimal CSS framework for semantic HTML.",
+    "purpose": "Minimal CSS framework.",
     "cdn": ["https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"],
-    "usage": "Include in <head>. Write semantic HTML (e.g., <article>, <section>).",
+    "usage": "Include in <head>.",
     "example": "<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css\">"
   },
   "fontawesome": {
     "name": "Font Awesome 6",
     "purpose": "Standard icon library.",
     "cdn": ["https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css"],
-    "usage": "Include in <head>. Use <i class=\"fa-solid fa-...\"></i>.",
+    "usage": "Include in <head>.",
     "example": "<link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css\">"
   },
   "swiper": {
     "name": "Swiper",
-    "purpose": "Modern touch slider and carousel.",
-    "cdn": [
-      "https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css",
-      "https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"
-    ],
-    "usage": "Include CSS in <head>, JS in <body>. Initialize with new Swiper('.swiper', {...}).",
-    "example": "<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css\">\n<script src=\"https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js\"></script>"
+    "purpose": "Touch slider and carousel.",
+    "cdn": ["https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.css", "https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js"],
+    "usage": "Include CSS in <head>, JS in <body>.",
+    "example": "<script src=\"https://cdn.jsdelivr.net/npm/swiper@11/swiper-bundle.min.js\"></script>"
   },
   "animatecss": {
     "name": "Animate.css",
-    "purpose": "Easy CSS animations.",
+    "purpose": "CSS animations.",
     "cdn": ["https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"],
-    "usage": "Include in <head>. Add classes like animate__animated animate__fadeIn.",
+    "usage": "Include in <head>.",
     "example": "<link rel=\"stylesheet\" href=\"https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css\">"
   },
   "alpinejs": {
     "name": "Alpine.js",
-    "purpose": "Lightweight reactive UI (Vue-like without build steps).",
+    "purpose": "Lightweight reactive UI.",
     "cdn": ["https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"],
-    "usage": "Include in <head>. Use x-data, x-bind, x-on directives in HTML.",
+    "usage": "Include in <head>.",
     "example": "<script defer src=\"https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js\"></script>"
   },
   "htmx": {
     "name": "HTMX",
-    "purpose": "Access AJAX, WebSockets via HTML attributes.",
+    "purpose": "AJAX via HTML.",
     "cdn": ["https://unpkg.com/htmx.org@2.0.1"],
-    "usage": "Include in <head>. Use hx-get, hx-post, hx-trigger attributes.",
+    "usage": "Include in <head>.",
     "example": "<script src=\"https://unpkg.com/htmx.org@2.0.1\"></script>"
   },
   "jquery": {
     "name": "jQuery",
-    "purpose": "Classic DOM manipulation and AJAX library.",
+    "purpose": "DOM manipulation.",
     "cdn": ["https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js"],
-    "usage": "Include in <head>. Use $('.selector').action().",
+    "usage": "Include in <head>.",
     "example": "<script src=\"https://cdn.jsdelivr.net/npm/jquery@3.7.1/dist/jquery.min.js\"></script>"
   },
   "sortablejs": {
     "name": "SortableJS",
-    "purpose": "Drag-and-drop reorderable lists.",
+    "purpose": "Drag and drop lists.",
     "cdn": ["https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"],
-    "usage": "Include before </body>. Initialize with new Sortable(el, {...}).",
+    "usage": "Include before </body>.",
     "example": "<script src=\"https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js\"></script>"
   },
   "chartjs": {
     "name": "Chart.js",
-    "purpose": "Beautiful, simple charts and graphs.",
+    "purpose": "Charts and graphs.",
     "cdn": ["https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"],
-    "usage": "Include before </body>. Use <canvas id=\"chart\"></canvas> and new Chart(ctx, config).",
+    "usage": "Include before </body>.",
     "example": "<script src=\"https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js\"></script>"
   },
   "d3js": {
     "name": "D3.js",
-    "purpose": "Powerful data visualization library.",
+    "purpose": "Data visualization.",
     "cdn": ["https://cdn.jsdelivr.net/npm/d3@7"],
-    "usage": "Include before </body>. Use d3.select(), d3.scaleLinear(), etc.",
+    "usage": "Include before </body>.",
     "example": "<script src=\"https://cdn.jsdelivr.net/npm/d3@7\"></script>"
   },
   "plotly": {
     "name": "Plotly.js",
-    "purpose": "High-level charts, including 3D and scientific charts.",
+    "purpose": "Scientific charts.",
     "cdn": ["https://cdn.jsdelivr.net/npm/plotly.js-dist@2"],
-    "usage": "Include before </body>. Use Plotly.newPlot(target, data, layout).",
+    "usage": "Include before </body>.",
     "example": "<script src=\"https://cdn.jsdelivr.net/npm/plotly.js-dist@2\"></script>"
   },
   "echarts": {
     "name": "Apache ECharts",
-    "purpose": "Enterprise-grade charts with great performance.",
+    "purpose": "Enterprise charts.",
     "cdn": ["https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"],
-    "usage": "Include before </body>. Use echarts.init(dom).",
+    "usage": "Include before </body>.",
     "example": "<script src=\"https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js\"></script>"
   },
   "apexcharts": {
     "name": "ApexCharts",
     "purpose": "Interactive SVG charts.",
     "cdn": ["https://cdn.jsdelivr.net/npm/apexcharts"],
-    "usage": "Include before </body>. Use new ApexCharts(el, options).render().",
+    "usage": "Include before </body>.",
     "example": "<script src=\"https://cdn.jsdelivr.net/npm/apexcharts\"></script>"
   },
   "leaflet": {
     "name": "Leaflet",
-    "purpose": "Interactive mobile-friendly maps.",
-    "cdn": [
-      "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css",
-      "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    ],
-    "usage": "Include CSS in <head>, JS before </body>. Use L.map('id').setView([lat, lng], zoom).",
-    "example": "<link rel=\"stylesheet\" href=\"https://unpkg.com/leaflet@1.9.4/dist/leaflet.css\" />\n<script src=\"https://unpkg.com/leaflet@1.9.4/dist/leaflet.js\"></script>"
+    "purpose": "Interactive maps.",
+    "cdn": ["https://unpkg.com/leaflet@1.9.4/dist/leaflet.css", "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"],
+    "usage": "Include CSS in <head>, JS before </body>.",
+    "example": "<link rel=\"stylesheet\" href=\"https://unpkg.com/leaflet@1.9.4/dist/leaflet.css\" />"
   },
   "maplibre": {
     "name": "MapLibre GL JS",
-    "purpose": "Vector maps, open-source.",
-    "cdn": [
-      "https://unpkg.com/maplibre-gl@4.1.3/dist/maplibre-gl.css",
-      "https://unpkg.com/maplibre-gl@4.1.3/dist/maplibre-gl.js"
-    ],
-    "usage": "Include CSS in <head>, JS before </body>. Use new maplibregl.Map({...}).",
-    "example": "<link href=\"https://unpkg.com/maplibre-gl@4.1.3/dist/maplibre-gl.css\" rel=\"stylesheet\" />\n<script src=\"https://unpkg.com/maplibre-gl@4.1.3/dist/maplibre-gl.js\"></script>"
+    "purpose": "Vector maps.",
+    "cdn": ["https://unpkg.com/maplibre-gl@4.1.3/dist/maplibre-gl.css", "https://unpkg.com/maplibre-gl@4.1.3/dist/maplibre-gl.js"],
+    "usage": "Include CSS in <head>, JS before </body>.",
+    "example": "<script src=\"https://unpkg.com/maplibre-gl@4.1.3/dist/maplibre-gl.js\"></script>"
   },
   "openlayers": {
     "name": "OpenLayers",
-    "purpose": "Powerful 2D map library.",
-    "cdn": [
-      "https://cdn.jsdelivr.net/npm/ol@9.2.4/ol.css",
-      "https://cdn.jsdelivr.net/npm/ol@9.2.4/dist/ol.js"
-    ],
-    "usage": "Include CSS in <head>, JS before </body>. Use new ol.Map({...}).",
-    "example": "<link rel=\"stylesheet\" href=\"https://cdn.jsdelivr.net/npm/ol@9.2.4/ol.css\">\n<script src=\"https://cdn.jsdelivr.net/npm/ol@9.2.4/dist/ol.js\"></script>"
+    "purpose": "Powerful 2D maps.",
+    "cdn": ["https://cdn.jsdelivr.net/npm/ol@9.2.4/ol.css", "https://cdn.jsdelivr.net/npm/ol@9.2.4/dist/ol.js"],
+    "usage": "Include CSS in <head>, JS before </body>.",
+    "example": "<script src=\"https://cdn.jsdelivr.net/npm/ol@9.2.4/dist/ol.js\"></script>"
   },
   "threejs": {
     "name": "Three.js",
-    "purpose": "3D graphics for the web.",
+    "purpose": "3D graphics.",
     "cdn": ["https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js"],
-    "usage": "Include as type=\"module\" in <head> or <body>. Requires import statements (use <script type=\"module\">).",
-    "example": "<script type=\"module\">\n  import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js';\n</script>"
+    "usage": "Include as type=\"module\".",
+    "example": "<script type=\"module\">import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js';</script>"
   },
   "babylonjs": {
     "name": "Babylon.js",
-    "purpose": "Powerful 3D engine for games and VR.",
+    "purpose": "3D engine.",
     "cdn": ["https://cdn.babylonjs.com/babylon.js"],
-    "usage": "Include in <head> or <body>. Use BABYLON.Engine.",
+    "usage": "Include in <head> or <body>.",
     "example": "<script src=\"https://cdn.babylonjs.com/babylon.js\"></script>"
   },
   "aframe": {
     "name": "A-Frame",
-    "purpose": "Build VR experiences with HTML.",
+    "purpose": "VR experiences.",
     "cdn": ["https://aframe.io/releases/1.5.0/aframe.min.js"],
-    "usage": "Include in <head>. Use <a-scene> tags.",
+    "usage": "Include in <head>.",
     "example": "<script src=\"https://aframe.io/releases/1.5.0/aframe.min.js\"></script>"
   },
   "pixijs": {
     "name": "PixiJS",
-    "purpose": "Fast 2D rendering (WebGL).",
+    "purpose": "Fast 2D rendering.",
     "cdn": ["https://cdn.jsdelivr.net/npm/pixi.js@8.1.0/dist/pixi.min.js"],
-    "usage": "Include before </body>. Use new PIXI.Application().",
+    "usage": "Include before </body>.",
     "example": "<script src=\"https://cdn.jsdelivr.net/npm/pixi.js@8.1.0/dist/pixi.min.js\"></script>"
   },
   "peerjs": {
     "name": "PeerJS",
-    "purpose": "Simplifies WebRTC peer-to-peer connections.",
+    "purpose": "WebRTC connections.",
     "cdn": ["https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js"],
-    "usage": "Include before </body>. Use new Peer().",
+    "usage": "Include before </body>.",
     "example": "<script src=\"https://cdn.jsdelivr.net/npm/peerjs@1.5.4/dist/peerjs.min.js\"></script>"
   },
   "socketio": {
     "name": "Socket.io Client",
-    "purpose": "Real-time WebSocket connections.",
+    "purpose": "WebSockets.",
     "cdn": ["https://cdn.socket.io/4.7.5/socket.io.min.js"],
-    "usage": "Include before </body>. Use io().",
+    "usage": "Include before </body>.",
     "example": "<script src=\"https://cdn.socket.io/4.7.5/socket.io.min.js\"></script>"
   },
   "webrtcadapter": {
     "name": "WebRTC Adapter",
-    "purpose": "Ensures WebRTC works across browsers.",
+    "purpose": "WebRTC cross-browser.",
     "cdn": ["https://webrtc.github.io/adapter/adapter-latest.js"],
-    "usage": "Include before </body>. Automatically patches browser differences.",
+    "usage": "Include before </body>.",
     "example": "<script src=\"https://webrtc.github.io/adapter/adapter-latest.js\"></script>"
   },
   "lodash": {
     "name": "Lodash",
-    "purpose": "Utility functions for arrays, objects, strings.",
+    "purpose": "Utility functions.",
     "cdn": ["https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js"],
-    "usage": "Include before </body>. Use _.map(), _.filter(), etc.",
+    "usage": "Include before </body>.",
     "example": "<script src=\"https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js\"></script>"
   },
   "dayjs": {
     "name": "Day.js",
-    "purpose": "Fast, lightweight date/time library.",
+    "purpose": "Date/time library.",
     "cdn": ["https://cdn.jsdelivr.net/npm/dayjs@1.11.11/dayjs.min.js"],
-    "usage": "Include before </body>. Use dayjs().format().",
+    "usage": "Include before </body>.",
     "example": "<script src=\"https://cdn.jsdelivr.net/npm/dayjs@1.11.11/dayjs.min.js\"></script>"
   },
   "axios": {
     "name": "Axios",
-    "purpose": "Promise-based HTTP client.",
+    "purpose": "HTTP client.",
     "cdn": ["https://cdn.jsdelivr.net/npm/axios@1.7.2/dist/axios.min.js"],
-    "usage": "Include before </body>. Use axios.get(url).",
+    "usage": "Include before </body>.",
     "example": "<script src=\"https://cdn.jsdelivr.net/npm/axios@1.7.2/dist/axios.min.js\"></script>"
   },
   "papaparse": {
     "name": "PapaParse",
-    "purpose": "Fast CSV parser.",
+    "purpose": "CSV parser.",
     "cdn": ["https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"],
-    "usage": "Include before </body>. Use Papa.parse(csvString).",
+    "usage": "Include before </body>.",
     "example": "<script src=\"https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js\"></script>"
   },
   "marked": {
     "name": "Marked",
     "purpose": "Markdown parser.",
     "cdn": ["https://cdn.jsdelivr.net/npm/marked/marked.min.js"],
-    "usage": "Include before </body>. Use marked.parse('# hello').",
+    "usage": "Include before </body>.",
     "example": "<script src=\"https://cdn.jsdelivr.net/npm/marked/marked.min.js\"></script>"
   },
   "dompurify": {
     "name": "DOMPurify",
-    "purpose": "Sanitizes HTML to prevent XSS attacks.",
+    "purpose": "XSS sanitizer.",
     "cdn": ["https://cdn.jsdelivr.net/npm/dompurify@3.1.5/dist/purify.min.js"],
-    "usage": "Include before </body>. Use DOMPurify.sanitize(dirtyHTML).",
+    "usage": "Include before </body>.",
     "example": "<script src=\"https://cdn.jsdelivr.net/npm/dompurify@3.1.5/dist/purify.min.js\"></script>"
   },
   "qrcode": {
     "name": "QRCode.js",
-    "purpose": "Generate QR codes.",
+    "purpose": "QR codes.",
     "cdn": ["https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"],
-    "usage": "Include before </body>. Use new QRCode(el, text).",
+    "usage": "Include before </body>.",
     "example": "<script src=\"https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js\"></script>"
   },
   "howler": {
     "name": "Howler.js",
-    "purpose": "Audio library for cross-browser audio.",
+    "purpose": "Audio library.",
     "cdn": ["https://cdn.jsdelivr.net/npm/howler@2.2.4/dist/howler.min.js"],
-    "usage": "Include before </body>. Use new Howl({ src: ['sound.mp3'] }).play().",
+    "usage": "Include before </body>.",
     "example": "<script src=\"https://cdn.jsdelivr.net/npm/howler@2.2.4/dist/howler.min.js\"></script>"
   },
   "videojs": {
     "name": "Video.js",
     "purpose": "HTML5 video player.",
-    "cdn": [
-      "https://vjs.zencdn.net/8.10.0/video-js.css",
-      "https://vjs.zencdn.net/8.10.0/video.min.js"
-    ],
-    "usage": "Include CSS in <head>, JS before </body>. Use videojs('my-video').",
-    "example": "<link href=\"https://vjs.zencdn.net/8.10.0/video-js.css\" rel=\"stylesheet\" />\n<script src=\"https://vjs.zencdn.net/8.10.0/video.min.js\"></script>"
+    "cdn": ["https://vjs.zencdn.net/8.10.0/video-js.css", "https://vjs.zencdn.net/8.10.0/video.min.js"],
+    "usage": "Include CSS in <head>, JS before </body>.",
+    "example": "<script src=\"https://vjs.zencdn.net/8.10.0/video.min.js\"></script>"
   },
   "plyr": {
     "name": "Plyr",
-    "purpose": "Simple, accessible HTML5 media player.",
-    "cdn": [
-      "https://cdn.plyr.io/3.7.8/plyr.css",
-      "https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"
-    ],
-    "usage": "Include CSS in <head>, JS before </body>. Use new Plyr('video').",
-    "example": "<link rel=\"stylesheet\" href=\"https://cdn.plyr.io/3.7.8/plyr.css\" />\n<script src=\"https://cdn.plyr.io/3.7.8/plyr.polyfilled.js\"></script>"
+    "purpose": "Media player.",
+    "cdn": ["https://cdn.plyr.io/3.7.8/plyr.css", "https://cdn.plyr.io/3.7.8/plyr.polyfilled.js"],
+    "usage": "Include CSS in <head>, JS before </body>.",
+    "example": "<script src=\"https://cdn.plyr.io/3.7.8/plyr.polyfilled.js\"></script>"
   },
   "quill": {
     "name": "Quill",
-    "purpose": "Powerful rich text editor.",
-    "cdn": [
-      "https://cdn.quilljs.com/1.3.6/quill.snow.css",
-      "https://cdn.quilljs.com/1.3.6/quill.js"
-    ],
-    "usage": "Include CSS in <head>, JS before </body>. Use new Quill('#editor', {...}).",
-    "example": "<link href=\"https://cdn.quilljs.com/1.3.6/quill.snow.css\" rel=\"stylesheet\">\n<script src=\"https://cdn.quilljs.com/1.3.6/quill.js\"></script>"
+    "purpose": "Rich text editor.",
+    "cdn": ["https://cdn.quilljs.com/1.3.6/quill.snow.css", "https://cdn.quilljs.com/1.3.6/quill.js"],
+    "usage": "Include CSS in <head>, JS before </body>.",
+    "example": "<script src=\"https://cdn.quilljs.com/1.3.6/quill.js\"></script>"
   },
   "codemirror": {
     "name": "CodeMirror",
-    "purpose": "Code editor component.",
+    "purpose": "Code editor.",
     "cdn": ["https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js"],
-    "usage": "Include before </body>. Use CodeMirror(el, {...}).",
+    "usage": "Include before </body>.",
     "example": "<script src=\"https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js\"></script>"
   },
   "ragina": {
     "name": "RAGina",
-    "purpose": "Client-side RAG (Retrieval-Augmented Generation) for document Q&A.",
+    "purpose": "Client-side RAG.",
     "cdn": ["https://cdn.jsdelivr.net/gh/suryasticsai/RAGina@main/ragina-t1.js"],
-    "usage": "Include before </body>. Use the window.RAGina class to ingest text and query it.",
+    "usage": "Include before </body>.",
     "example": "<script src=\"https://cdn.jsdelivr.net/gh/suryasticsai/RAGina@main/ragina-t1.js\"></script>"
+  },
+  "tonejs": {
+    "name": "Tone.js",
+    "purpose": "Web Audio framework for creating interactive music.",
+    "cdn": ["https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"],
+    "usage": "Include before </body>. Use new Tone.Synth().toDestination().",
+    "example": "<script src=\"https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js\"></script>"
   }
-}, 
-"tonejs": {
-  "name": "Tone.js",
-  "purpose": "Web Audio framework for creating interactive music.",
-  "cdn": ["https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"],
-  "usage": "Include before </body>. Use new Tone.Synth().toDestination().",
-  "example": "<script src=\"https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js\"></script>"
 }
