@@ -54,13 +54,15 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
-          NEMOTRON_API_KEY: ${{ secrets.NEMOTRON_API_KEY }}
           FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
+
+          # Skritimai Private Backend Integration
+          SKRITIMAI_BASE_URL: ${{ vars.SKRITIMAI_BASE_URL }}
+          SKRITIMAI_TIMEOUT_MS: ${{ vars.SKRITIMAI_TIMEOUT_MS }}
 
           # Optional overrides to control the AI model race dynamically
           PROVIDER_ORDER: ${{ vars.PROVIDER_ORDER }}
           RACE_SIZE: ${{ vars.RACE_SIZE }}
-          NEMOTRON_MODEL: ${{ vars.NEMOTRON_MODEL }}
           GROQ_MODEL: ${{ vars.GROQ_MODEL }}
 
           RUN_ID: ${{ github.run_id }}
