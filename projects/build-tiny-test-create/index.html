@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' https://fonts.gstatic.com; media-src 'self' blob:; connect-src 'self'; manifest-src 'self';">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TaskMate</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="icon-192.png">
+  <meta name="theme-color" content="hsl(287, 70%, 50%)">
+</head>
+<body>
+  <header class="app-header">
+    <h1>TaskMate</h1>
+    <nav>
+      <a href="#/dashboard" class="nav-link" aria-label="Dashboard">Dashboard</a>
+      <a href="#/settings" class="nav-link" aria-label="Settings">Settings</a>
+      <a href="#/about" class="nav-link" aria-label="About">About</a>
+    </nav>
+  </header>
+
+  <main>
+    <section id="dashboard" class="view" aria-live="polite">
+      <div class="task-input">
+        <input type="text" id="newTask" placeholder="Add a new task" aria-label="New task">
+        <button id="addTaskBtn" aria-label="Add task">Add</button>
+      </div>
+      <ul id="taskList" class="task-list"></ul>
+      <p id="emptyState" class="empty-state">No tasks yet, add one!</p>
+    </section>
+
+    <section id="settings" class="view hidden" aria-live="polite">
+      <h2>Settings</h2>
+      <p>Placeholder for settings.</p>
+    </section>
+
+    <section id="about" class="view hidden" aria-live="polite">
+      <h2>About</h2>
+      <p>TaskMate – a simple vanilla‑JS task manager.</p>
+    </section>
+  </main>
+
+  <script src="script.js"></script>
+
+<div class='toast-container'></div>
+
+<!-- Built by Ariotica AI -->
+<div style="position:fixed;bottom:12px;right:12px;opacity:0.35;font-size:11px;font-family:monospace;color:white;pointer-events:none;z-index:9999;">⚡ Ariotica</div>
+<script>if('serviceWorker' in navigator){addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}</script>
+</body>
+</html>
