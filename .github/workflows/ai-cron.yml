@@ -65,8 +65,8 @@ jobs:
         contains(github.event.comment.body, '[ask]') ||
         contains(github.event.comment.body, '[skill]') ||
         contains(github.event.comment.body, '[skills]') ||
-        contains(github.event.comment.body, '[forge]') ||
         contains(github.event.comment.body, '[inspire]') ||
+        contains(github.event.comment.body, '[forge]') ||
         contains(github.event.comment.body, '[leaderboard]')))
 
     steps:
@@ -143,7 +143,6 @@ jobs:
         run: |
           if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
-      # Only install Playwright if we are actually generating code
       - name: Cache Playwright Browsers
         if: contains(github.event.comment.body, '[create]') || contains(github.event.comment.body, '[inspire]') || inputs.mode == 'create' || inputs.mode == 'inspire'
         uses: actions/cache@v4
@@ -177,9 +176,15 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
           
-          # Skritimai Private Backend Integration
+          # Skritimai Integration (Using Secrets as set in your screenshot)
+          SKRITIMAI_API_KEY: ${{ secrets.SKRITIMAI_API_KEY }}
+          SKRITIMAI_GIST_ID: ${{ vars.SKRITIMAI_GIST_ID }}
           SKRITIMAI_BASE_URL: ${{ vars.SKRITIMAI_BASE_URL }}
-          SKRITIMAI_TIMEOUT_MS: ${{ vars.SKRITIMAI_TIMEOUT_MS }}
+          
+          # Provider Overrides (Using Secrets as set in your screenshot)
+          GROQ_REASONING_EFFORT: ${{ secrets.GROQ_REASONING_EFFORT }}
+          OPENROUTER_MODEL: ${{ secrets.OPENROUTER_MODEL }}
+          RUN_BUDGET_MS: ${{ secrets.RUN_BUDGET_MS }}
           
           PROVIDER_ORDER: ${{ vars.PROVIDER_ORDER }}
           RACE_SIZE: ${{ vars.RACE_SIZE }}
@@ -262,7 +267,6 @@ jobs:
           ACTOR: ${{ github.actor }}
           RUN_ID: ${{ github.run_id }}
         run: |
-          # Clean the project string to extract the slug (e.g. "[BUILD] skill-v2 [create]" -> "skill-v2")
           PROJECT=$(echo "$RAW_PROJECT" | sed 's/\[BUILD\] //i' | awk '{print $1}' | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z0-9-')
           
           echo "## 🤖 Ariotica Build Report" >> $GITHUB_STEP_SUMMARY
