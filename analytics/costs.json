@@ -630,5 +630,31 @@
         "tokensOut": 5239
       }
     ]
+  },
+  {
+    "ts": "2026-10-31T17:43:31.500Z",
+    "slug": "build-tiny-test-create",
+    "mode": "create",
+    "provider": "Groq",
+    "model": "openai/gpt-oss-120b",
+    "runId": "41225803776",
+    "cost": 0.00169635,
+    "tokensIn": 1214,
+    "tokensOut": 2019,
+    "score": 80,
+    "sec": 6,
+    "race": [
+      {
+        "provider": "Groq",
+        "model": "openai/gpt-oss-120b",
+        "sec": 6,
+        "ok": true,
+        "score": 100,
+        "reason": "",
+        "cost": 0.00169635,
+        "tokensIn": 1214,
+        "tokensOut": 2019
+      }
+    ]
   }
 ]

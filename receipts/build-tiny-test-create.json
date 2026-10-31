@@ -1,0 +1,67 @@
+{
+  "schema": 2,
+  "app": "build-tiny-test-create",
+  "files": {
+    "index.html": "f5faa19c82c279bf2bb2b9eedede26e2d83e3150241cba6aa524354fb7172f18",
+    "style.css": "96cb1f52106a9a82a7cd8114824e554775b30be67b2614c2cb8ec8f45cb3037c",
+    "script.js": "348322c3c98ffb5ef8da90bfcdb159573b5028478a534806d3444dbd74f1e03d",
+    "icon-192.png": "f29532438375c6ef50fdc037b22a3dd3c7063ba5978c6f1fb92f092b69455cbc",
+    "icon-512.png": "f29532438375c6ef50fdc037b22a3dd3c7063ba5978c6f1fb92f092b69455cbc",
+    "manifest.json": "dc829366756b38cbc7109785be47d3d27f3420e00c95c8327c0822c753388d49",
+    "sw.js": "89df41938956c02f79a3de1af967c96a627ca9d967e8819c8e8d735cbc4b4861",
+    "meta.json": "9d4d9c5afedae9ae12a80258eae72a2a91cef3331331d900869829d49ec6a7e6",
+    "CHANGELOG.md": "ef60c7cff7687898dd87a14c62fca43efd0e2de0974a85358d6766e564761ab5"
+  },
+  "bytes": 25909,
+  "builtAt": "2026-10-31T17:43:26.157Z",
+  "mode": "create",
+  "repo": "suryasticsai/Ariotica",
+  "runId": "41225803776",
+  "commit": "4d0900d5840cf975098be10e969ea86f8ce36387",
+  "model": {
+    "provider": "Groq",
+    "name": "openai/gpt-oss-120b"
+  },
+  "race": [
+    {
+      "provider": "Groq",
+      "model": "openai/gpt-oss-120b",
+      "sec": 6,
+      "ok": true,
+      "score": 100,
+      "reason": "",
+      "cost": 0.00169635,
+      "tokensIn": 1214,
+      "tokensOut": 2019
+    }
+  ],
+  "sha256": "f5faa19c82c279bf2bb2b9eedede26e2d83e3150241cba6aa524354fb7172f18",
+  "skillsUsed": [],
+  "checks": {
+    "complete": true,
+    "vanilla": true,
+    "externalRefs": [],
+    "connectsTo": [],
+    "zeroDeps": true,
+    "smoke": "pass",
+    "smokeErrors": [],
+    "scan": {
+      "total": 1,
+      "high": 1,
+      "medium": 0,
+      "low": 0,
+      "byTool": {
+        "custom": 1,
+        "eslint": 0,
+        "sparrow": 0,
+        "externals": 0
+      }
+    }
+  },
+  "promptSha256": "3c697ce78982917628087c8cdd4125e9bcec3424f81249932fbd075d15bad376",
+  "prompt": "A simple calculator app",
+  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js build-tiny-test-create",
+  "cost": 0.00169635,
+  "tokensIn": 1214,
+  "tokensOut": 2019
+}
