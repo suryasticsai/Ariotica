@@ -56,11 +56,16 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
 
-          # Skritimai Private Backend Integration
+          # Skritimai Integration
+          SKRITIMAI_API_KEY: ${{ secrets.SKRITIMAI_API_KEY }}
+          SKRITIMAI_GIST_ID: ${{ vars.SKRITIMAI_GIST_ID }}
           SKRITIMAI_BASE_URL: ${{ vars.SKRITIMAI_BASE_URL }}
-          SKRITIMAI_TIMEOUT_MS: ${{ vars.SKRITIMAI_TIMEOUT_MS }}
-
-          # Optional overrides to control the AI model race dynamically
+          
+          # Provider Overrides
+          GROQ_REASONING_EFFORT: ${{ secrets.GROQ_REASONING_EFFORT }}
+          OPENROUTER_MODEL: ${{ secrets.OPENROUTER_MODEL }}
+          RUN_BUDGET_MS: ${{ secrets.RUN_BUDGET_MS }}
+          
           PROVIDER_ORDER: ${{ vars.PROVIDER_ORDER }}
           RACE_SIZE: ${{ vars.RACE_SIZE }}
           GROQ_MODEL: ${{ vars.GROQ_MODEL }}
@@ -72,17 +77,12 @@ jobs:
       - name: Commit Proposals and Plugins
         if: success()
         run: |
-          # Standard GitHub Actions Bot Identity
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           
-          # Ensure the plugins directory exists so git add doesn't fail
           mkdir -p lib/plugins proposals
-          
-          # Stage both proposals and the newly compiled plugins
           git add proposals/ lib/plugins/
           
-          # Check if there's anything to commit
           if git diff --staged --quiet; then
             echo "No new proposals or plugins generated."
             exit 0
@@ -90,7 +90,6 @@ jobs:
           
           git commit -m "docs: new evolution proposal and plugin [skip ci]"
           
-          # Retry logic for rebase/push in case main branch is active
           for i in 1 2 3; do
             git pull -q --rebase origin main && git push -q && echo "Proposals and plugins pushed successfully!" && exit 0
             echo "Push failed (attempt $i/3). Retrying in 3s..."
