@@ -148,9 +148,10 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: ${{ runner.os }}-playwright-${{ hashFiles('**/package.json') }}
+          # FIXED: Bumped cache version to v2 to force download of the headless shell
+          key: ${{ runner.os }}-playwright-v2-${{ hashFiles('**/package.json') }}
           restore-keys: |
-            ${{ runner.os }}-playwright-
+            ${{ runner.os }}-playwright-v2-
 
       - name: Install Playwright Chromium
         if: contains(github.event.comment.body, '[create]') || contains(github.event.comment.body, '[inspire]') || inputs.mode == 'create' || inputs.mode == 'inspire'
@@ -160,7 +161,8 @@ jobs:
           NEEDRESTART_MODE: a
         run: |
           sudo apt-get update
-          npx playwright install chromium --with-deps
+          # FIXED: Added --force to ensure the headless shell is installed
+          npx playwright install chromium --with-deps --force
 
       - name: Validate Agent Code
         run: |
@@ -175,21 +177,21 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
-          
-          # Skritimai Integration (Using Secrets as set in your screenshot)
+
+          # Skritimai Integration
           SKRITIMAI_API_KEY: ${{ secrets.SKRITIMAI_API_KEY }}
           SKRITIMAI_GIST_ID: ${{ vars.SKRITIMAI_GIST_ID }}
           SKRITIMAI_BASE_URL: ${{ vars.SKRITIMAI_BASE_URL }}
-          
-          # Provider Overrides (Using Secrets as set in your screenshot)
+
+          # Provider Overrides
           GROQ_REASONING_EFFORT: ${{ secrets.GROQ_REASONING_EFFORT }}
           OPENROUTER_MODEL: ${{ secrets.OPENROUTER_MODEL }}
           RUN_BUDGET_MS: ${{ secrets.RUN_BUDGET_MS }}
-          
+
           PROVIDER_ORDER: ${{ vars.PROVIDER_ORDER }}
           RACE_SIZE: ${{ vars.RACE_SIZE }}
           GROQ_MODEL: ${{ vars.GROQ_MODEL }}
-          
+
           EVENT_NAME: ${{ github.event_name }}
           ISSUE_TITLE: ${{ github.event.issue.title }}
           ISSUE_BODY: ${{ github.event.issue.body }}
