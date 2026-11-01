@@ -1,5 +1,5 @@
 :root {
-  --color-bg: #0a0a0a;
+  --color-bg: linear-gradient(135deg, #0a0a2a, #1a0a3a);
   --color-surface: rgba(255, 255, 255, 0.08);
   --color-primary: #0d6efd;
   --color-primary-dark: #0a58ca;
@@ -7,6 +7,7 @@
   --color-muted: #555;
   --radius: 1rem;
   --transition: 0.3s ease;
+  --neon-glow: 0 0 8px var(--color-primary), 0 0 20px var(--color-primary);
 }
 
 * { box-sizing: border-box; margin:0; padding:0; }
@@ -47,7 +48,6 @@ body {
   flex-direction: column;
   gap: 1.5rem;
   align-items: center;
-  /* glassmorphism effect */
   border: 1px solid rgba(255,255,255,0.12);
 }
 
@@ -80,13 +80,14 @@ body {
   padding: 1rem;
   cursor: pointer;
   transition: var(--transition);
-  /* bounce animation on click */
-  will-change: transform;
+  box-shadow: 0 0 0 transparent;
+  will-change: transform, box-shadow;
 }
 
 .key:hover, .key:focus {
   background: var(--color-primary);
   color: #fff;
+  box-shadow: var(--neon-glow);
   outline: none;
 }
 
