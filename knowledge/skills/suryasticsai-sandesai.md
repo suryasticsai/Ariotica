@@ -1,6 +1,6 @@
 ---
 name: suryasticsai-sandesai
-status: verified
+status: draft
 source: https://github.com/suryasticsai/sandesai
 created: 2026-10-29T09:27:50.137Z
 ---
