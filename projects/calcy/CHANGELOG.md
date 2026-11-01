@@ -1,5 +1,51 @@
 # Changelog
 
+## v1.7.2 — 2026-11-01 16:45 UTC — improve
+
+**Model:** Groq/openai/gpt-oss-120b · **Cost:** $0.0037
+
+### Files
+- `style.css` (+3 −10)
+
+#### `style.css`
+```diff
+@@ … @@
+   padding: 1rem;
+   cursor: pointer;
+   transition: var(--transition);
+-  box-shadow: 0 0 0 transparent;
++  box-shadow: 0 4px var(--color-muted);
+   will-change: transform, box-shadow;
+ }
+ 
+@@ … @@
+ }
+ 
+ .key:active {
+-  animation: bounce 0.3s ease;
+-}
+-
+-@keyframes bounce {
+-  0%   { transform: scale(1); }
+-  30%  { transform: scale(0.85); }
+-  60%  { transform: scale(1.05); }
+-  100% { transform: scale(1); }
++  transform: translateY(2px);
++  box-shadow: inset 0 2px 4px rgba(0,0,0,0.6);
+ }
+ 
+ .operator { background: rgba(13,111,255,0.2); }
+@@ … @@
+   .app{padding:1rem;}
+   .key{font-size:1.5rem;padding:0.75rem;}
+ }
+-
+```
+
+### Human follow-up
+Low
+
+
 ## v1.6.2 — 2026-11-01 16:26 UTC — improve
 
 **Model:** Groq/openai/gpt-oss-120b · **Cost:** $0.0038
@@ -1664,13 +1710,6 @@ Low – the code is ready to run; only replace logo.png with an actual image and
    <title>Simple Calculator</title>
    <link rel="stylesheet" href="style.css">
 -  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-ENjdO4Dr2bkBIFxQpeoYz1HIb6+1L9gq6a7k6R9a9p6G6V9p5h6V6K3N9T9qv0T" crossorigin="anonymous">
--  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js" defer integrity="sha384-EjEsUfA/5AUp6AOIxGF9AopVVVwLwWKoPCOZPsblbSOTPiaTUOkSxL5rKNN5Vvd3" crossorigin="anonymous"></script>
-+  <!-- Pico.css for minimal reset and base styling -->
-+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU" crossorigin="anonymous">
-   <link rel="manifest" href="manifest.json">
-   <link rel="icon" type="image/png" href="icon-192.png">
-   <meta name="theme-color" content="hsl(164, 70%, 50%)">
-+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-ENjdO4Dr2bkBIFxQpeoYz1HIb6+1L9gq6a7k6R9a9p6G6V9p5h6V6K3N9T9qv0T" crossorigin="anonymous">
 
 ---
 

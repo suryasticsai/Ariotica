@@ -962,5 +962,31 @@
         "tokensOut": 4093
       }
     ]
+  },
+  {
+    "ts": "2026-11-01T16:45:38.395Z",
+    "slug": "calcy",
+    "mode": "improve",
+    "provider": "Groq",
+    "model": "openai/gpt-oss-120b",
+    "runId": "41327886096",
+    "cost": 0.0037300500000000004,
+    "tokensIn": 4822,
+    "tokensOut": 4009,
+    "score": 100,
+    "sec": 10,
+    "race": [
+      {
+        "provider": "Groq",
+        "model": "openai/gpt-oss-120b",
+        "sec": 10,
+        "ok": true,
+        "score": 100,
+        "reason": "",
+        "cost": 0.0037300500000000004,
+        "tokensIn": 4822,
+        "tokensOut": 4009
+      }
+    ]
   }
 ]
