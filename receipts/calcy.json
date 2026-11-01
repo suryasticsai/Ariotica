@@ -2,22 +2,22 @@
   "schema": 2,
   "app": "calcy",
   "files": {
-    "index.html": "8e5fb7506a42ac9344ce443dc91e49682495ee9dcdf6424edb053642eed323e0",
-    "style.css": "afcb11f29886380f88070adb67fcbeb31eeffb5d55bb95861c3f68ba1c7bac38",
-    "script.js": "f3208f133f38d900b731623c886d8ee5f8b3e24781cc9de6ce94d6db3d79ba26",
+    "index.html": "767006ff78c025a9d5fd8c64c909a1f21b7a95fa68107293718dd2721c8f6a0b",
+    "style.css": "07594d61af0a6c37aaca4873de4753f1670e5ccff8452cfe1e30753e6fd853b8",
+    "script.js": "0a3e78b19d980a44611acbf1a7e3fffe5bfcea0fc06643b721b290af3561c8e1",
     "icon-192.png": "9f58aa4eabaa258a1b04c35cbedd8c74bf56c39408e2d4dcea3c75de145dd859",
     "icon-512.png": "9f58aa4eabaa258a1b04c35cbedd8c74bf56c39408e2d4dcea3c75de145dd859",
     "manifest.json": "356efdbbd1dedd73b8c2e63478efc1b14ac0301d42c1efee778750a41e8c6679",
-    "sw.js": "03c29124cb412740eb06873d145afd61e9e2d89511e3be16451ed5061aa564ff",
-    "meta.json": "97bf3540c6728923ba7c290faa23d636a2006bfdf21e8bc425f50bf8ff26a725",
-    "CHANGELOG.md": "8f8960281172078b745a94a9d8d4d546515748bd271db2679cb453f0a90e7d40"
+    "sw.js": "df16ffd5579859b531ae8189493cce3ec05d2719aef2773fa2dc161093f9d57b",
+    "meta.json": "7c9e500a80ffa5539c851192fe49f5b673fab60f8f266e13fd3ecd72fd59056d",
+    "CHANGELOG.md": "024d6b3b4d90745f61e17009cb7cf9fd969390e1626ea7b0d4d32a523a481196"
   },
-  "bytes": 88512,
-  "builtAt": "2026-11-01T11:35:52.010Z",
+  "bytes": 88580,
+  "builtAt": "2026-11-01T12:08:01.231Z",
   "mode": "improve",
   "repo": "suryasticsai/Ariotica",
-  "runId": "41302536197",
-  "commit": "570aae142d6d9edce59231466f5e54b2e74105b5",
+  "runId": "41304944396",
+  "commit": "7f9215977157ee2b96728239baf4a6da7ae11703",
   "model": {
     "provider": "Groq",
     "name": "openai/gpt-oss-120b"
@@ -27,21 +27,21 @@
       "provider": "Skritimai",
       "sec": 0,
       "ok": false,
-      "reason": "Skritimai/skritimai network error: fetch failed"
+      "reason": "SKRITIMAI_BASE_URL / SKRITIMAI_GIST_ID not set"
     },
     {
       "provider": "Groq",
       "model": "openai/gpt-oss-120b",
-      "sec": 9,
+      "sec": 10,
       "ok": true,
       "score": 100,
       "reason": "",
-      "cost": 0.0032625,
-      "tokensIn": 5215,
-      "tokensOut": 3307
+      "cost": 0.0037954499999999997,
+      "tokensIn": 4728,
+      "tokensOut": 4115
     }
   ],
-  "sha256": "8e5fb7506a42ac9344ce443dc91e49682495ee9dcdf6424edb053642eed323e0",
+  "sha256": "767006ff78c025a9d5fd8c64c909a1f21b7a95fa68107293718dd2721c8f6a0b",
   "skillsUsed": [],
   "checks": {
     "complete": true,
@@ -70,10 +70,10 @@
       }
     }
   },
-  "promptSha256": "b12c27beb37dd9de7a5501d53797bdab6845d89c96d6b0b1b3daaa97d3dc1a5c",
-  "prompt": "can you transform my calculator in this UI on image remove home features and about do add proper header and footer\n\n![Screenshot_20261101_170312.jpg](https://github.com/user-attachments/assets/228a96ea-e65e-4784-bd86-94b9654d1f65)",
+  "promptSha256": "75f34f811b4535a98391b56c59a257165d43a49203ef47d072f209c17200bf65",
+  "prompt": "Add glassmorphism effects to the calculator background and add smooth bounce animations (using CSS @keyframes) when the user clicks a button.",
   "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js calcy",
-  "cost": 0.0032625,
-  "tokensIn": 5215,
-  "tokensOut": 3307
+  "cost": 0.0037954499999999997,
+  "tokensIn": 4728,
+  "tokensOut": 4115
 }
