@@ -752,5 +752,40 @@
         "tokensOut": 3685
       }
     ]
+  },
+  {
+    "ts": "2026-11-01T05:18:30.524Z",
+    "slug": "calcy",
+    "mode": "fix",
+    "provider": "Groq",
+    "model": "openai/gpt-oss-120b",
+    "runId": "41276379291",
+    "cost": 0.0036018,
+    "tokensIn": 4737,
+    "tokensOut": 3855,
+    "score": 100,
+    "sec": 9,
+    "race": [
+      {
+        "provider": "Skritimai",
+        "sec": 0,
+        "ok": false,
+        "reason": "Skritimai/skritimai network error: fetch failed",
+        "cost": 0,
+        "tokensIn": 0,
+        "tokensOut": 0
+      },
+      {
+        "provider": "Groq",
+        "model": "openai/gpt-oss-120b",
+        "sec": 9,
+        "ok": true,
+        "score": 100,
+        "reason": "",
+        "cost": 0.0036018,
+        "tokensIn": 4737,
+        "tokensOut": 3855
+      }
+    ]
   }
 ]

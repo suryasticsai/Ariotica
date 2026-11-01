@@ -2,22 +2,22 @@
   "schema": 2,
   "app": "calcy",
   "files": {
-    "index.html": "5f0fad0b1f732f5f1a9bf89b1760796f9e43cd724b9828b7944f5a95b8138a5c",
-    "style.css": "3d6bf4e0c37a27c8539341ebd69c4116d1f6120ed24e0bee6d9b163e803f52f8",
-    "script.js": "64f577034f7f4406f1ec3399a35f92d81d49eef56d4f7cc4bfcf830d8185c94e",
+    "index.html": "b9772ff2b9a8303b5deaebba4f67422f200870a5e0f22b68afaa043a8b0f08de",
+    "style.css": "1802b379dc5c50c5dd7c51a8bcaada69a2d89c78da6045a881efc2ba2b45ccc2",
+    "script.js": "753b1f537f8cae3d74968a6f03a6e89119d8556ce58ee55b1d9be93ec6c5fe36",
     "icon-192.png": "9f58aa4eabaa258a1b04c35cbedd8c74bf56c39408e2d4dcea3c75de145dd859",
     "icon-512.png": "9f58aa4eabaa258a1b04c35cbedd8c74bf56c39408e2d4dcea3c75de145dd859",
     "manifest.json": "356efdbbd1dedd73b8c2e63478efc1b14ac0301d42c1efee778750a41e8c6679",
-    "sw.js": "ba4fb40f6484d2e3fce84bc704b13ba9aac4e37ef789a2e6e05e217798db1764",
-    "meta.json": "d326626a015440a60d2f88104f592663a886d523160abe8b5e85c92106793b7e",
-    "CHANGELOG.md": "21f13ba695a52e11efa9a45e727518aa4d2a3052987ad080f72b974b7182a145"
+    "sw.js": "abc596e868e588689fccfe706de7b1d4dc6e8920a4b3890c55c8d110621670ac",
+    "meta.json": "c3f99ce2dccf9b4a67d13e2f5c02cf0f2b9d27efa0891c0484073915740592f4",
+    "CHANGELOG.md": "8f747631f3350f06c2bbb1815ba18007cf73034a6117ef8175e4fc49de971d52"
   },
-  "bytes": 49199,
-  "builtAt": "2026-11-01T05:01:24.188Z",
-  "mode": "improve",
+  "bytes": 52513,
+  "builtAt": "2026-11-01T05:18:25.089Z",
+  "mode": "fix",
   "repo": "suryasticsai/Ariotica",
-  "runId": "41275240153",
-  "commit": "b6e58dee8b050839af266af6420acc428ff690a1",
+  "runId": "41276379291",
+  "commit": "47a49ce6cab9b7a0d8babb975de7ec6584ba46a3",
   "model": {
     "provider": "Groq",
     "name": "openai/gpt-oss-120b"
@@ -36,12 +36,12 @@
       "ok": true,
       "score": 100,
       "reason": "",
-      "cost": 0.00335835,
-      "tokensIn": 3964,
-      "tokensOut": 3685
+      "cost": 0.0036018,
+      "tokensIn": 4737,
+      "tokensOut": 3855
     }
   ],
-  "sha256": "5f0fad0b1f732f5f1a9bf89b1760796f9e43cd724b9828b7944f5a95b8138a5c",
+  "sha256": "b9772ff2b9a8303b5deaebba4f67422f200870a5e0f22b68afaa043a8b0f08de",
   "skillsUsed": [],
   "checks": {
     "complete": true,
@@ -70,10 +70,10 @@
       }
     }
   },
-  "promptSha256": "b25a8a04681c0f399578f5042d0080221ba5d2f051303def71b63f06c420f3c4",
-  "prompt": "Add logo img src in header and footer to the app make it look like physical Calculator\nMake it mobile ui friendly add menu options in the bottom menu icons",
+  "promptSha256": "4b15e41b1216107085a9eed923240035a41a290e44fa147823e86703f5ecd36d",
+  "prompt": "replace logo.png to icon-512.png and icon-192.png use and fix whole UI",
   "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js calcy",
-  "cost": 0.00335835,
-  "tokensIn": 3964,
-  "tokensOut": 3685
+  "cost": 0.0036018,
+  "tokensIn": 4737,
+  "tokensOut": 3855
 }
