@@ -2,22 +2,22 @@
   "schema": 2,
   "app": "calcy",
   "files": {
-    "index.html": "b9772ff2b9a8303b5deaebba4f67422f200870a5e0f22b68afaa043a8b0f08de",
-    "style.css": "1802b379dc5c50c5dd7c51a8bcaada69a2d89c78da6045a881efc2ba2b45ccc2",
-    "script.js": "753b1f537f8cae3d74968a6f03a6e89119d8556ce58ee55b1d9be93ec6c5fe36",
+    "index.html": "218695e6116eb76b80e4f863f8345bc931cea2b12415b47c1c1b9d7478eb509c",
+    "style.css": "3c5621df0be53ff67b6b2b71a89568ecd70b23a2b0cfe11eabf13d7c61f79514",
+    "script.js": "05099c182658c5d552667858ca2a9a0eb11173fdd09bbd6f22e6b7c4db7f8b10",
     "icon-192.png": "9f58aa4eabaa258a1b04c35cbedd8c74bf56c39408e2d4dcea3c75de145dd859",
     "icon-512.png": "9f58aa4eabaa258a1b04c35cbedd8c74bf56c39408e2d4dcea3c75de145dd859",
     "manifest.json": "356efdbbd1dedd73b8c2e63478efc1b14ac0301d42c1efee778750a41e8c6679",
-    "sw.js": "abc596e868e588689fccfe706de7b1d4dc6e8920a4b3890c55c8d110621670ac",
-    "meta.json": "c3f99ce2dccf9b4a67d13e2f5c02cf0f2b9d27efa0891c0484073915740592f4",
-    "CHANGELOG.md": "8f747631f3350f06c2bbb1815ba18007cf73034a6117ef8175e4fc49de971d52"
+    "sw.js": "d4ac88a378affeb8ad3e8674c8b27c58f4a9b3130d156e847c3b1c0bd12b069b",
+    "meta.json": "623637778190181e6f2f819138f4c1953d1f5657ec755a02881d1d54a01d9e49",
+    "CHANGELOG.md": "52eec588d36ae42db34f5d5e19d981631c54fa1e610d532914b93e5265308c34"
   },
-  "bytes": 52513,
-  "builtAt": "2026-11-01T05:18:25.089Z",
+  "bytes": 68852,
+  "builtAt": "2026-11-01T09:43:00.315Z",
   "mode": "fix",
   "repo": "suryasticsai/Ariotica",
-  "runId": "41276379291",
-  "commit": "47a49ce6cab9b7a0d8babb975de7ec6584ba46a3",
+  "runId": "41294261267",
+  "commit": "3923ab07c772a085d5b24535dc5dc02ae7388046",
   "model": {
     "provider": "Groq",
     "name": "openai/gpt-oss-120b"
@@ -32,16 +32,16 @@
     {
       "provider": "Groq",
       "model": "openai/gpt-oss-120b",
-      "sec": 9,
+      "sec": 10,
       "ok": true,
       "score": 100,
       "reason": "",
-      "cost": 0.0036018,
-      "tokensIn": 4737,
-      "tokensOut": 3855
+      "cost": 0.0037344,
+      "tokensIn": 5131,
+      "tokensOut": 3953
     }
   ],
-  "sha256": "b9772ff2b9a8303b5deaebba4f67422f200870a5e0f22b68afaa043a8b0f08de",
+  "sha256": "218695e6116eb76b80e4f863f8345bc931cea2b12415b47c1c1b9d7478eb509c",
   "skillsUsed": [],
   "checks": {
     "complete": true,
@@ -70,10 +70,10 @@
       }
     }
   },
-  "promptSha256": "4b15e41b1216107085a9eed923240035a41a290e44fa147823e86703f5ecd36d",
-  "prompt": "replace logo.png to icon-512.png and icon-192.png use and fix whole UI",
+  "promptSha256": "269876182f6f8ca7d129defc1ef691781b89f5408bbf75be453c8c9e6b833bbd",
+  "prompt": "![Screenshot_20261101_151007.jpg](https://github.com/user-attachments/assets/3d6b642d-12cc-452c-aa6b-07554b6376af)\n\n\nPlease make UI with all numbers from 0 to 9\nAnd calculate symbols and casio style calculator the breadcrum is not working w",
   "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js calcy",
-  "cost": 0.0036018,
-  "tokensIn": 4737,
-  "tokensOut": 3855
+  "cost": 0.0037344,
+  "tokensIn": 5131,
+  "tokensOut": 3953
 }
