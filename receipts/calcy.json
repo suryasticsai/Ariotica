@@ -2,22 +2,22 @@
   "schema": 2,
   "app": "calcy",
   "files": {
-    "index.html": "a8c99d9b732f0265ffbd6920d5385b491b6b21b7c3b1162afadef4e3b76dbeff",
-    "style.css": "0d64e54422e0994901622b7220c81bee5ed747cb4a5d70a8d9a3fadffb851dee",
-    "script.js": "dbbb274caa8112d7754ce6c93ad4525303eb89c2074048f3376e7976a135c8bc",
-    "manifest.json": "356efdbbd1dedd73b8c2e63478efc1b14ac0301d42c1efee778750a41e8c6679",
+    "index.html": "5f0fad0b1f732f5f1a9bf89b1760796f9e43cd724b9828b7944f5a95b8138a5c",
+    "style.css": "3d6bf4e0c37a27c8539341ebd69c4116d1f6120ed24e0bee6d9b163e803f52f8",
+    "script.js": "64f577034f7f4406f1ec3399a35f92d81d49eef56d4f7cc4bfcf830d8185c94e",
     "icon-192.png": "9f58aa4eabaa258a1b04c35cbedd8c74bf56c39408e2d4dcea3c75de145dd859",
     "icon-512.png": "9f58aa4eabaa258a1b04c35cbedd8c74bf56c39408e2d4dcea3c75de145dd859",
-    "sw.js": "40bf2e73c170b2b98990f13cead2753df402273fc4b03a1c93ab7a409fb5a0c9",
-    "meta.json": "755546aaa41c9976235254a59c8ff2baae2c345164dbe8e3d4018c99566e1dc1",
-    "CHANGELOG.md": "4d54cab7fb7813616bb0ad2ee47b5ae926daea0a7c0a72b26dd638d6fd304d6d"
+    "manifest.json": "356efdbbd1dedd73b8c2e63478efc1b14ac0301d42c1efee778750a41e8c6679",
+    "sw.js": "ba4fb40f6484d2e3fce84bc704b13ba9aac4e37ef789a2e6e05e217798db1764",
+    "meta.json": "d326626a015440a60d2f88104f592663a886d523160abe8b5e85c92106793b7e",
+    "CHANGELOG.md": "21f13ba695a52e11efa9a45e727518aa4d2a3052987ad080f72b974b7182a145"
   },
-  "bytes": 36899,
-  "builtAt": "2026-11-01T04:54:04.080Z",
+  "bytes": 49199,
+  "builtAt": "2026-11-01T05:01:24.188Z",
   "mode": "improve",
   "repo": "suryasticsai/Ariotica",
-  "runId": "41274791956",
-  "commit": "28a0fbd1ac2311ae6b001729b7413486ab75b8f5",
+  "runId": "41275240153",
+  "commit": "b6e58dee8b050839af266af6420acc428ff690a1",
   "model": {
     "provider": "Groq",
     "name": "openai/gpt-oss-120b"
@@ -32,16 +32,16 @@
     {
       "provider": "Groq",
       "model": "openai/gpt-oss-120b",
-      "sec": 7,
+      "sec": 9,
       "ok": true,
       "score": 100,
       "reason": "",
-      "cost": 0.0026067,
-      "tokensIn": 4343,
-      "tokensOut": 2607
+      "cost": 0.00335835,
+      "tokensIn": 3964,
+      "tokensOut": 3685
     }
   ],
-  "sha256": "a8c99d9b732f0265ffbd6920d5385b491b6b21b7c3b1162afadef4e3b76dbeff",
+  "sha256": "5f0fad0b1f732f5f1a9bf89b1760796f9e43cd724b9828b7944f5a95b8138a5c",
   "skillsUsed": [],
   "checks": {
     "complete": true,
@@ -49,6 +49,7 @@
     "externalRefs": [
       "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
       "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css",
+      "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css",
       "https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js",
       "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
     ],
@@ -69,10 +70,10 @@
       }
     }
   },
-  "promptSha256": "909b08c629890505b2c6ca8a7c7b9c2b8c4c0c44d56128e0131b69337d7ce2e3",
-  "prompt": "Make the calculator UI much larger, centered in the middle of the screen, and give it a stunning dark-mode glassmorphism design with a grid layout for the buttons.\nAdded logo with names icon-512.png and icon-192.png![Screenshot_20261101_102",
+  "promptSha256": "b25a8a04681c0f399578f5042d0080221ba5d2f051303def71b63f06c420f3c4",
+  "prompt": "Add logo img src in header and footer to the app make it look like physical Calculator\nMake it mobile ui friendly add menu options in the bottom menu icons",
   "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js calcy",
-  "cost": 0.0026067,
-  "tokensIn": 4343,
-  "tokensOut": 2607
+  "cost": 0.00335835,
+  "tokensIn": 3964,
+  "tokensOut": 3685
 }
