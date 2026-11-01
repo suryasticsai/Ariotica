@@ -20,6 +20,11 @@
       "sri": "sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz",
       "bytes": 80721,
       "verifiedAt": "2026-11-01T04:35:36.349Z"
+    },
+    "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css": {
+      "sri": "sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU",
+      "bytes": 83319,
+      "verifiedAt": "2026-11-01T04:53:56.544Z"
     }
   }
 }

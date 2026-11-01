@@ -23,38 +23,30 @@ function handleCalc() {
 
   if (isNaN(a) || isNaN(b)) {
     updateResult('Please enter both numbers');
+    showToast('Both numbers are required', 'warning');
     return;
   }
   if (op === '/' && b === 0) {
     updateResult('Cannot divide by zero');
+    showToast('Division by zero', 'error');
     return;
   }
 
   let res;
   switch (op) {
-    case '+':
-      res = a + b;
-      break;
-    case '-':
-      res = a - b;
-      break;
-    case '*':
-      res = a * b;
-      break;
-    case '/':
-      res = a / b;
-      break;
-    default:
-      res = 'Error';
+    case '+': res = a + b; break;
+    case '-': res = a - b; break;
+    case '*': res = a * b; break;
+    case '/': res = a / b; break;
+    default: res = 'Error';
   }
   updateResult(`Result: ${res}`);
+  showToast('Calculation successful', 'success');
 }
 
 function updateResult(message) {
   resultDiv.textContent = message;
 }
-
-window.addEventListener('DOMContentLoaded', init);
 
 function showToast(message, type = 'info') {
   const validTypes = ['info', 'success', 'error', 'warning'];
@@ -66,16 +58,15 @@ function showToast(message, type = 'info') {
     document.body.appendChild(container);
   }
   const toast = document.createElement('div');
-  toast.className = 'toast toast-' + type;
-  toast.textContent = String(message);
+  toast.className = `toast toast-${type}`;
+  toast.textContent = message;
   container.appendChild(toast);
-  requestAnimationFrame(() => {
-    toast.classList.add('toast-visible');
-  });
+  requestAnimationFrame(() => toast.classList.add('toast-visible'));
   setTimeout(() => {
     toast.classList.remove('toast-visible');
     toast.classList.add('toast-hidden');
     setTimeout(() => toast.remove(), 300);
   }, 3000);
 }
-window.showToast = showToast;
+
+window.addEventListener('DOMContentLoaded', init);
