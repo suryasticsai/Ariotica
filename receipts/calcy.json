@@ -1,0 +1,71 @@
+{
+  "schema": 2,
+  "app": "calcy",
+  "files": {
+    "index.html": "dec866fc7be6262200c0b30c049824d95512f83c80c09b30546add2045a3ec48",
+    "style.css": "0c504a22e9a96f537a33c47836ee7dc64b045ed3fa3662f7d265a97ead50b87c",
+    "script.js": "9e94d47e6ad66bc03add0f5b9fb1df56dde6f6cdcd2d587f75b2c995922faff4",
+    "icon-192.png": "9f58aa4eabaa258a1b04c35cbedd8c74bf56c39408e2d4dcea3c75de145dd859",
+    "icon-512.png": "9f58aa4eabaa258a1b04c35cbedd8c74bf56c39408e2d4dcea3c75de145dd859",
+    "manifest.json": "356efdbbd1dedd73b8c2e63478efc1b14ac0301d42c1efee778750a41e8c6679",
+    "sw.js": "f4ec8c8e05cbf84e1c6e63baac062f5f24e4cb2e48a1d3a2f456aca54243fab9",
+    "meta.json": "ff63ded583fe9242b822a576346e6d8c09ad1041d2c61252cd2ff320c287e4b1",
+    "CHANGELOG.md": "40f9547300294db450394e6c5ce8d138c121e6a019c7f476a18438fc0cba9b6c"
+  },
+  "bytes": 25188,
+  "builtAt": "2026-11-01T04:35:44.602Z",
+  "mode": "create",
+  "repo": "suryasticsai/Ariotica",
+  "runId": "41273654880",
+  "commit": "01c4ecf341f029af79f4ddca4e39482d38b782ac",
+  "model": {
+    "provider": "Groq",
+    "name": "openai/gpt-oss-120b"
+  },
+  "race": [
+    {
+      "provider": "Groq",
+      "model": "openai/gpt-oss-120b",
+      "sec": 5,
+      "ok": true,
+      "score": 100,
+      "reason": "",
+      "cost": 0.0015693,
+      "tokensIn": 1227,
+      "tokensOut": 1847
+    }
+  ],
+  "sha256": "dec866fc7be6262200c0b30c049824d95512f83c80c09b30546add2045a3ec48",
+  "skillsUsed": [],
+  "checks": {
+    "complete": true,
+    "vanilla": true,
+    "externalRefs": [
+      "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css",
+      "https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js",
+      "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    ],
+    "connectsTo": [],
+    "zeroDeps": false,
+    "smoke": "pass",
+    "smokeErrors": [],
+    "scan": {
+      "total": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 0,
+      "byTool": {
+        "custom": 0,
+        "eslint": 0,
+        "sparrow": 0,
+        "externals": 0
+      }
+    }
+  },
+  "promptSha256": "07d34e66b303b708e73230acefe5b5eab72e658ef1e45d51da0afd716f32d9e1",
+  "prompt": "A simple Calculator with best UI",
+  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js calcy",
+  "cost": 0.0015693,
+  "tokensIn": 1227,
+  "tokensOut": 1847
+}
