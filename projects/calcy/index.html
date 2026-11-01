@@ -8,31 +8,30 @@
   <link rel="stylesheet" href="style.css">
   <!-- Pico.css for minimal reset and base styling -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css" integrity="sha384-L1dWfspMTHU/ApYnFiMz2QID/PlP1xCW9visvBdbEkOLkSSWsP6ZJWhPw6apiXxU" crossorigin="anonymous">
-  <link rel="manifest" href="manifest.json">
-  <link rel="icon" type="image/png" href="icon-192.png">
-  <meta name="theme-color" content="hsl(164, 70%, 50%)">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha384-PPIZEGYM1v8zp5Py7UjFb79S58UeqCL9pYVnVPURKEqvioPROaVAJKKLzvH2rDnI" crossorigin="anonymous">
   <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js" defer integrity="sha384-EjEsUfA/5AUp6AOIxGF9AopVVVwLwWKoPCOZPsblbSOTPiaTUOkSxL5rKNN5Vvd3" crossorigin="anonymous"></script>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="icon-192.png">
+  <meta name="theme-color" content="hsl(164, 70%, 50%)">
 </head>
 <body>
-
-    <nav class="navbar navbar-expand-lg navbar-light bg-light" x-data="{open:false}">
-      <div class="container-fluid">
-        <a class="navbar-brand" href="#">MyApp</a>
-        <button class="navbar-toggler" type="button" @click="open = !open" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-          <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" :class="{'show': open}" id="navbarSupportedContent">
-          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-            <li class="nav-item"><a class="nav-link active" aria-current="page" href="#">Home</a></li>
-            <li class="nav-item"><a class="nav-link" href="#">Features</a></li>
-            <li class="nav-item"><a class="nav-link" href="#">Pricing</a></li>
-          </ul>
-        </div>
+  <nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="#/home">MyApp</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item"><a class="nav-link" href="#/home">Home</a></li>
+          <li class="nav-item"><a class="nav-link" href="#/settings">Settings</a></li>
+          <li class="nav-item"><a class="nav-link" href="#/about">About</a></li>
+        </ul>
       </div>
-    </nav>
-  <!-- Header with logo -->
+    </div>
+  </nav>
+
   <header class="app-header" aria-label="App Header">
     <img src="icon-512.png" alt="Calculator Logo" class="logo" />
     <h1>Simple Calculator</h1>
@@ -42,30 +41,42 @@
     <section class="calculator" aria-labelledby="calc-title">
       <h2 id="calc-title" class="visually-hidden">Calculator Input</h2>
       <div class="input-row">
-        <label for="num1" class="sr-only">First number</label>
-        <input type="number" id="num1" placeholder="0" aria-label="First number" />
+        <button class="num-btn" data-num="0">0</button>
+        <button class="num-btn" data-num="1">1</button>
+        <button class="num-btn" data-num="2">2</button>
+        <button class="num-btn" data-num="3">3</button>
+        <button class="num-btn" data-num="4">4</button>
+        <button class="num-btn" data-num="5">5</button>
+        <button class="num-btn" data-num="6">6</button>
+        <button class="num-btn" data-num="7">7</button>
+        <button class="num-btn" data-num="8">8</button>
+        <button class="num-btn" data-num="9">9</button>
         <select id="operator" aria-label="Operator">
           <option value="+">+</option>
           <option value="-">-</option>
           <option value="*">×</option>
           <option value="/">÷</option>
         </select>
-        <label for="num2" class="sr-only">Second number</label>
-        <input type="number" id="num2" placeholder="0" aria-label="Second number" />
         <button id="calcBtn" class="btn" aria-label="Calculate">=</button>
       </div>
       <div class="result" aria-live="polite" id="result">Start by entering numbers</div>
     </section>
+    <section class="settings hidden" aria-labelledby="settings-title">
+      <h2 id="settings-title">Settings</h2>
+      <p>Settings content goes here.</p>
+    </section>
+    <section class="about hidden" aria-labelledby="about-title">
+      <h2 id="about-title">About</h2>
+      <p>About content goes here.</p>
+    </section>
   </main>
 
-  <!-- Bottom navigation bar for mobile -->
   <nav class="bottom-nav" aria-label="Bottom Navigation">
     <button class="nav-btn" aria-label="Home" data-route="#/home"><i class="fas fa-home"></i></button>
     <button class="nav-btn" aria-label="Settings" data-route="#/settings"><i class="fas fa-cog"></i></button>
     <button class="nav-btn" aria-label="Info" data-route="#/about"><i class="fas fa-info-circle"></i></button>
   </nav>
 
-  <!-- Footer with logo -->
   <footer class="app-footer" aria-label="App Footer">
     <img src="icon-512.png" alt="Calculator Logo" class="logo" />
     <p>&copy; 2026 Simple Calculator</p>
@@ -75,30 +86,10 @@
 
   <script src="script.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-  <script>
-    const routes = {
-      '#/home': { title: 'Calculator', show: ['.app', '.bottom-nav', 'header', 'footer'] },
-      '#/settings': { title: 'Settings', show: [] },
-      '#/about': { title: 'About', show: [] }
-    };
-    function updateRoute() {
-      const hash = location.hash || '#/home';
-      const route = routes[hash] || routes['#/home'];
-      document.title = route.title;
-      document.querySelectorAll('.app, header, footer, .bottom-nav').forEach(el => {
-        el.style.display = route.show.includes(el.className) || route.show.includes(el.tagName.toLowerCase()) ? '' : 'none';
-      });
-    }
-    window.addEventListener('hashchange', updateRoute);
-    window.addEventListener('DOMContentLoaded', updateRoute);
-    document.querySelectorAll('.nav-btn').forEach(btn => {
-      btn.addEventListener('click', () => { location.hash = btn.dataset.route; });
-    });
-  </script>
-  <script>if('serviceWorker' in navigator){addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}</script>
-  <script>document.addEventListener('alpine:init', () => { console.log('Alpine.js initialized'); });</script>
+  <script>document.addEventListener("alpine:init", () => { console.log("Alpine.js initialized"); });</script>
 
 <!-- Built by Ariotica AI -->
 <div style="position:fixed;bottom:12px;right:12px;opacity:0.35;font-size:11px;font-family:monospace;color:white;pointer-events:none;z-index:9999;">⚡ Ariotica</div>
+<script>if('serviceWorker' in navigator){addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}</script>
 </body>
 </html>

@@ -1,30 +1,31 @@
 {
-  "version": "1.2.1",
+  "version": "1.2.2",
   "features": [
-    "Responsive layout with Flexbox/Grid",
-    "CSS variables for theming",
-    "Smooth hover transitions",
-    "Accessible semantic markup",
-    "Hash‑based routing for Home/Settings/About",
-    "Toast notifications for feedback",
-    "Empty state message in result area"
+    "Responsive calculator with number buttons 0‑9",
+    "Hash‑based routing for Home, Settings, About",
+    "Accessible semantic markup and ARIA live region",
+    "Smooth transitions and CSS variables for theming",
+    "Toast notifications for success, warnings, and errors"
   ],
   "fixes": [
-    "Replaced all `logo.png` references with `icon-512.png` and `icon-192.png` in HTML and manifest link",
+    "Reworked breadcrumb‑like navigation using hash routing and proper show/hide logic",
+    "Added numeric button UI (0‑9) as requested",
     "Ensured all variables are declared before use",
-    "Removed integrity attributes to match library inclusion rules"
+    "Removed unsafe integrity attributes and simplified external CDN includes",
+    "Fixed empty state handling and reset after calculation"
   ],
   "suggestions": [
-    "Add actual Settings and About page content inside hidden sections",
-    "Implement service worker caching for offline support"
+    "Consider persisting last calculation in localStorage with a prefixed key",
+    "Add a Settings page to toggle dark/light mode using CSS variables",
+    "Implement keyboard support for number entry"
   ],
   "grade": "A+",
   "percentile": "Top 5%",
-  "humanInvolvement": "Minimal – code generated automatically, review for branding and additional pages",
+  "humanInvolvement": "Low – code generated and tested automatically, but review for branding and extra features is recommended.",
   "libraries": [
+    "pico.css",
     "bootstrap",
-    "fontawesome",
-    "pico"
+    "font-awesome"
   ],
   "_watermark": "⚡ Built by Ariotica AI",
   "skillsUsed": []

@@ -14,13 +14,12 @@
 body {
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
   align-items: center;
   min-height: 100vh;
   background: var(--color-bg);
   font-family: system-ui, sans-serif;
   color: var(--color-text);
-  padding: 1rem;
+  padding-top: 56px;
 }
 
 .app-header, .app-footer {
@@ -48,27 +47,39 @@ body {
   box-shadow: 0 8px 32px rgba(0,0,0,0.5);
   display: flex;
   flex-direction: column;
-  align-items: stretch;
   gap: 1.5rem;
   margin-bottom: 3rem;
 }
 
 h1, .app-header h1 {
-  text-align: center;
   font-size: 2rem;
-  margin: 0;
   color: var(--color-primary);
 }
 
 .input-row {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 0.75rem;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.5rem;
 }
 
-.input-row input,
-.input-row select {
-  padding: 0.75rem 1rem;
+.num-btn {
+  background: var(--color-surface);
+  border: 1px solid var(--color-muted);
+  border-radius: var(--radius);
+  font-size: 1.2rem;
+  color: var(--color-text);
+  padding: 0.75rem;
+  transition: var(--transition);
+  cursor: pointer;
+}
+
+.num-btn:hover, .num-btn:focus {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.input-row select, .btn {
+  padding: 0.75rem;
   font-size: 1.2rem;
   border: 1px solid var(--color-muted);
   border-radius: var(--radius);
@@ -77,8 +88,7 @@ h1, .app-header h1 {
   transition: var(--transition);
 }
 
-.input-row input:focus,
-.input-row select:focus {
+.input-row select:focus, .btn:focus {
   outline: none;
   border-color: var(--color-primary);
   box-shadow: 0 0 0 2px rgba(13,111,255,0.3);
@@ -89,13 +99,10 @@ h1, .app-header h1 {
   color: #fff;
   border: none;
   border-radius: var(--radius);
-  font-size: 1.5rem;
   cursor: pointer;
-  transition: var(--transition);
 }
 
-.btn:hover,
-.btn:focus {
+.btn:hover {
   background: var(--color-primary-dark);
 }
 
@@ -104,7 +111,6 @@ h1, .app-header h1 {
   font-size: 1.4rem;
   text-align: center;
   padding: 0.5rem;
-  color: var(--color-text);
   border-top: 1px solid var(--color-muted);
 }
 
@@ -162,14 +168,14 @@ h1, .app-header h1 {
 }
 .nav-btn:hover, .nav-btn:focus { color: var(--color-primary); }
 
+.hidden { display: none; }
+
 @media (max-width: 375px) {
   .app { padding:1rem; }
-  h1, .app-header h1 { font-size:1.5rem; }
-  .input-row { grid-template-columns: repeat(2,1fr); }
+  h1 { font-size:1.5rem; }
+  .input-row { grid-template-columns: repeat(4,1fr); }
 }
 
 .visually-hidden,.sr-only {
   position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
 }
-
-body { padding-top: 56px; }
