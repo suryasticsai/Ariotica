@@ -46,7 +46,6 @@ let statusHeader = '';
 let statusDone = false;
 let lastStatus = 0;
 
-// Skills that should be verified against this build. Set once, read in gradeHtml.
 let ACTIVE_SKILLS = [];
 
 const icon = (s) => (s.status === 'done' ? '✅' : s.status === 'error' ? '❌' : s.status === 'cancelled' ? '⏹️' : '⏳');
@@ -282,7 +281,7 @@ STRICT RULES:
 - **DESIGN SYSTEM**: You MUST use CSS variables (:root) for colors. Use a modern, sleek aesthetic. Use Flexbox/Grid. Use smooth transitions (0.3s ease) on all hover states and button clicks.
 - **RESPONSIVE**: Must look perfect on mobile (375px) and desktop. Use media queries.
 - **ACCESSIBILITY**: Use semantic HTML, aria-labels, and ensure high contrast.
-- **UX**: Always include a clear empty state (e.g., "No tasks yet, add one!"). Handle edge cases gracefully.
+- **UX**: Always include a clear empty state relevant to the app's core function (e.g., "No items found" or "Start by entering a number"). Handle edge cases gracefully.
 - **MULTI-PAGE**: If the app needs multiple views (e.g., Settings, Dashboard, About), use hash-based routing (e.g., #/settings) and listen to the window.onhashchange event. Update document.title based on the route. Hide/show sections using CSS classes based on the hash. Do NOT use external routing libraries.
 - **WEBRTC**: If building a video/audio call app, use PeerJS. Always request media with navigator.mediaDevices.getUserMedia. Use window.location.hash for the room ID. Copy the current URL for the share link.
 - **SCRAPED DATA**: If the prompt includes a "SCRAPED REFERENCE" section, analyze the text, extract the core features, UI text, and design patterns, and use them as your primary blueprint for the new app.
@@ -363,6 +362,8 @@ async function gradeHtml(text) {
 }
 
 const structurallyBad = (c) => !c.grade.files || !c.grade.files['index.html'] || !T.isVanilla(c.grade.html, TRUSTED_DOMAINS).ok;
+
+// Added 'kind' parameter for Smart Routing
 const generate = (userText, kind = 'generate') => askAI(genMessages(userText), { json: true, grade: gradeHtml, onEvent: aiEvents(), kind });
 
 async function readFile(p) {
@@ -455,7 +456,6 @@ function searchChunks(chunks, query, k) {
 
 const SKILL_MIN_SCORE = 3.0, SKILL_MAX_CHARS = 9000;
 
-// FIXED: Returns slug, not path. Handles draft vs verified correctly.
 function skillContext(query) {
   const chunks = K.collectSkillChunks(process.cwd());
   if (!chunks.length) return { text: '', files: [], names: [], draft: false };
