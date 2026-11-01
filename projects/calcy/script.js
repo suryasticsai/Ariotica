@@ -26,7 +26,6 @@ function init() {
   clearBtn.addEventListener('click', resetCalculator);
   calcBtn.addEventListener('click', calculate);
 
-  // navigation buttons
   document.querySelectorAll('.nav-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       location.hash = btn.dataset.route;
