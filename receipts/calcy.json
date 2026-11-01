@@ -2,45 +2,52 @@
   "schema": 2,
   "app": "calcy",
   "files": {
-    "index.html": "dec866fc7be6262200c0b30c049824d95512f83c80c09b30546add2045a3ec48",
-    "style.css": "0c504a22e9a96f537a33c47836ee7dc64b045ed3fa3662f7d265a97ead50b87c",
-    "script.js": "9e94d47e6ad66bc03add0f5b9fb1df56dde6f6cdcd2d587f75b2c995922faff4",
+    "index.html": "a8c99d9b732f0265ffbd6920d5385b491b6b21b7c3b1162afadef4e3b76dbeff",
+    "style.css": "0d64e54422e0994901622b7220c81bee5ed747cb4a5d70a8d9a3fadffb851dee",
+    "script.js": "dbbb274caa8112d7754ce6c93ad4525303eb89c2074048f3376e7976a135c8bc",
+    "manifest.json": "356efdbbd1dedd73b8c2e63478efc1b14ac0301d42c1efee778750a41e8c6679",
     "icon-192.png": "9f58aa4eabaa258a1b04c35cbedd8c74bf56c39408e2d4dcea3c75de145dd859",
     "icon-512.png": "9f58aa4eabaa258a1b04c35cbedd8c74bf56c39408e2d4dcea3c75de145dd859",
-    "manifest.json": "356efdbbd1dedd73b8c2e63478efc1b14ac0301d42c1efee778750a41e8c6679",
-    "sw.js": "f4ec8c8e05cbf84e1c6e63baac062f5f24e4cb2e48a1d3a2f456aca54243fab9",
-    "meta.json": "ff63ded583fe9242b822a576346e6d8c09ad1041d2c61252cd2ff320c287e4b1",
-    "CHANGELOG.md": "40f9547300294db450394e6c5ce8d138c121e6a019c7f476a18438fc0cba9b6c"
+    "sw.js": "40bf2e73c170b2b98990f13cead2753df402273fc4b03a1c93ab7a409fb5a0c9",
+    "meta.json": "755546aaa41c9976235254a59c8ff2baae2c345164dbe8e3d4018c99566e1dc1",
+    "CHANGELOG.md": "4d54cab7fb7813616bb0ad2ee47b5ae926daea0a7c0a72b26dd638d6fd304d6d"
   },
-  "bytes": 25188,
-  "builtAt": "2026-11-01T04:35:44.602Z",
-  "mode": "create",
+  "bytes": 36899,
+  "builtAt": "2026-11-01T04:54:04.080Z",
+  "mode": "improve",
   "repo": "suryasticsai/Ariotica",
-  "runId": "41273654880",
-  "commit": "01c4ecf341f029af79f4ddca4e39482d38b782ac",
+  "runId": "41274791956",
+  "commit": "28a0fbd1ac2311ae6b001729b7413486ab75b8f5",
   "model": {
     "provider": "Groq",
     "name": "openai/gpt-oss-120b"
   },
   "race": [
     {
+      "provider": "Skritimai",
+      "sec": 0,
+      "ok": false,
+      "reason": "Skritimai/skritimai network error: fetch failed"
+    },
+    {
       "provider": "Groq",
       "model": "openai/gpt-oss-120b",
-      "sec": 5,
+      "sec": 7,
       "ok": true,
       "score": 100,
       "reason": "",
-      "cost": 0.0015693,
-      "tokensIn": 1227,
-      "tokensOut": 1847
+      "cost": 0.0026067,
+      "tokensIn": 4343,
+      "tokensOut": 2607
     }
   ],
-  "sha256": "dec866fc7be6262200c0b30c049824d95512f83c80c09b30546add2045a3ec48",
+  "sha256": "a8c99d9b732f0265ffbd6920d5385b491b6b21b7c3b1162afadef4e3b76dbeff",
   "skillsUsed": [],
   "checks": {
     "complete": true,
     "vanilla": true,
     "externalRefs": [
+      "https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css",
       "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css",
       "https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js",
       "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
@@ -62,10 +69,10 @@
       }
     }
   },
-  "promptSha256": "07d34e66b303b708e73230acefe5b5eab72e658ef1e45d51da0afd716f32d9e1",
-  "prompt": "A simple Calculator with best UI",
+  "promptSha256": "909b08c629890505b2c6ca8a7c7b9c2b8c4c0c44d56128e0131b69337d7ce2e3",
+  "prompt": "Make the calculator UI much larger, centered in the middle of the screen, and give it a stunning dark-mode glassmorphism design with a grid layout for the buttons.\nAdded logo with names icon-512.png and icon-192.png![Screenshot_20261101_102",
   "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js calcy",
-  "cost": 0.0015693,
-  "tokensIn": 1227,
-  "tokensOut": 1847
+  "cost": 0.0026067,
+  "tokensIn": 4343,
+  "tokensOut": 2607
 }

@@ -1,24 +1,24 @@
 {
-  "updatedAt": "2026-11-01T04:35:52.317Z",
-  "totalBuilds": 21,
+  "updatedAt": "2026-11-01T04:54:10.976Z",
+  "totalBuilds": 22,
   "models": {
     "Groq/openai/gpt-oss-120b": {
       "provider": "Groq",
       "model": "openai/gpt-oss-120b",
-      "wins": 21,
+      "wins": 22,
       "losses": 2,
       "cancels": 0,
-      "totalScore": 2260,
-      "scoredCount": 23,
-      "totalSec": 260,
-      "timedCount": 23,
-      "totalCost": 0.08961735,
-      "totalIn": 97679,
-      "totalOut": 99954,
-      "lastSeen": "2026-11-01T04:35:52.142Z",
-      "avgScore": 98.26086956521739,
-      "avgSec": 11.304347826086957,
-      "winRate": 0.9130434782608695
+      "totalScore": 2360,
+      "scoredCount": 24,
+      "totalSec": 267,
+      "timedCount": 24,
+      "totalCost": 0.09222405,
+      "totalIn": 102022,
+      "totalOut": 102561,
+      "lastSeen": "2026-11-01T04:54:10.809Z",
+      "avgScore": 98.33333333333333,
+      "avgSec": 11.125,
+      "winRate": 0.9166666666666666
     },
     "OpenRouter/recursive/flint-v1.0:free": {
       "provider": "OpenRouter",
@@ -105,23 +105,40 @@
       "avgScore": 0,
       "avgSec": 10,
       "winRate": 0
+    },
+    "Skritimai/unknown": {
+      "provider": "Skritimai",
+      "wins": 0,
+      "losses": 1,
+      "cancels": 0,
+      "totalScore": 0,
+      "scoredCount": 1,
+      "totalSec": 0,
+      "timedCount": 0,
+      "totalCost": 0,
+      "totalIn": 0,
+      "totalOut": 0,
+      "lastSeen": "2026-11-01T04:54:10.809Z",
+      "avgScore": 0,
+      "avgSec": 0,
+      "winRate": 0
     }
   },
   "providers": {
     "Groq": {
-      "wins": 21,
+      "wins": 22,
       "losses": 4,
       "cancels": 0,
-      "totalScore": 2260,
-      "scoredCount": 25,
-      "totalSec": 270,
-      "timedCount": 24,
-      "totalCost": 0.08961735,
-      "totalIn": 97679,
-      "totalOut": 99954,
-      "avgScore": 90.4,
-      "avgSec": 11.25,
-      "winRate": 0.84
+      "totalScore": 2360,
+      "scoredCount": 26,
+      "totalSec": 277,
+      "timedCount": 25,
+      "totalCost": 0.09222405,
+      "totalIn": 102022,
+      "totalOut": 102561,
+      "avgScore": 90.76923076923077,
+      "avgSec": 11.08,
+      "winRate": 0.8461538461538461
     },
     "OpenRouter": {
       "wins": 2,
@@ -181,6 +198,21 @@
       "totalOut": 0,
       "avgScore": 0,
       "avgSec": 6,
+      "winRate": 0
+    },
+    "Skritimai": {
+      "wins": 0,
+      "losses": 1,
+      "cancels": 0,
+      "totalScore": 0,
+      "scoredCount": 1,
+      "totalSec": 0,
+      "timedCount": 0,
+      "totalCost": 0,
+      "totalIn": 0,
+      "totalOut": 0,
+      "avgScore": 0,
+      "avgSec": 0,
       "winRate": 0
     }
   }
