@@ -2,22 +2,22 @@
   "schema": 2,
   "app": "calcy",
   "files": {
-    "index.html": "767006ff78c025a9d5fd8c64c909a1f21b7a95fa68107293718dd2721c8f6a0b",
-    "style.css": "07594d61af0a6c37aaca4873de4753f1670e5ccff8452cfe1e30753e6fd853b8",
-    "script.js": "0a3e78b19d980a44611acbf1a7e3fffe5bfcea0fc06643b721b290af3561c8e1",
+    "index.html": "894f46870bc39c46008089314506f1df7a29e35e0fe7448252bc194d2ae9bc91",
+    "style.css": "1d99d988e9017f5fb7ea7a22f3beb0c1cf6e69abd1657d654fcf29b05ee6b505",
+    "script.js": "b60e7cccf7002d33d8d5b947b005a93363bf03b3026f93d553abec712d569b19",
     "icon-192.png": "9f58aa4eabaa258a1b04c35cbedd8c74bf56c39408e2d4dcea3c75de145dd859",
     "icon-512.png": "9f58aa4eabaa258a1b04c35cbedd8c74bf56c39408e2d4dcea3c75de145dd859",
     "manifest.json": "356efdbbd1dedd73b8c2e63478efc1b14ac0301d42c1efee778750a41e8c6679",
-    "sw.js": "df16ffd5579859b531ae8189493cce3ec05d2719aef2773fa2dc161093f9d57b",
-    "meta.json": "7c9e500a80ffa5539c851192fe49f5b673fab60f8f266e13fd3ecd72fd59056d",
-    "CHANGELOG.md": "024d6b3b4d90745f61e17009cb7cf9fd969390e1626ea7b0d4d32a523a481196"
+    "sw.js": "f245a7f9e8a2f1e771ecee80637eb82511ca38cfa68d59888106253fae6f6fd7",
+    "meta.json": "d14278779fe0a410de14a99fbe986fb368c1ea2ed55ddfd860b3393a40db758e",
+    "CHANGELOG.md": "8ef03275dc65011a3963dba60fdc4a1a1b0dbb2ceefa13cfdb1f08b1d4c9dbc3"
   },
-  "bytes": 88580,
-  "builtAt": "2026-11-01T12:08:01.231Z",
+  "bytes": 87848,
+  "builtAt": "2026-11-01T16:25:57.865Z",
   "mode": "improve",
   "repo": "suryasticsai/Ariotica",
-  "runId": "41304944396",
-  "commit": "7f9215977157ee2b96728239baf4a6da7ae11703",
+  "runId": "41326233806",
+  "commit": "84f61b3e6979f429dc818475d8b82e94ed50b48c",
   "model": {
     "provider": "Groq",
     "name": "openai/gpt-oss-120b"
@@ -27,7 +27,7 @@
       "provider": "Skritimai",
       "sec": 0,
       "ok": false,
-      "reason": "SKRITIMAI_BASE_URL / SKRITIMAI_GIST_ID not set"
+      "reason": "Skritimai gist is stale (1373 min old)"
     },
     {
       "provider": "Groq",
@@ -36,12 +36,12 @@
       "ok": true,
       "score": 100,
       "reason": "",
-      "cost": 0.0037954499999999997,
-      "tokensIn": 4728,
-      "tokensOut": 4115
+      "cost": 0.00378405,
+      "tokensIn": 4762,
+      "tokensOut": 4093
     }
   ],
-  "sha256": "767006ff78c025a9d5fd8c64c909a1f21b7a95fa68107293718dd2721c8f6a0b",
+  "sha256": "894f46870bc39c46008089314506f1df7a29e35e0fe7448252bc194d2ae9bc91",
   "skillsUsed": [],
   "checks": {
     "complete": true,
@@ -70,10 +70,10 @@
       }
     }
   },
-  "promptSha256": "75f34f811b4535a98391b56c59a257165d43a49203ef47d072f209c17200bf65",
-  "prompt": "Add glassmorphism effects to the calculator background and add smooth bounce animations (using CSS @keyframes) when the user clicks a button.",
+  "promptSha256": "15f4e673710544800261c3e15024a4c699bc9135ce55ce0b26cfc2cdacee9f6e",
+  "prompt": "Make the background a deep gradient and add a glowing neon effect to the calculator buttons.",
   "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js calcy",
-  "cost": 0.0037954499999999997,
-  "tokensIn": 4728,
-  "tokensOut": 4115
+  "cost": 0.00378405,
+  "tokensIn": 4762,
+  "tokensOut": 4093
 }

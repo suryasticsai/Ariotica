@@ -927,5 +927,40 @@
         "tokensOut": 4115
       }
     ]
+  },
+  {
+    "ts": "2026-11-01T16:26:03.317Z",
+    "slug": "calcy",
+    "mode": "improve",
+    "provider": "Groq",
+    "model": "openai/gpt-oss-120b",
+    "runId": "41326233806",
+    "cost": 0.00378405,
+    "tokensIn": 4762,
+    "tokensOut": 4093,
+    "score": 100,
+    "sec": 10,
+    "race": [
+      {
+        "provider": "Skritimai",
+        "sec": 0,
+        "ok": false,
+        "reason": "Skritimai gist is stale (1373 min old)",
+        "cost": 0,
+        "tokensIn": 0,
+        "tokensOut": 0
+      },
+      {
+        "provider": "Groq",
+        "model": "openai/gpt-oss-120b",
+        "sec": 10,
+        "ok": true,
+        "score": 100,
+        "reason": "",
+        "cost": 0.00378405,
+        "tokensIn": 4762,
+        "tokensOut": 4093
+      }
+    ]
   }
 ]

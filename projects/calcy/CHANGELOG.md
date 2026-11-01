@@ -1,5 +1,83 @@
 # Changelog
 
+## v1.6.2 — 2026-11-01 16:26 UTC — improve
+
+**Model:** Groq/openai/gpt-oss-120b · **Cost:** $0.0038
+
+### Files
+- `index.html` (+0 −1)
+- `style.css` (+5 −4)
+- `script.js` (+0 −1)
+
+#### `index.html`
+```diff
+@@ … @@
+   <script src="script.js"></script>
+   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+   <script>document.addEventListener("alpine:init", () => { console.log("Alpine.js initialized"); });</script>
+-
+ <!-- Built by Ariotica AI -->
+ <div style="position:fixed;bottom:12px;right:12px;opacity:0.35;font-size:11px;font-family:monospace;color:white;pointer-events:none;z-index:9999;">⚡ Ariotica</div>
+ <script>if('serviceWorker' in navigator){addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}</script>
+```
+
+#### `style.css`
+```diff
+@@ … @@
+ :root {
+-  --color-bg: #0a0a0a;
++  --color-bg: linear-gradient(135deg, #0a0a2a, #1a0a3a);
+   --color-surface: rgba(255, 255, 255, 0.08);
+   --color-primary: #0d6efd;
+   --color-primary-dark: #0a58ca;
+@@ … @@
+   --color-muted: #555;
+   --radius: 1rem;
+   --transition: 0.3s ease;
++  --neon-glow: 0 0 8px var(--color-primary), 0 0 20px var(--color-primary);
+ }
+ 
+ * { box-sizing: border-box; margin:0; padding:0; }
+@@ … @@
+   flex-direction: column;
+   gap: 1.5rem;
+   align-items: center;
+-  /* glassmorphism effect */
+   border: 1px solid rgba(255,255,255,0.12);
+ }
+ 
+@@ … @@
+   padding: 1rem;
+   cursor: pointer;
+   transition: var(--transition);
+-  /* bounce animation on click */
+-  will-change: transform;
++  box-shadow: 0 0 0 transparent;
++  will-change: transform, box-shadow;
+ }
+ 
+ .key:hover, .key:focus {
+   background: var(--color-primary);
+   color: #fff;
++  box-shadow: var(--neon-glow);
+   outline: none;
+ }
+ 
+```
+
+#### `script.js`
+```diff
+@@ … @@
+ }
+ 
+ window.addEventListener('DOMContentLoaded', init);
+-
+```
+
+### Human follow-up
+Low
+
+
 ## v1.5.2 — 2026-11-01 12:08 UTC — improve
 
 **Model:** Groq/openai/gpt-oss-120b · **Cost:** $0.0038
@@ -1593,76 +1671,6 @@ Low – the code is ready to run; only replace logo.png with an actual image and
    <link rel="icon" type="image/png" href="icon-192.png">
    <meta name="theme-color" content="hsl(164, 70%, 50%)">
 +  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-ENjdO4Dr2bkBIFxQpeoYz1HIb6+1L9gq6a7k6R9a9p6G6V9p5h6V6K3N9T9qv0T" crossorigin="anonymous">
-+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js" defer integrity="sha384-EjEsUfA/5AUp6AOIxGF9AopVVVwLwWKoPCOZPsblbSOTPiaTUOkSxL5rKNN5Vvd3" crossorigin="anonymous"></script>
- </head>
- <body>
- 
-@@ … @@
-     </section>
-   </main>
-   <script src="script.js"></script>
-+  <div class="toast-container" aria-live="polite" aria-atomic="true"></div>
-   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
-   <script>document.addEventListener("alpine:init", () => { console.log("Alpine.js initialized"); });</script>
--
--<div class='toast-container'></div>
- 
- <!-- Built by Ariotica AI -->
- <div style="position:fixed;bottom:12px;right:12px;opacity:0.35;font-size:11px;font-family:monospace;color:white;pointer-events:none;z-index:9999;">⚡ Ariotica</div>
-```
-
-#### `style.css`
-```diff
-@@ … @@
- :root {
--  --color-bg: #f5f7fa;
--  --color-primary: #0066ff;
--  --color-primary-dark: #004bbb;
--  --color-text: #222222;
--  --color-muted: #777777;
--  --radius: 0.5rem;
-+  --color-bg: #121212;
-+  --color-surface: rgba(255,255,255,0.08);
-+  --color-primary: #0d6efd;
-+  --color-primary-dark: #0a58ca;
-+  --color-text: #e0e0e0;
-+  --color-muted: #777;
-+  --radius: 1rem;
-   --transition: 0.3s ease;
- }
- 
--* {
--  box-sizing: border-box;
--  margin: 0;
--  padding: 0;
--}
-+* { box-sizing: border-box; margin:0; padding:0; }
- 
- body {
--  font-family: system-ui, sans-serif;
--  background: var(--color-bg);
--  color: var(--color-text);
-   display: flex;
-   justify-content: center;
-   align-items: center;
-   min-height: 100vh;
-+  background: var(--color-bg);
-+  font-family: system-ui, sans-serif;
-+  color: var(--color-text);
-   padding: 1rem;
- }
- 
- .app {
-   width: 100%;
--  max-width: 420px;
--  background: #fff;
--  padding: 2rem;
-+  max-width: 500px;
-+  background: var(--color-surface);
-+  backdrop-filter: blur(12px);
-   border-radius: var(--radius);
--  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-+  padding: 2rem;
 
 ---
 
