@@ -50,7 +50,7 @@ body {
   flex-direction: column;
   align-items: stretch;
   gap: 1.5rem;
-  margin-bottom: 3rem; /* space for bottom nav */
+  margin-bottom: 3rem;
 }
 
 h1, .app-header h1 {
@@ -172,5 +172,4 @@ h1, .app-header h1 {
   position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
 }
 
-/* Added by bootstrap-alpine-enhancer */
 body { padding-top: 56px; }

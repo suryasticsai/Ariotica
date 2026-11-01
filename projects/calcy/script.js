@@ -1,4 +1,4 @@
-// Simple Calculator – vanilla JS with scoped variables
+// Simple Calculator – vanilla JS with proper variable declarations
 let num1Input = null;
 let num2Input = null;
 let operatorSelect = null;
