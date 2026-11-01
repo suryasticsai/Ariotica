@@ -1,65 +1,74 @@
 ---
 name: user-attachments-assets
 status: draft
-source: https://github.com/user-attachments/assets/4eb2e782-6732-4542-8ce3-4a0085cdb989)
-created: 2026-11-01T04:53:42.766Z
+source: https://github.com/user-attachments/assets/3d6b642d-12cc-452c-aa6b-07554b6376af)
+created: 2026-11-01T09:42:36.386Z
 ---
 
-# GitHub Session Refresh
-Keywords: github, session, reload, auth, tab sync
+# Session Sync Alert
+Keywords: session, storage event, cross‑tab, reload, alert
 ## Requirements
-- Detect when the GitHub auth state changes in another tab.
-- Show a dismissible alert prompting the user to reload.
-- Automatically reload the page when the user confirms.
-- Works in any vanilla JS web page embedding GitHub auth flows.
+- Detect when the user signs in/out or switches accounts in another browser tab or window.
+- Show a dismissable alert prompting the user to reload the page.
+- Use only vanilla JavaScript and a simple CSS selector for the alert container.
 ## Pattern
 ```html
-<!-- Alert container (must exist) -->
-<div id="auth-alert" class="hidden">
-  <p>You signed in/out in another tab. <button id="reload-btn">Reload</button></p>
+<!-- HTML -->
+<div class="session-alert hidden">
+  <p>You signed in/out in another tab. <a href="#" class="reload-link">Reload</a></p>
+  <button class="close-alert">✕</button>
 </div>
 ```
 
+```css
+/* CSS */
+.session-alert { 
+  background:#ffeb3b; color:#000; padding:1rem; 
+  position:fixed; top:0; left:0; right:0; text-align:center;
+}
+.session-alert.hidden { display:none; }
+```
+
 ```js
-// must-have-code: window.addEventListener('storage', handleStorage);
+/* JavaScript */
 (function () {
-  const ALERT_SELECTOR = '#auth-alert';
-  const RELOAD_BTN = '#reload-btn';
-
+  const ALERT_SELECTOR = '.session-alert';
   const alertEl = document.querySelector(ALERT_SELECTOR);
-  const reloadBtn = document.querySelector(RELOAD_BTN);
+  if (!alertEl) return; // no alert container → nothing to do
 
-  // Show alert when storage event signals auth change
-  function handleStorage(e) {
-    if (e.key === 'github-auth-event' && e.newValue) {
-      alertEl.classList.remove('hidden');
-    }
-  }
+  // Show alert
+  function showAlert() { alertEl.classList.remove('hidden'); }
 
-  // Reload page on user click
-  reloadBtn.addEventListener('click', () => location.reload());
+  // Hide alert
+  function hideAlert() { alertEl.classList.add('hidden'); }
 
-  // Listen for cross‑tab auth changes
-  window.addEventListener('storage', handleStorage);
+  // Reload handler
+  alertEl.querySelector('.reload-link').addEventListener('click', e => {
+    e.preventDefault();
+    location.reload();
+  });
+
+  // Close button
+  alertEl.querySelector('.close-alert').addEventListener('click', hideAlert);
+
+  // Cross‑tab sync: listen for changes to a known key in localStorage
+  window.addEventListener('storage', e => {
+    if (e.key !== 'session-sync') return;
+    // Any change means another tab altered the session state
+    showAlert();
+  });
+
+  // Optional: broadcast own changes (e.g., after a successful login/logout)
+  // window.localStorage.setItem('session-sync', Date.now());
 })();
 ```
-
-```js
-// In any other tab/window where auth changes (login/logout)
-function broadcastAuthChange() {
-  // must-have-code: localStorage.setItem('github-auth-event', Date.now());
-  localStorage.setItem('github-auth-event', Date.now());
-  // clean up so future events fire
-  setTimeout(() => localStorage.removeItem('github-auth-event'), 0);
-}
-```
 ## Gotchas
-- **Storage event only fires in other tabs**, not in the same tab that wrote the value.
-- The `localStorage` key must be unique to avoid clashing with other apps.
-- Some browsers (Safari private mode) may block `localStorage`; fallback to `BroadcastChannel` if needed.
-- Ensure the alert element is initially hidden via CSS (`.hidden { display:none; }`).
-- Debounce rapid login/logout cycles to avoid flickering alerts.
+- **Storage event only fires in *other* tabs** – the tab that writes to `localStorage` does **not** receive the event. Always write a dummy value (`Date.now()`) after login/logout to trigger other tabs.
+- **Privacy mode / Safari** may block `localStorage` writes; wrap calls in `try/catch`.
+- **Multiple alerts**: guard against duplicate alerts by checking `alertEl.classList.contains('hidden')` before showing.
+- **Performance**: the `storage` listener is cheap, but avoid heavy work inside it; just toggle UI.
+- **CSS selector specificity**: ensure `.session-alert` is unique on the page to satisfy the `must-have-selector` check.
 ## Checks
-- must-have-code: window.addEventListener('storage', handleStorage);
-- must-have-selector: #auth-alert
-- must-not-have: placeholder-host.com
+- must-have-code: `addEventListener('storage'`
+- must-have-selector: `.session-alert`
+- must-not-have: `placeholder`
