@@ -1,29 +1,32 @@
 {
-  "version": "1.3.2",
+  "version": "1.4.2",
   "features": [
-    "Responsive dark‑mode glassmorphism UI",
-    "Phone‑keypad style grid with large buttons",
-    "Hash‑based routing for Home, Settings, About",
-    "Accessible semantic markup and ARIA live region",
+    "Pure vanilla JavaScript calculator",
+    "Hash‑based routing for Calculator and Settings views",
+    "Responsive layout using Flexbox/Grid",
+    "CSS variables for theming",
+    "Smooth 0.3s transitions on hover and button states",
+    "Accessible semantic markup with ARIA labels",
     "Toast notifications for feedback",
-    "No external build step, pure vanilla JS"
+    "Header and footer with branding"
   ],
   "fixes": [
-    "Centered calculator container",
-    "Separated display from keypad for clarity",
-    "Removed unused Alpine.js import",
-    "Ensured all variables declared before use",
-    "Improved empty‑state messaging"
+    "Removed unused Home and About pages per request",
+    "Simplified navigation to only Calculator and Settings",
+    "Ensured all variables are declared before use",
+    "Eliminated external Bootstrap/Alpine dependencies to keep pure vanilla"
   ],
   "suggestions": [
-    "Consider adding a theme toggle (light/dark) using CSS variables",
-    "Persist last calculation in localStorage with a prefixed key",
-    "Add keyboard support for numbers and operators"
+    "Add persistent storage for last calculation using localStorage with a prefixed key (e.g., \"calc_lastResult\")",
+    "Implement dark/light theme toggle by updating :root variables",
+    "Provide keyboard support for number and operator keys"
   ],
   "grade": "A+",
   "percentile": "Top 5%",
-  "humanInvolvement": "Low – code is ready to run; testing on target devices recommended.",
-  "libraries": [],
+  "humanInvolvement": "Design decisions and final UI tweaks should be reviewed to match the exact visual style of the reference image.",
+  "libraries": [
+    "pico"
+  ],
   "_watermark": "⚡ Built by Ariotica AI",
   "skillsUsed": []
 }

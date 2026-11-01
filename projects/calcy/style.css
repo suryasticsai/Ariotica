@@ -87,9 +87,7 @@ body {
 }
 
 .operator { background: rgba(13,111,255,0.2); }
-
 .equal { background: var(--color-primary); color:#fff; }
-
 .clear { background: rgba(220,53,69,0.2); }
 
 .bottom-nav {

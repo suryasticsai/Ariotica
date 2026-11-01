@@ -1,13 +1,12 @@
-// Calculator – pure vanilla JS with hash routing and proper declarations
+// Simple Calculator with hash routing – pure vanilla JS
 let displayEl = null;
 let num1 = '';
 let num2 = '';
 let currentOp = '';
 
 const routes = {
-  '#/home': { title: 'Calculator', sections: ['.calculator'] },
-  '#/settings': { title: 'Settings', sections: ['.settings'] },
-  '#/about': { title: 'About', sections: ['.about'] }
+  '#/home': { title: 'Simple Calculator', sections: ['.calculator'] },
+  '#/settings': { title: 'Settings', sections: ['.settings'] }
 };
 
 function init() {
@@ -27,7 +26,13 @@ function init() {
   clearBtn.addEventListener('click', resetCalculator);
   calcBtn.addEventListener('click', calculate);
 
-  // hash routing
+  // navigation buttons
+  document.querySelectorAll('.nav-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      location.hash = btn.dataset.route;
+    });
+  });
+
   window.addEventListener('hashchange', updateRoute);
   updateRoute();
 }
@@ -77,7 +82,6 @@ function calculate() {
   }
   displayEl.textContent = `Result: ${res}`;
   showToast('Calculation successful', 'success');
-  // reset for next use
   num1 = '';
   num2 = '';
   currentOp = '';
@@ -115,8 +119,11 @@ function updateRoute() {
   const hash = location.hash || '#/home';
   const route = routes[hash] || routes['#/home'];
   document.title = route.title;
-  document.querySelectorAll('.calculator, .settings, .about').forEach(s => s.classList.add('hidden'));
-  route.sections.forEach(sel => document.querySelector(sel).classList.remove('hidden'));
+  document.querySelectorAll('.calculator, .settings').forEach(el => el.classList.add('hidden'));
+  route.sections.forEach(sel => {
+    const el = document.querySelector(sel);
+    if (el) el.classList.remove('hidden');
+  });
 }
 
 window.addEventListener('DOMContentLoaded', init);
