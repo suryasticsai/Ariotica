@@ -1,10 +1,8 @@
-// Simple Calculator – vanilla JS with proper declarations and hash routing
+// Calculator – pure vanilla JS with hash routing and proper declarations
+let displayEl = null;
 let num1 = '';
 let num2 = '';
-let operator = '+';
-let resultDiv = null;
-let numberButtons = null;
-let calcBtn = null;
+let currentOp = '';
 
 const routes = {
   '#/home': { title: 'Calculator', sections: ['.calculator'] },
@@ -13,69 +11,90 @@ const routes = {
 };
 
 function init() {
-  resultDiv = document.getElementById('result');
-  numberButtons = document.querySelectorAll('.num-btn');
-  calcBtn = document.getElementById('calcBtn');
-  const operatorSelect = document.getElementById('operator');
+  displayEl = document.getElementById('result');
+  const keys = document.querySelectorAll('.key');
+  const clearBtn = document.getElementById('clearBtn');
+  const calcBtn = document.getElementById('calcBtn');
 
-  numberButtons.forEach(btn => btn.addEventListener('click', () => {
-    const val = btn.dataset.num;
-    if (operatorSelect.value && num1 && !num2) {
-      num2 += val;
-    } else {
-      num1 += val;
+  keys.forEach(k => {
+    if (k.dataset.num !== undefined) {
+      k.addEventListener('click', () => handleNumber(k.dataset.num));
+    } else if (k.dataset.op !== undefined) {
+      k.addEventListener('click', () => handleOperator(k.dataset.op));
     }
-    updateDisplay();
-  }));
-
-  operatorSelect.addEventListener('change', e => {
-    operator = e.target.value;
   });
 
+  clearBtn.addEventListener('click', resetCalculator);
   calcBtn.addEventListener('click', calculate);
 
-  // routing
+  // hash routing
   window.addEventListener('hashchange', updateRoute);
   updateRoute();
 }
 
+function handleNumber(digit) {
+  if (!currentOp) {
+    num1 += digit;
+  } else {
+    num2 += digit;
+  }
+  updateDisplay();
+}
+
+function handleOperator(op) {
+  if (num1) {
+    currentOp = op;
+    updateDisplay();
+  } else {
+    showToast('Enter a number first', 'warning');
+  }
+}
+
 function updateDisplay() {
-  const display = `${num1} ${operator} ${num2}`.trim();
-  resultDiv.textContent = display || 'Start by entering numbers';
+  const expr = `${num1} ${currentOp} ${num2}`.trim();
+  displayEl.textContent = expr || 'Start by entering numbers';
 }
 
 function calculate() {
   const a = parseFloat(num1);
   const b = parseFloat(num2);
-  if (isNaN(a) || isNaN(b)) {
-    showToast('Please enter both numbers', 'warning');
+  if (isNaN(a) || isNaN(b) || !currentOp) {
+    showToast('Complete the expression first', 'warning');
     return;
   }
-  if (operator === '/' && b === 0) {
+  if (currentOp === '/' && b === 0) {
     showToast('Cannot divide by zero', 'error');
-    resultDiv.textContent = 'Cannot divide by zero';
+    displayEl.textContent = 'Error: Division by 0';
     return;
   }
   let res;
-  switch (operator) {
+  switch (currentOp) {
     case '+': res = a + b; break;
     case '-': res = a - b; break;
     case '*': res = a * b; break;
     case '/': res = a / b; break;
     default: res = 'Error';
   }
-  resultDiv.textContent = `Result: ${res}`;
+  displayEl.textContent = `Result: ${res}`;
   showToast('Calculation successful', 'success');
-  // reset for next calculation
+  // reset for next use
   num1 = '';
   num2 = '';
+  currentOp = '';
 }
 
-function showToast(message, type = 'info') {
+function resetCalculator() {
+  num1 = '';
+  num2 = '';
+  currentOp = '';
+  updateDisplay();
+}
+
+function showToast(msg, type = 'info') {
   const container = document.querySelector('.toast-container') || createToastContainer();
   const toast = document.createElement('div');
   toast.className = `toast toast-${type}`;
-  toast.textContent = message;
+  toast.textContent = msg;
   container.appendChild(toast);
   requestAnimationFrame(() => toast.classList.add('toast-visible'));
   setTimeout(() => {
@@ -96,9 +115,7 @@ function updateRoute() {
   const hash = location.hash || '#/home';
   const route = routes[hash] || routes['#/home'];
   document.title = route.title;
-  // hide all sections first
-  document.querySelectorAll('.calculator, .settings, .about').forEach(sec => sec.classList.add('hidden'));
-  // show relevant sections
+  document.querySelectorAll('.calculator, .settings, .about').forEach(s => s.classList.add('hidden'));
   route.sections.forEach(sel => document.querySelector(sel).classList.remove('hidden'));
 }
 

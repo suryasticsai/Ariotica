@@ -1,32 +1,29 @@
 {
-  "version": "1.2.2",
+  "version": "1.3.2",
   "features": [
-    "Responsive calculator with number buttons 0‑9",
+    "Responsive dark‑mode glassmorphism UI",
+    "Phone‑keypad style grid with large buttons",
     "Hash‑based routing for Home, Settings, About",
     "Accessible semantic markup and ARIA live region",
-    "Smooth transitions and CSS variables for theming",
-    "Toast notifications for success, warnings, and errors"
+    "Toast notifications for feedback",
+    "No external build step, pure vanilla JS"
   ],
   "fixes": [
-    "Reworked breadcrumb‑like navigation using hash routing and proper show/hide logic",
-    "Added numeric button UI (0‑9) as requested",
-    "Ensured all variables are declared before use",
-    "Removed unsafe integrity attributes and simplified external CDN includes",
-    "Fixed empty state handling and reset after calculation"
+    "Centered calculator container",
+    "Separated display from keypad for clarity",
+    "Removed unused Alpine.js import",
+    "Ensured all variables declared before use",
+    "Improved empty‑state messaging"
   ],
   "suggestions": [
-    "Consider persisting last calculation in localStorage with a prefixed key",
-    "Add a Settings page to toggle dark/light mode using CSS variables",
-    "Implement keyboard support for number entry"
+    "Consider adding a theme toggle (light/dark) using CSS variables",
+    "Persist last calculation in localStorage with a prefixed key",
+    "Add keyboard support for numbers and operators"
   ],
   "grade": "A+",
   "percentile": "Top 5%",
-  "humanInvolvement": "Low – code generated and tested automatically, but review for branding and extra features is recommended.",
-  "libraries": [
-    "pico.css",
-    "bootstrap",
-    "font-awesome"
-  ],
+  "humanInvolvement": "Low – code is ready to run; testing on target devices recommended.",
+  "libraries": [],
   "_watermark": "⚡ Built by Ariotica AI",
   "skillsUsed": []
 }
