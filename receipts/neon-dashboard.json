@@ -1,0 +1,76 @@
+{
+  "schema": 2,
+  "app": "neon-dashboard",
+  "files": {
+    "index.html": "eac7469a554ac01260342d98e6b23ab8f929511bdbaad7b3bb07907e3fbc40b4",
+    "style.css": "6efbd7ea90e48d5328370f3cd310f2db64ac118991a4f409e8e6d06944337b5c",
+    "script.js": "f8021681a36baa9863c04154899e76df41a7608a2f2b9ec66eb4c47dece01505",
+    "icon-192.png": "d14a8828e5d9c1571b78a22cc7cdf9c0ac41b202c413fd0b2b8f84992191bd35",
+    "icon-512.png": "d14a8828e5d9c1571b78a22cc7cdf9c0ac41b202c413fd0b2b8f84992191bd35",
+    "manifest.json": "eefdbd0ecefac68d77ed9076e14c2691bfa0ef60d8c750a749fd33d3bcd752f3",
+    "sw.js": "3e74933fb40b6f1065ad2cfd555bc3e160f8dec7b3c1396398afdb5502a2669a",
+    "meta.json": "2e1b8f70c5d1d92054578fc8a2522ece606565b768a7a584fe132f7bcde08638",
+    "CHANGELOG.md": "dfa67c1eef98131c3c7fb232c5a043ef14bbd1d026125bfeabf5258bd6ad66aa"
+  },
+  "bytes": 27124,
+  "builtAt": "2026-11-01T16:51:11.380Z",
+  "mode": "create",
+  "repo": "suryasticsai/Ariotica",
+  "runId": "41328383114",
+  "commit": "1ae77b53529117ccc779206d355d89e9079c4359",
+  "model": {
+    "provider": "Groq",
+    "name": "openai/gpt-oss-120b"
+  },
+  "race": [
+    {
+      "provider": "Groq",
+      "model": "openai/gpt-oss-120b",
+      "sec": 7,
+      "ok": true,
+      "score": 100,
+      "reason": "",
+      "cost": 0.0025035,
+      "tokensIn": 2935,
+      "tokensOut": 2751
+    }
+  ],
+  "sha256": "eac7469a554ac01260342d98e6b23ab8f929511bdbaad7b3bb07907e3fbc40b4",
+  "skillsUsed": [
+    "ariotica-ui"
+  ],
+  "checks": {
+    "complete": true,
+    "vanilla": true,
+    "externalRefs": [
+      "https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Syne:wght@600;700&display=swap",
+      "https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js",
+      "https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js",
+      "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css",
+      "https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js",
+      "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    ],
+    "connectsTo": [],
+    "zeroDeps": false,
+    "smoke": "pass",
+    "smokeErrors": [],
+    "scan": {
+      "total": 1,
+      "high": 0,
+      "medium": 1,
+      "low": 0,
+      "byTool": {
+        "custom": 0,
+        "eslint": 1,
+        "sparrow": 0,
+        "externals": 0
+      }
+    }
+  },
+  "promptSha256": "2f0a35a97dc56ba9e3bb90eb284af3310ca1d64a4e3034e729290faf3ca91fb1",
+  "prompt": "Build a dashboard app using skill:ariotica-ui. Include a glassmorphic chart and a bottom navigation dock.",
+  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js neon-dashboard",
+  "cost": 0.0025035,
+  "tokensIn": 2935,
+  "tokensOut": 2751
+}

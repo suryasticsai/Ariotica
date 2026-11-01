@@ -988,5 +988,31 @@
         "tokensOut": 4009
       }
     ]
+  },
+  {
+    "ts": "2026-11-01T16:51:17.415Z",
+    "slug": "neon-dashboard",
+    "mode": "create",
+    "provider": "Groq",
+    "model": "openai/gpt-oss-120b",
+    "runId": "41328383114",
+    "cost": 0.0025035,
+    "tokensIn": 2935,
+    "tokensOut": 2751,
+    "score": 90,
+    "sec": 7,
+    "race": [
+      {
+        "provider": "Groq",
+        "model": "openai/gpt-oss-120b",
+        "sec": 7,
+        "ok": true,
+        "score": 100,
+        "reason": "",
+        "cost": 0.0025035,
+        "tokensIn": 2935,
+        "tokensOut": 2751
+      }
+    ]
   }
 ]
