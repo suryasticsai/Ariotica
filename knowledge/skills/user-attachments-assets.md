@@ -1,74 +1,95 @@
 ---
 name: user-attachments-assets
 status: draft
-source: https://github.com/user-attachments/assets/3d6b642d-12cc-452c-aa6b-07554b6376af)
-created: 2026-11-01T09:42:36.386Z
+source: https://github.com/user-attachments/assets/228a96ea-e65e-4784-bd86-94b9654d1f65)
+created: 2026-11-01T11:35:33.395Z
 ---
 
-# Session Sync Alert
-Keywords: session, storage event, cross‑tab, reload, alert
+# Session Refresh Alert Handling
+Keywords: session, reload, alert, GitHub, authentication, vanilla JavaScript
 ## Requirements
-- Detect when the user signs in/out or switches accounts in another browser tab or window.
-- Show a dismissable alert prompting the user to reload the page.
-- Use only vanilla JavaScript and a simple CSS selector for the alert container.
+- Detect when GitHub displays a session‑related alert (signed‑in elsewhere, signed‑out elsewhere, account switched).
+- Show a custom UI element (e.g., a banner) prompting the user to reload.
+- Perform a hard page reload when the user clicks the prompt.
+- Work in any modern browser without external libraries.
+- No placeholders for hosts or credentials.
+
 ## Pattern
 ```html
-<!-- HTML -->
-<div class="session-alert hidden">
-  <p>You signed in/out in another tab. <a href="#" class="reload-link">Reload</a></p>
-  <button class="close-alert">✕</button>
+<!-- Add this somewhere in your page, preferably just after <body> -->
+<div id="session-alert" class="session-alert hidden">
+  <p>You were signed in/out elsewhere. <button id="reload-btn">Reload</button></p>
 </div>
 ```
 
 ```css
-/* CSS */
-.session-alert { 
-  background:#ffeb3b; color:#000; padding:1rem; 
-  position:fixed; top:0; left:0; right:0; text-align:center;
+/* Minimal styling – adjust as needed */
+.session-alert {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  background: #ffeb3b;
+  color: #000;
+  padding: 1rem;
+  text-align: center;
+  z-index: 1000;
 }
-.session-alert.hidden { display:none; }
+.session-alert.hidden { display: none; }
 ```
 
 ```js
-/* JavaScript */
+// Core logic – paste anywhere after the HTML above
 (function () {
-  const ALERT_SELECTOR = '.session-alert';
-  const alertEl = document.querySelector(ALERT_SELECTOR);
-  if (!alertEl) return; // no alert container → nothing to do
+  // 1. Selector for the injected banner
+  const banner = document.querySelector('#session-alert');
+  const btn    = document.querySelector('#reload-btn');
 
-  // Show alert
-  function showAlert() { alertEl.classList.remove('hidden'); }
+  // 2. Text patterns that GitHub uses in its native alerts
+  const patterns = [
+    /signed in with another tab/i,
+    /signed out in another tab/i,
+    /switched accounts on another tab/i
+  ];
 
-  // Hide alert
-  function hideAlert() { alertEl.classList.add('hidden'); }
-
-  // Reload handler
-  alertEl.querySelector('.reload-link').addEventListener('click', e => {
-    e.preventDefault();
-    location.reload();
+  // 3. MutationObserver watches the <body> for the native GitHub alert
+  const observer = new MutationObserver((mutations) => {
+    for (const m of mutations) {
+      for (const node of m.addedNodes) {
+        if (node.nodeType !== Node.ELEMENT_NODE) continue;
+        const txt = node.textContent || '';
+        if (patterns.some(p => p.test(txt))) {
+          // Show our custom banner
+          banner.classList.remove('hidden');
+          // Optionally hide the native GitHub alert
+          node.style.display = 'none';
+        }
+      }
+    }
   });
 
-  // Close button
-  alertEl.querySelector('.close-alert').addEventListener('click', hideAlert);
+  observer.observe(document.body, { childList: true, subtree: true });
 
-  // Cross‑tab sync: listen for changes to a known key in localStorage
-  window.addEventListener('storage', e => {
-    if (e.key !== 'session-sync') return;
-    // Any change means another tab altered the session state
-    showAlert();
+  // 4. Reload on user click
+  btn.addEventListener('click', () => {
+    // Hard reload, bypass cache
+    location.reload(true);
   });
 
-  // Optional: broadcast own changes (e.g., after a successful login/logout)
-  // window.localStorage.setItem('session-sync', Date.now());
+  // 5. Cleanup on page unload
+  window.addEventListener('beforeunload', () => observer.disconnect());
 })();
 ```
+
 ## Gotchas
-- **Storage event only fires in *other* tabs** – the tab that writes to `localStorage` does **not** receive the event. Always write a dummy value (`Date.now()`) after login/logout to trigger other tabs.
-- **Privacy mode / Safari** may block `localStorage` writes; wrap calls in `try/catch`.
-- **Multiple alerts**: guard against duplicate alerts by checking `alertEl.classList.contains('hidden')` before showing.
-- **Performance**: the `storage` listener is cheap, but avoid heavy work inside it; just toggle UI.
-- **CSS selector specificity**: ensure `.session-alert` is unique on the page to satisfy the `must-have-selector` check.
+- **MutationObserver overhead**: Only observe `childList` and `subtree` on `document.body`. Too broad observation can hurt performance on very large pages.
+- **`location.reload(true)`** is deprecated in some browsers; fallback to `location.reload()` which still forces a reload in most cases.
+- **Pattern brittleness**: GitHub may change alert wording; keep `patterns` array up‑to‑date.
+- **Multiple alerts**: If GitHub fires several alerts simultaneously, the observer may fire multiple times—`banner` is idempotent because we simply remove the `hidden` class.
+- **CSS specificity**: Ensure your `.session-alert` selector isn’t overridden by site‑wide styles (use higher specificity or `!important` as a last resort).
+- **Cross‑origin restrictions**: This script runs only on pages you control; you cannot inject it into GitHub’s own domain unless you’re building a browser extension or userscript.
+
 ## Checks
-- must-have-code: `addEventListener('storage'`
-- must-have-selector: `.session-alert`
+- must-have-code: `location.reload(`
+- must-have-selector: `#session-alert`
 - must-not-have: `placeholder`
