@@ -2,22 +2,22 @@
   "schema": 2,
   "app": "calcy",
   "files": {
-    "index.html": "218695e6116eb76b80e4f863f8345bc931cea2b12415b47c1c1b9d7478eb509c",
-    "style.css": "3c5621df0be53ff67b6b2b71a89568ecd70b23a2b0cfe11eabf13d7c61f79514",
-    "script.js": "05099c182658c5d552667858ca2a9a0eb11173fdd09bbd6f22e6b7c4db7f8b10",
+    "index.html": "b2cb0a65aeff1817c71d807681e0fcbe124135771828008f9ba3fb7f21d6821a",
+    "style.css": "af034057bd199bbf2a2ef46480e6fd7a32ba7c26eb6a0bb02542cd7ba438509d",
+    "script.js": "e59851aff77fa16ac7c802e02b7e7406d7d1fdd7e4a67458e3464dc8df55fd63",
     "icon-192.png": "9f58aa4eabaa258a1b04c35cbedd8c74bf56c39408e2d4dcea3c75de145dd859",
     "icon-512.png": "9f58aa4eabaa258a1b04c35cbedd8c74bf56c39408e2d4dcea3c75de145dd859",
     "manifest.json": "356efdbbd1dedd73b8c2e63478efc1b14ac0301d42c1efee778750a41e8c6679",
-    "sw.js": "d4ac88a378affeb8ad3e8674c8b27c58f4a9b3130d156e847c3b1c0bd12b069b",
-    "meta.json": "623637778190181e6f2f819138f4c1953d1f5657ec755a02881d1d54a01d9e49",
-    "CHANGELOG.md": "52eec588d36ae42db34f5d5e19d981631c54fa1e610d532914b93e5265308c34"
+    "sw.js": "156d7fa7bf556e297c6c1dc8d0f650cd1e05416ba73230c3d1973ffb798df61d",
+    "meta.json": "55a1829125d8742027484a46450b27471e4fd24d6cf52e372fca8cb1bd73da29",
+    "CHANGELOG.md": "fb048fd35775d2b508dde436bd068fca8afb56d3260076cc564f1e2547994a9c"
   },
-  "bytes": 68852,
-  "builtAt": "2026-11-01T09:43:00.315Z",
-  "mode": "fix",
+  "bytes": 82973,
+  "builtAt": "2026-11-01T11:12:28.408Z",
+  "mode": "improve",
   "repo": "suryasticsai/Ariotica",
-  "runId": "41294261267",
-  "commit": "3923ab07c772a085d5b24535dc5dc02ae7388046",
+  "runId": "41300812552",
+  "commit": "d4a7e31e7721de86be71e240eebe5beebd83728b",
   "model": {
     "provider": "Groq",
     "name": "openai/gpt-oss-120b"
@@ -36,12 +36,12 @@
       "ok": true,
       "score": 100,
       "reason": "",
-      "cost": 0.0037344,
-      "tokensIn": 5131,
-      "tokensOut": 3953
+      "cost": 0.0036401999999999997,
+      "tokensIn": 4923,
+      "tokensOut": 3869
     }
   ],
-  "sha256": "218695e6116eb76b80e4f863f8345bc931cea2b12415b47c1c1b9d7478eb509c",
+  "sha256": "b2cb0a65aeff1817c71d807681e0fcbe124135771828008f9ba3fb7f21d6821a",
   "skillsUsed": [],
   "checks": {
     "complete": true,
@@ -70,10 +70,10 @@
       }
     }
   },
-  "promptSha256": "269876182f6f8ca7d129defc1ef691781b89f5408bbf75be453c8c9e6b833bbd",
-  "prompt": "![Screenshot_20261101_151007.jpg](https://github.com/user-attachments/assets/3d6b642d-12cc-452c-aa6b-07554b6376af)\n\n\nPlease make UI with all numbers from 0 to 9\nAnd calculate symbols and casio style calculator the breadcrum is not working w",
+  "promptSha256": "5d47e44115bbcaba0683ce5eb81be134b1d1ef343150247cdf37923984108012",
+  "prompt": "Make the calculator UI much larger, centered in the middle of the screen, and give it a stunning dark-mode glassmorphism design with a grid layout for the buttons.\nI want in Phone keypad style",
   "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js calcy",
-  "cost": 0.0037344,
-  "tokensIn": 5131,
-  "tokensOut": 3953
+  "cost": 0.0036401999999999997,
+  "tokensIn": 4923,
+  "tokensOut": 3869
 }
