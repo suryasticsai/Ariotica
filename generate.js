@@ -1073,10 +1073,19 @@ main().catch(async (err) => {
   
   const num = currentIssue || parseInt(process.env.ISSUE_NUMBER || '0', 10);
   const isBudget = err.name === 'BudgetError';
+  const isMissing = err.message.includes('no existing file');
+  const isTokenLimit = err.message.includes('413') || err.message.includes('too large');
   
-  const body = isBudget
-    ? `⏱️ **Run Budget Exhausted**\n\nThe overall 9-minute limit for this run was reached. This usually happens when all providers are slow or the app is very complex. Try again, or split the request into smaller \`[improve]\` steps.`
-    : `❌ **Fatal System Error**\n\n\`\`\`\n${currentError.slice(0, 1500)}\n\`\`\`${HINT}`;
+  let body;
+  if (isBudget) {
+    body = `⏱️ **Run Budget Exhausted**\n\nThe overall 9-minute limit for this run was reached. Try again, or split the request into smaller \`[improve]\` steps.`;
+  } else if (isMissing) {
+    body = `⚠️ **Cannot Improve: App Not Found**\n\nYou tried to \`[improve]\` the app **\`${inputs?.project || 'unknown'}\`**, but it does not exist in the repository yet. This usually happens if the original \`[create]\` build failed.\n\n💡 **To fix this:** Reply to this issue with \`[create] <your prompt>\` to build it from scratch.`;
+  } else if (isTokenLimit) {
+    body = `⚠️ **Prompt Too Large**\n\nThe prompt (including the template) exceeded the AI's context limit. The template is being minified, but it is still too large for this model.\n\n💡 **To fix this:** Try again. The system will automatically fallback to GitHub Models, which has a larger context window.`;
+  } else {
+    body = `❌ **Fatal System Error**\n\n\`\`\`\n${currentError.slice(0, 1500)}\n\`\`\`${HINT}`;
+  }
     
   await finishStatus(num, body, false); 
   process.exit(1);
