@@ -1,0 +1,76 @@
+{
+  "schema": 2,
+  "app": "finboard",
+  "files": {
+    "index.html": "970a1de8beeadf4aa87266be240ab7c8426f5e9d84a0280ee6efd70db8302d48",
+    "style.css": "6bd71dc01ff6e92525b0b08b06027168d3e92c1f8245138cc537c5c3f055cb4a",
+    "script.js": "935aedce9cdd6cedde8968799c26fa2e20e3099ac94931174710d4ccbda3843d",
+    "icon-192.png": "f9ff50eadd92029ff4ab515a741db4013dd9b529931661e8b7899961e1c96a34",
+    "icon-512.png": "f9ff50eadd92029ff4ab515a741db4013dd9b529931661e8b7899961e1c96a34",
+    "manifest.json": "6349bed564356350c77d87ce6237b2f936c2a6cf9fff5ce3f1ca28abfb5abb1c",
+    "sw.js": "5470dcd5d74e7a35a3fe2f26fd18079ee56ad2e3d6f395dfc2f59671aa629567",
+    "meta.json": "89c65165b26c3431e0d3b40c8935f14f1f8e75a2667e3c833dd1c0359fd32ea0",
+    "CHANGELOG.md": "870af354df62ddd4f7c56b2cfe80efbaee8f5c16e8e7080f23c51648dfcbac21"
+  },
+  "bytes": 26634,
+  "builtAt": "2026-11-02T12:13:21.615Z",
+  "mode": "create",
+  "repo": "suryasticsai/Ariotica",
+  "runId": "41442832893",
+  "commit": "0b5da8ec22f65a3079abb28a31f6226d77c4c86c",
+  "model": {
+    "provider": "Groq",
+    "name": "openai/gpt-oss-120b"
+  },
+  "race": [
+    {
+      "provider": "Groq",
+      "model": "openai/gpt-oss-120b",
+      "sec": 6,
+      "ok": true,
+      "score": 100,
+      "reason": "",
+      "cost": 0.00270375,
+      "tokensIn": 6940,
+      "tokensOut": 2217
+    }
+  ],
+  "sha256": "970a1de8beeadf4aa87266be240ab7c8426f5e9d84a0280ee6efd70db8302d48",
+  "skillsUsed": [
+    "webrtc"
+  ],
+  "checks": {
+    "complete": true,
+    "vanilla": true,
+    "externalRefs": [
+      "https://fonts.googleapis.com",
+      "https://fonts.gstatic.com",
+      "https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Syne:wght@600;700&display=swap",
+      "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css",
+      "https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js",
+      "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    ],
+    "connectsTo": [],
+    "zeroDeps": false,
+    "smoke": "pass",
+    "smokeErrors": [],
+    "scan": {
+      "total": 0,
+      "high": 0,
+      "medium": 0,
+      "low": 0,
+      "byTool": {
+        "custom": 0,
+        "eslint": 0,
+        "sparrow": 0,
+        "externals": 0
+      }
+    }
+  },
+  "promptSha256": "a6d1ca825e5a13304639f2e4c144f85093e5c46f0a89f11ba3a1e28cf8e03059",
+  "prompt": "[create] Create a personal finance dashboard. Use the template. Add a grid layout with 3 stats cards (Balance, Income, Expenses) and a list of recent transactions.",
+  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js finboard",
+  "cost": 0.00270375,
+  "tokensIn": 6940,
+  "tokensOut": 2217
+}
