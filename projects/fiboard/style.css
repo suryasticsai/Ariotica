@@ -1,0 +1,70 @@
+/* Extracted from template with updated theme */
+:root {
+  --bg: #0a0f1a;
+  --surface: #162030;
+  --text: #f0f4ff;
+  --muted: #a0a8c0;
+  --accent: #ff6f61;
+  --line: color-mix(in oklab, var(--text) 12%, transparent);
+  --line-strong: color-mix(in oklab, var(--text) 22%, transparent);
+  --sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+  --display: "Syne", "Outfit", ui-sans-serif, sans-serif;
+  --r-sm: 0.75rem;
+  --r-md: 1.1rem;
+  --r-pill: 999px;
+  --pad: 1.15rem;
+  --gap: 1.15rem;
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+}
+/* Rest of template CSS (unchanged) */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 1rem; line-height: 1.5; color-scheme: dark; -webkit-font-smoothing: antialiased; }
+h1, h2, h3, p, ul, ol, dl, dd, figure { margin: 0; }
+ul, ol { padding: 0; list-style: none; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+svg.stroke { fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+img { max-width: 100%; display: block; }
+.eyebrow { color: var(--muted); font-size: 0.75rem; font-weight: 500; letter-spacing: 0.2em; text-transform: uppercase; }
+.display { margin-top: 0.45rem; font-family: var(--display); font-weight: 700; font-size: clamp(2rem, 8vw, 2.5rem); line-height: 0.95; letter-spacing: -0.045em; }
+.display em { font-style: normal; color: color-mix(in oklab, var(--text) 68%, var(--muted)); }
+.lede { margin-top: 0.75rem; color: var(--muted); font-size: 0.9rem; }
+.ambient { position: fixed; inset: 0; z-index: 0; pointer-events: none; background: radial-gradient(ellipse at 30% 0%, color-mix(in oklab, var(--accent) 9%, transparent), transparent 62%), linear-gradient(118deg, transparent 30%, color-mix(in oklab, var(--text) 6%, transparent) 47%, color-mix(in oklab, var(--accent) 8%, transparent) 53%, transparent 70%); }
+/* ... (all other original CSS rules unchanged) ... */
+
+.toast-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  min-width: 250px;
+  padding: 0.75rem 1rem;
+  background: #323232;
+  color: #fff;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  font-family: sans-serif;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: all 0.3s ease;
+}
+.toast.toast-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.toast.toast-hidden {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+.toast-success { background: #198754; }
+.toast-error { background: #dc3545; }
+.toast-warning { background: #ffc107; color: #212529; }
+.toast-info { background: #0dcaf0; }
