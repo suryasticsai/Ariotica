@@ -25,6 +25,7 @@ const ANALYTICS_DIR = 'analytics';
 const COSTS_PATH    = `${ANALYTICS_DIR}/costs.json`;
 const LB_PATH       = `${ANALYTICS_DIR}/leaderboard.json`;
 const MANIFEST_PATH = 'projects.json';
+const TEMPLATE_PATH = 'app-template.html';
 
 const EXISTING_LIMIT = 30000;
 const STATUS_EVERY   = 3000;
@@ -273,20 +274,20 @@ function aiEvents() {
   };
 }
 
+// ============================================================
+// TEMPLATE RULES
+// ============================================================
 const RULES = `You are a Senior UI/UX Engineer building a PURE VANILLA JAVASCRIPT web app using multiple files.
 STRICT RULES:
-- Create separate files: index.html, style.css, script.js.
-- Link them properly using <link rel="stylesheet" href="style.css"> and <script src="script.js"></script>.
+- **TEMPLATE ADHERENCE**: You MUST use the exact structure from the provided BASE TEMPLATE. Keep the .ambient, .app-bar, .app-main, and .app-dock intact.
+- **THEMING**: Change the CSS variables in :root to give the app a unique color scheme that matches the prompt.
+- **CONTENT**: Replace the placeholder content in the <main> section with the actual app functionality.
+- **FILES**: Return exactly 3 files: index.html, style.css, script.js.
+- **EXTRACT CSS**: Move all the CSS from the <style> block in the template into style.css. Link it in index.html using <link rel="stylesheet" href="style.css">.
+- **EXTRACT JS**: Move all the JS from the <script> block in the template into script.js. Link it in index.html using <script src="script.js"></script>.
 - NO build step. NO import/export statements. NO require().
-- **DESIGN SYSTEM**: You MUST use CSS variables (:root) for colors. Use a modern, sleek aesthetic. Use Flexbox/Grid. Use smooth transitions (0.3s ease) on all hover states and button clicks.
-- **RESPONSIVE**: Must look perfect on mobile (375px) and desktop. Use media queries.
-- **ACCESSIBILITY**: Use semantic HTML, aria-labels, and ensure high contrast.
-- **UX**: Always include a clear empty state relevant to the app's core function (e.g., "No items found" or "Start by entering a number"). Handle edge cases gracefully.
-- **MULTI-PAGE**: If the app needs multiple views (e.g., Settings, Dashboard, About), use hash-based routing (e.g., #/settings) and listen to the window.onhashchange event. Update document.title based on the route. Hide/show sections using CSS classes based on the hash. Do NOT use external routing libraries.
-- **WEBRTC**: If building a video/audio call app, use PeerJS. Always request media with navigator.mediaDevices.getUserMedia. Use window.location.hash for the room ID. Copy the current URL for the share link.
-- **SCRAPED DATA**: If the prompt includes a "SCRAPED REFERENCE" section, analyze the text, extract the core features, UI text, and design patterns, and use them as your primary blueprint for the new app.
-- **STORAGE NAMESPACING**: If you use localStorage, ALL keys MUST be prefixed with the app's name (e.g., "kanban_items" not "items").
-- **VARIABLE SCOPING**: You MUST declare all variables with 'let' or 'const' BEFORE using them. NEVER reference an undeclared variable. (e.g., if you use 'deferredPrompt', declare 'let deferredPrompt = null;' at the top of the script).
+- **RESPONSIVE**: Must look perfect on mobile (375px) and desktop.
+- **VARIABLE SCOPING**: You MUST declare all variables with 'let' or 'const' BEFORE using them.
 - The app must run without console errors on load and when every button is pressed once.
 
 OUTPUT FORMAT: reply with ONLY one JSON object and nothing else.
@@ -362,8 +363,6 @@ async function gradeHtml(text) {
 }
 
 const structurallyBad = (c) => !c.grade.files || !c.grade.files['index.html'] || !T.isVanilla(c.grade.html, TRUSTED_DOMAINS).ok;
-
-// Added 'kind' parameter for Smart Routing
 const generate = (userText, kind = 'generate') => askAI(genMessages(userText), { json: true, grade: gradeHtml, onEvent: aiEvents(), kind });
 
 async function readFile(p) {
@@ -843,7 +842,7 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
     }
   }
 
-  // 🧠 SKILL MATCHING: Load receipt skills first, then BM25
+  // 🧠 SKILL MATCHING
   let skillCtx = ''; let skillNames = [];
   if (mode === 'create' || mode === 'improve' || mode === 'fix' || mode === 'inspire') {
     if (oldReceipt && Array.isArray(oldReceipt.skillsUsed)) {
@@ -866,7 +865,16 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
     }
   }
 
-  // FIXED: Budgeting — files are never truncated, extras get the leftovers
+  // ═════════════════════════════════════════════════════════════════
+  // TEMPLATE INJECTION
+  // ═════════════════════════════════════════════════════════════════
+  let templateContext = '';
+  if (isNew && fs.existsSync(TEMPLATE_PATH)) {
+    const template = fs.readFileSync(TEMPLATE_PATH, 'utf8');
+    templateContext = `\n\n--- BASE TEMPLATE (MANDATORY) ---\nYou MUST use this exact HTML structure. Do NOT change the class names or layout. Customize the CSS variables in :root to fit the app's theme. Replace the demo content with the actual app.\n\n${template}\n--- END BASE TEMPLATE ---`;
+    console.log(`[template] Injected ${TEMPLATE_PATH} into prompt`);
+  }
+
   const BUDGET = { total: 32000 };
   const fit = (text, max) => (text.length <= max ? text : text.slice(0, max) + '\n[...trimmed]');
 
@@ -875,7 +883,7 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
     filesCtx = `\n\nCURRENT FILES:\n[index.html]:\n${existingHtml}\n\n[style.css]:\n${existingCss}\n\n[script.js]:\n${existingJs}`;
   }
 
-  const overhead = RULES.length + ask.length + filesCtx.length;
+  const overhead = RULES.length + ask.length + filesCtx.length + templateContext.length;
   let room = BUDGET.total - overhead;
   if (room < 0) {
     console.warn(`[budget] Overhead (${overhead}) already exceeds budget (${BUDGET.total}).`);
@@ -898,7 +906,7 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
 
   if (skillCtx && skillPart.length < 500) { skillNames = []; ACTIVE_SKILLS = []; }
 
-  let fullPrompt = RULES + libPart + ask + inspirePart + scrapedPart + skillPart + filesCtx;
+  let fullPrompt = RULES + templateContext + libPart + ask + inspirePart + scrapedPart + skillPart + filesCtx;
   console.log(`[budget] Final prompt size: ${fullPrompt.length} chars (${skillNames.length} skills, ${ACTIVE_SKILLS.length} verified)`);
 
   const mainKind = (mode === 'create' || mode === 'inspire') ? 'generate' : 'edit';
@@ -967,7 +975,6 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
 
   if (score < 50) { await finishStatus(issue, `❌ **Score too low (${score}/100)**. Not committed.`, false); process.exit(2); }
 
-  // FIXED: Regression guard
   if (!isNew && !smoke.ok) {
     const oldSmoke = (oldReceipt && oldReceipt.checks && oldReceipt.checks.smoke) || (oldReceipt && oldReceipt.smoke) || 'unknown';
     if (oldSmoke === 'pass') {
