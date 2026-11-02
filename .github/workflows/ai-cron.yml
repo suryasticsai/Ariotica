@@ -75,6 +75,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup Git Config
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
       - name: Parse Request
         id: parse
         env:
@@ -129,22 +134,15 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: '20'
-
-      - name: Cache npm
-        uses: actions/cache@v4
-        with:
-          path: ~/.npm
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
+          cache: 'npm'
 
       - name: Install dependencies
         timeout-minutes: 10
         run: |
           if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
+      # FIX: Always install Playwright (cached). Removing the `if` condition prevents Cyclops from silently crashing on issue events.
       - name: Cache Playwright Browsers
-        if: contains(github.event.comment.body, '[create]') || contains(github.event.comment.body, '[inspire]') || inputs.mode == 'create' || inputs.mode == 'inspire'
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
@@ -153,7 +151,6 @@ jobs:
             ${{ runner.os }}-playwright-v2-
 
       - name: Install Playwright Chromium
-        if: contains(github.event.comment.body, '[create]') || contains(github.event.comment.body, '[inspire]') || inputs.mode == 'create' || inputs.mode == 'inspire'
         timeout-minutes: 15
         env:
           DEBIAN_FRONTEND: noninteractive
@@ -211,9 +208,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
+          # 3-attempt retry loop to handle race conditions with concurrent builds
           for i in 1 2 3; do
             git fetch -q origin main 
             git reset -q --hard origin/main
@@ -221,7 +216,12 @@ jobs:
             git add knowledge/index.json
             git diff --staged --quiet && echo "No index changes to commit." && exit 0
             git commit -qm "chore: rebuild knowledge index"
-            git pull -q --rebase origin main && git push -q && exit 0
+            
+            # If a parallel build pushed just after our reset, pull the latest and rebase before pushing
+            if git pull -q --rebase origin main && git push -q; then
+              exit 0
+            fi
+            echo "Push conflict detected, retrying in $((i*3)) seconds..."
             sleep $((i*3))
           done
           echo "Failed to commit knowledge index after 3 retries"
@@ -267,7 +267,12 @@ jobs:
           ACTOR: ${{ github.actor }}
           RUN_ID: ${{ github.run_id }}
         run: |
-          PROJECT=$(echo "$RAW_PROJECT" | sed 's/\[BUILD\] //i' | awk '{print $1}' | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z0-9-')
+          # Extract project slug robustly
+          if [ -n "${{ inputs.project }}" ]; then
+            PROJECT="${{ inputs.project }}"
+          else
+            PROJECT=$(echo "$RAW_PROJECT" | sed 's/\[BUILD\] //i' | awk '{print $1}' | tr '[:upper:]' '[:lower:]' | tr -cd 'a-z0-9-')
+          fi
           
           echo "## 🤖 Ariotica Build Report" >> $GITHUB_STEP_SUMMARY
           echo "| Status | Project | Mode | Triggered By |" >> $GITHUB_STEP_SUMMARY
