@@ -280,6 +280,8 @@ function aiEvents() {
 const RULES = `You are a Senior UI/UX Engineer building a PURE VANILLA JAVASCRIPT web app using multiple files.
 STRICT RULES:
 - **TEMPLATE ADHERENCE**: You MUST use the exact structure from the provided BASE TEMPLATE. Keep the .ambient, .app-bar, .app-main, and .app-dock intact.
+- **CSS RULE**: You MUST copy ALL CSS rules from the template's <style> block into style.css. Do NOT write placeholders like \`/* rest unchanged */\` or \`/* ... */\`. Every rule MUST be present verbatim.
+- **NO INTEGRITY HASHES**: Do NOT add \`integrity="..."\` attributes to any external stylesheet or script. They will block loading.
 - **SMART CDN USAGE**: You are ALLOWED and encouraged to use standard CDNs like Bootstrap (for grids, buttons, utilities) to save time. 
 - **CRITICAL**: When using Bootstrap, do NOT use \`<nav class="navbar">\` or let its body resets break your custom \`.app\` layout.
 - **THEMING**: Change the CSS variables in :root to give the app a unique color scheme that matches the prompt.
@@ -871,19 +873,33 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
   }
 
   // ═════════════════════════════════════════════════════════════════
-  // TEMPLATE INJECTION (WITH MINIFIER)
+  // TEMPLATE INJECTION (WITH MINIFIER & PRESERVED AI INSTRUCTIONS)
   // ═════════════════════════════════════════════════════════════════
   let templateContext = '';
   if (isNew && fs.existsSync(TEMPLATE_PATH)) {
     let template = fs.readFileSync(TEMPLATE_PATH, 'utf8');
 
-    // Minify the template to save tokens (strip comments and extra whitespace)
+    // FIX 3: Preserve AI INSTRUCTION comments
+    const preserved = [];
+    template = template.replace(/<!--\s*⚠️[\s\S]*?-->/g, (match) => {
+      preserved.push(match);
+      return `@@AI_INSTR_${preserved.length - 1}@@`;
+    });
+    template = template.replace(/\/\*[^*]*⚠️[\s\S]*?\*\//g, (match) => {
+      preserved.push(match);
+      return `@@AI_INSTR_${preserved.length - 1}@@`;
+    });
+
+    // Strip everything else
     template = template
-      .replace(/\/\*[\s\S]*?\*\//g, '') // remove CSS/JS block comments
-      .replace(/<!--[\s\S]*?-->/g, '')  // remove HTML comments
-      .replace(/\n\s*\n/g, '\n')        // collapse multiple newlines
-      .replace(/^\s+|\s+$/gm, '')       // trim spaces at line starts/ends
-      .replace(/>\s+</g, '><');         // remove spaces between tags
+      .replace(/\/\*[\s\S]*?\*\//g, '')
+      .replace(/<!--[\s\S]*?-->/g, '')
+      .replace(/\n\s*\n/g, '\n')
+      .replace(/^\s+|\s+$/gm, '')
+      .replace(/>\s+</g, '><');
+
+    // Restore AI INSTRUCTION comments
+    template = template.replace(/@@AI_INSTR_(\d+)@@/g, (_, i) => preserved[parseInt(i)]);
 
     templateContext = `\n\n--- BASE TEMPLATE (MANDATORY) ---\nYou MUST use this exact HTML structure. Do NOT change the class names or layout. Customize the CSS variables in :root to fit the app's theme. Replace the demo content with the actual app.\n\n${template}\n--- END BASE TEMPLATE ---`;
     console.log(`[template] Injected minified app-template.html (${template.length} chars)`);
@@ -999,6 +1015,41 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
     } catch (e) { console.log('[Cyclops] skipped:', e.message); }
   }
 
+  // 🎨 FIX 1: ENSURE TEMPLATE CSS IS PRESENT (AI often forgets)
+  if (fs.existsSync(TEMPLATE_PATH)) {
+    const templateHtmlRaw = fs.readFileSync(TEMPLATE_PATH, 'utf8');
+    const m = templateHtmlRaw.match(/<style>([\s\S]*?)<\/style>/i);
+    if (m) {
+      const templateCss = m[1].trim();
+      const aiCss = files['style.css'] || '';
+      // Idempotent injection: AI overrides win via cascade, template provides base
+      files['style.css'] = `/* ===== Template CSS (auto-injected) ===== */\n${templateCss}\n\n/* ===== AI CSS Overrides ===== */\n${aiCss}`;
+      console.log(`[css] Injected template CSS (${templateCss.length}) + AI CSS (${aiCss.length})`);
+    }
+  }
+
+  // Ensure the CSS and JS links exist in HTML
+  if (!files['index.html'].includes('href="style.css"')) {
+    files['index.html'] = files['index.html'].replace(/<\/head>/i, '<link rel="stylesheet" href="style.css">\n</head>');
+  }
+  if (!files['index.html'].includes('src="script.js"')) {
+    files['index.html'] = files['index.html'].replace(/<\/body>/i, '<script src="script.js"></script>\n</body>');
+  }
+
+  // Rebuild testHtml to reflect the injected CSS and JS for the security scan
+  let rebuiltTestHtml = files['index.html'];
+  if (files['style.css']) {
+    const cssRegex = /<link[^>]*href=["'](?:\.\/)?style\.css["'][^>]*>/i;
+    if (cssRegex.test(rebuiltTestHtml)) rebuiltTestHtml = rebuiltTestHtml.replace(cssRegex, `<style>\n${files['style.css']}\n</style>`);
+    else rebuiltTestHtml = rebuiltTestHtml.replace('</head>', `<style>\n${files['style.css']}\n</style>\n</head>`);
+  }
+  if (files['script.js']) {
+    const jsRegex = /<script[^>]*src=["'](?:\.\/)?script\.js["'][^>]*><\/script>/i;
+    if (jsRegex.test(rebuiltTestHtml)) rebuiltTestHtml = rebuiltTestHtml.replace(jsRegex, `<script>\n${files['script.js']}\n</script>`);
+    else rebuiltTestHtml = rebuiltTestHtml.replace('</body>', `<script>\n${files['script.js']}\n</script>\n</body>`);
+  }
+  testHtml = rebuiltTestHtml;
+
   const security = await step('Security scan', () => runAllScanners(testHtml, { trustedDomains: TRUSTED_DOMAINS }));
   let score = 100; if (!smoke.ok) score -= 30; if (smoke.errors.length > 0) score -= Math.min(smoke.errors.length * 5, 20); if (security.counts.high > 0) score -= 20; if (security.counts.medium > 0) score -= 10; if (testHtml.length > 50000) score -= 5;
 
@@ -1016,6 +1067,9 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
   let resolved;
   try { resolved = await Lib.resolveHtml(files['index.html']); } catch (e) { await finishStatus(issue, `❌ **Library failed:**\n\n\`\`\`\n${e.message}\n\`\`\``, false); process.exit(2); }
   files['index.html'] = resolved.html;
+
+  // 🛡️ FIX 2: Strip hallucinated integrity hashes
+  files['index.html'] = files['index.html'].replace(/\s+integrity=["'][^"']*["']/g, '');
 
   let currentHtml = files['index.html'];
   if (!currentHtml.includes('Built by Ariotica')) currentHtml = currentHtml.replace(/<\/body>/i, `\n<!-- Built by Ariotica AI -->\n<div style="position:fixed;bottom:12px;right:12px;opacity:0.35;font-size:11px;font-family:monospace;color:white;pointer-events:none;z-index:9999;">⚡ Ariotica</div>\n</body>`);
@@ -1063,8 +1117,16 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
   if (idx === -1) freshManifest.push(entry); else freshManifest[idx] = Object.assign({}, freshManifest[idx], entry);
   files[MANIFEST_PATH] = JSON.stringify(freshManifest, null, 2) + '\n';
 
-  const sanitized = T.sanitizeFiles(files); if (sanitized.dropped.length > 0) console.warn('[security] Dropped files:', sanitized.dropped);
-  const safeFiles = sanitized.files;
+  // FIX 1: Sanitize only AI-generated files to prevent system files (receipts, projects.json) from being dropped
+  const aiFiles = { 
+    'index.html': files['index.html'], 
+    'style.css': files['style.css'], 
+    'script.js': files['script.js'] 
+  };
+  const sanitized = T.sanitizeFiles(aiFiles);
+  const safeFiles = Object.assign({}, files, sanitized.files);
+  if (sanitized.dropped.length > 0) console.warn('[security] Dropped AI files:', sanitized.dropped);
+
   const fullFiles = {}; for (const [filename, content] of Object.entries(safeFiles)) { if (filename === MANIFEST_PATH || filename === receiptPath) fullFiles[filename] = content; else fullFiles[`${baseDir}/${filename}`] = content; }
   if (resolved.cacheChanged) fullFiles['libraries_cache.json'] = JSON.stringify(resolved.cache, null, 2) + '\n';
 
