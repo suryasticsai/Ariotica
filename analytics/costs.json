@@ -1040,5 +1040,31 @@
         "tokensOut": 2217
       }
     ]
+  },
+  {
+    "ts": "2026-11-02T15:52:48.492Z",
+    "slug": "fiboard",
+    "mode": "create",
+    "provider": "Groq",
+    "model": "openai/gpt-oss-120b",
+    "runId": "41475785914",
+    "cost": 0.0026397,
+    "tokensIn": 5523,
+    "tokensOut": 2415,
+    "score": 80,
+    "sec": 6,
+    "race": [
+      {
+        "provider": "Groq",
+        "model": "openai/gpt-oss-120b",
+        "sec": 6,
+        "ok": true,
+        "score": 100,
+        "reason": "",
+        "cost": 0.0026397,
+        "tokensIn": 5523,
+        "tokensOut": 2415
+      }
+    ]
   }
 ]

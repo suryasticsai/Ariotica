@@ -1,0 +1,73 @@
+{
+  "schema": 2,
+  "app": "fiboard",
+  "files": {
+    "index.html": "847971e9df6a733976fe6e3b6e2e10c1fb4ff9a8e460c2454667f73e348ac749",
+    "style.css": "94b168a099e4f02d152ac06a173c48df8af3878363232f1925939486bae087ef",
+    "script.js": "590e709a83b0fb7c561315d8e9015bd7537fa6bd993e9c481cac22f01eb56601",
+    "icon-192.png": "29ee543f3da138e47541555695ac9fdac47e61566f0c05b420de8bc034c9da34",
+    "icon-512.png": "29ee543f3da138e47541555695ac9fdac47e61566f0c05b420de8bc034c9da34",
+    "manifest.json": "5fe3d0000d85ae8fac855ac1e28591c4ce261fd7af3b038d36746a1234d5a8d9",
+    "sw.js": "614b49b29a8ef1ca0bc4a1a8e001be46593851ea61624760b375269d927a6a8d",
+    "meta.json": "67651458f8f68f2dc091dad45e615ac465b2f23d9eea1e4442b45600b55b7218",
+    "CHANGELOG.md": "6e6896669d1776351105706174c1ac76cf2e46f420a1a032d89396806ed095e6"
+  },
+  "bytes": 28373,
+  "builtAt": "2026-11-02T15:52:41.664Z",
+  "mode": "create",
+  "repo": "suryasticsai/Ariotica",
+  "runId": "41475785914",
+  "commit": "2e8079d4a7442e8e7cfb9e10b29f3f7a81a86a25",
+  "model": {
+    "provider": "Groq",
+    "name": "openai/gpt-oss-120b"
+  },
+  "race": [
+    {
+      "provider": "Groq",
+      "model": "openai/gpt-oss-120b",
+      "sec": 6,
+      "ok": true,
+      "score": 100,
+      "reason": "",
+      "cost": 0.0026397,
+      "tokensIn": 5523,
+      "tokensOut": 2415
+    }
+  ],
+  "sha256": "847971e9df6a733976fe6e3b6e2e10c1fb4ff9a8e460c2454667f73e348ac749",
+  "skillsUsed": [],
+  "checks": {
+    "complete": true,
+    "vanilla": true,
+    "externalRefs": [
+      "https://fonts.googleapis.com",
+      "https://fonts.gstatic.com",
+      "https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Syne:wght@600;700&display=swap",
+      "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css",
+      "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    ],
+    "connectsTo": [],
+    "zeroDeps": false,
+    "smoke": "pass",
+    "smokeErrors": [],
+    "scan": {
+      "total": 1,
+      "high": 1,
+      "medium": 0,
+      "low": 0,
+      "byTool": {
+        "custom": 1,
+        "eslint": 0,
+        "sparrow": 0,
+        "externals": 0
+      }
+    }
+  },
+  "promptSha256": "ed41bff56b975445e6ad3e19d76c843324221d4c58d66e7bd22b88a5ee57471e",
+  "prompt": "Build a beautiful 3-column dashboard for tracking daily habits. Use Bootstrap grids if it helps.",
+  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js fiboard",
+  "cost": 0.0026397,
+  "tokensIn": 5523,
+  "tokensOut": 2415
+}
