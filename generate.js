@@ -280,6 +280,8 @@ function aiEvents() {
 const RULES = `You are a Senior UI/UX Engineer building a PURE VANILLA JAVASCRIPT web app using multiple files.
 STRICT RULES:
 - **TEMPLATE ADHERENCE**: You MUST use the exact structure from the provided BASE TEMPLATE. Keep the .ambient, .app-bar, .app-main, and .app-dock intact.
+- **SMART CDN USAGE**: You are ALLOWED and encouraged to use standard CDNs like Bootstrap (for grids, buttons, utilities) to save time. 
+- **CRITICAL**: When using Bootstrap, do NOT use \`<nav class="navbar">\` or let its body resets break your custom \`.app\` layout.
 - **THEMING**: Change the CSS variables in :root to give the app a unique color scheme that matches the prompt.
 - **CONTENT**: Replace the placeholder content in the <main> section with the actual app functionality.
 - **FILES**: Return exactly 3 files: index.html, style.css, script.js.
@@ -571,6 +573,7 @@ async function main() {
     await Git.atomicCommit({ [filePath]: finalContent }, [], `docs: add draft skill ${skillName}`);
     await Git.syncCheckout();
     await finishStatus(issue, `🧠 **Skill Draft Saved:** \`${filePath}\`.`, true);
+    await pushProgress({ status: 'done' });
     return;
   }
 
@@ -693,15 +696,7 @@ module.exports = {
     oldMeta.revertedAt = new Date().toISOString();
     revertedFiles['meta.json'] = JSON.stringify(oldMeta, null, 2);
 
-    const receipt = R.buildReceipt({
-      repo: `${OWNER}/${REPO}`, slug, files: revertedFiles, mode: 'revert',
-      runId: RUN_ID, commit: null, provider: 'revert', model: `from-v${targetVersion}`,
-      race: [], smoke: { ok: true, errors: [], skipped: true },
-      security: { total: 0, high: 0, medium: 0, low: 0, byTool: {} },
-      prompt: `revert to v${targetVersion}`, vanilla: T.isVanilla(revertedFiles['index.html'] || '', TRUSTED_DOMAINS).ok,
-    });
-    revertedFiles[receiptPath] = JSON.stringify(receipt, null, 2) + '\n';
-
+    // BUG 2 FIX: Build changelog BEFORE receipt so it gets hashed
     const oldChangelog = await readFile(changelogPath) || '';
     const newChangelog = Rep.buildChangelogEntry({
       version: newVersion, mode: 'revert', when: new Date().toISOString(),
@@ -711,6 +706,15 @@ module.exports = {
       extraNotes: `**Reverted to content of v${targetVersion}** (\`${target.commit}\`, ${formatDate(target.when)}).`,
     });
     revertedFiles['CHANGELOG.md'] = newChangelog;
+
+    const receipt = R.buildReceipt({
+      repo: `${OWNER}/${REPO}`, slug, files: revertedFiles, mode: 'revert',
+      runId: RUN_ID, commit: null, provider: 'revert', model: `from-v${targetVersion}`,
+      race: [], smoke: { ok: true, errors: [], skipped: true },
+      security: { total: 0, high: 0, medium: 0, low: 0, byTool: {} },
+      prompt: `revert to v${targetVersion}`, vanilla: T.isVanilla(revertedFiles['index.html'] || '', TRUSTED_DOMAINS).ok,
+    });
+    revertedFiles[receiptPath] = JSON.stringify(receipt, null, 2) + '\n';
 
     const freshManifest = manifest.map((e) => {
       if (e.project === slug) {
@@ -774,6 +778,7 @@ module.exports = {
     await Git.atomicCommit({ [MANIFEST_PATH]: JSON.stringify((await readFile(MANIFEST_PATH) ? JSON.parse(await readFile(MANIFEST_PATH)) : []).filter((e) => e.project !== slug), null, 2) + '\n' }, filesToDelete, `chore: delete ${slug}`);
     await Git.syncCheckout();
     await finishStatus(issue, `🗑 Deleted \`${slug}\`.`, true);
+    await pushProgress({ status: 'done' });
     return;
   }
 
@@ -871,7 +876,7 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
   let templateContext = '';
   if (isNew && fs.existsSync(TEMPLATE_PATH)) {
     let template = fs.readFileSync(TEMPLATE_PATH, 'utf8');
-    
+
     // Minify the template to save tokens (strip comments and extra whitespace)
     template = template
       .replace(/\/\*[\s\S]*?\*\//g, '') // remove CSS/JS block comments
@@ -957,23 +962,38 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
     attempt++;
   }
 
+  // 🧠 CYCLOPS: VISUAL & RUNTIME AUDIT
   if (smoke.ok && (mode === 'create' || mode === 'inspire')) {
     try {
       let visualHtml = files['index.html'];
       if (files['style.css']) visualHtml = visualHtml.replace('</head>', `<style>${files['style.css']}</style></head>`);
       if (files['script.js']) visualHtml = visualHtml.replace('</body>', `<script>${files['script.js']}</script></body>`);
-      const critique = await softStep('Cyclops: Visual Audit', async () => visualAudit(visualHtml));
-      if (critique && critique.trim().length > 10) {
-        const fixPrompt = `${RULES}\n\nFix these visual issues:\n${critique}\n\nHTML:\n${files['index.html']}\n\nCSS:\n${files['style.css']}\n\nReturn ONLY {"files": {"index.html": "...", "style.css": "..."}}. Do NOT include script.js; it will be kept as-is.`;
-        const fixRes = await step('Cyclops: Patching UI', () => generate(fixPrompt, 'edit'));
 
-        if (fixRes && fixRes.grade && fixRes.grade.files && fixRes.grade.smoke.ok && !structurallyBad(fixRes)) {
-          Object.assign(files, fixRes.grade.files);
-          smoke = fixRes.grade.smoke;
-          testHtml = fixRes.grade.html;
-          console.log('[Cyclops] Visual patch applied and passed smoke.');
-        } else {
-          console.log('[Cyclops] Rejected — patch failed smoke. Keeping pre-Cyclops files.');
+      const auditResult = await softStep('Cyclops: Visual & Runtime Audit', async () => visualAudit(visualHtml));
+
+      if (auditResult) {
+        const { critique, errors } = auditResult;
+        const hasCritique = critique && critique.trim().length > 10;
+        const hasErrors = errors && errors.length > 0;
+
+        if (hasCritique || hasErrors) {
+          console.log(`[Cyclops] Applying fixes...`);
+          
+          const errorText = hasErrors ? `\nCONSOLE/RUNTIME ERRORS:\n${errors.map(e => '- ' + e).join('\n')}` : '';
+          const critiqueText = hasCritique ? `\nVISUAL CRITIQUE:\n${critique}` : '';
+
+          const fixPrompt = `${RULES}\n\nWe need to fix the following issues:\n${critiqueText}${errorText}\n\nHTML:\n${files['index.html']}\n\nCSS:\n${files['style.css']}\n\nReturn ONLY {"files": {"index.html": "...", "style.css": "...", "script.js": "..."}}`;
+          
+          const fixRes = await step('Cyclops: Patching UI', () => generate(fixPrompt, 'edit'));
+
+          if (fixRes && fixRes.grade && fixRes.grade.files && fixRes.grade.smoke.ok && !structurallyBad(fixRes)) {
+            Object.assign(files, fixRes.grade.files);
+            smoke = fixRes.grade.smoke;
+            testHtml = fixRes.grade.html;
+            console.log('[Cyclops] Visual/Error patch applied and passed smoke.');
+          } else {
+            console.log('[Cyclops] Rejected — patch failed smoke. Keeping pre-Cyclops files.');
+          }
         }
       }
     } catch (e) { console.log('[Cyclops] skipped:', e.message); }
@@ -1013,7 +1033,8 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
   if (!currentHtml.includes('serviceWorker.register')) currentHtml = currentHtml.replace('</body>', `<script>if('serviceWorker' in navigator){addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}</script>\n</body>`);
   files['index.html'] = currentHtml;
 
-  const staticHash = (() => { const h = crypto.createHash('sha256'); for (const name of ['index.html', 'style.css', 'script.js', 'manifest.json'].sort()) { if (!files[name]) continue; h.update(name); h.update('\0'); h.update(files[name]); h.update('\0'); } return h.digest('hex'); })();
+  // BUG 3 FIX: Add icons to staticHash
+  const staticHash = (() => { const h = crypto.createHash('sha256'); for (const name of ['index.html', 'style.css', 'script.js', 'manifest.json', 'icon-192.png', 'icon-512.png'].sort()) { if (!files[name]) continue; h.update(name); h.update('\0'); h.update(files[name]); h.update('\0'); } return h.digest('hex'); })();
   const precache = ['./', './index.html']; if (files['style.css']) precache.push('./style.css'); if (files['script.js']) precache.push('./script.js'); if (files['manifest.json']) precache.push('./manifest.json'); if (files['icon-192.png']) precache.push('./icon-192.png'); if (files['icon-512.png']) precache.push('./icon-512.png');
   const cacheName = `app-${slug}-${staticHash.slice(0, 8)}`;
   files['sw.js'] = `/* Ariotica SW · ${cacheName} */\nconst CACHE = ${JSON.stringify(cacheName)};\nconst PRECACHE = ${JSON.stringify(precache)};\nself.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => Promise.all(PRECACHE.map((u) => c.add(u).catch(() => {})))).then(() => self.skipWaiting())); });\nself.addEventListener('activate', (e) => { e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });\nself.addEventListener('fetch', (e) => {\n  const req = e.request; if (req.method !== 'GET') return;\n  const url = new URL(req.url); if (url.origin !== self.location.origin) return;\n  if (req.mode === 'navigate' || (req.headers.get('accept') || '').includes('text/html')) {\n    e.respondWith(fetch(req).then((res) => { const copy = res.clone(); caches.open(CACHE).then((c) => c.put(req, copy)).catch(() => {}); return res; }).catch(() => caches.match(req).then((r) => r || caches.match('./index.html')))); return;\n  }\n  e.respondWith(caches.match(req).then((cached) => { const network = fetch(req).then((res) => { if (res.ok) caches.open(CACHE).then((c) => c.put(req, res.clone())).catch(() => {}); return res; }).catch(() => cached); return cached || network; }));\n});\n`;
@@ -1025,7 +1046,13 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
 
   const diffReports = isNew ? [] : Rep.buildChangeReport(oldForDiff, files, false);
   const oldChangelog = await readFile(changelogPath) || '';
-  files['CHANGELOG.md'] = Rep.buildChangelogEntry({ version, mode, when: new Date().toISOString(), provider, model, totalCost: 0, diffReports, metaJson, oldChangelog, isNew });
+
+  // BUG 1 FIX: Calculate totalCost BEFORE receipt and changelog to ensure they hash correctly
+  const totalCost = raceReport.reduce((s, r) => s + (r.cost || 0), 0); 
+  const totalIn = raceReport.reduce((s, r) => s + (r.tokensIn || 0), 0); 
+  const totalOut = raceReport.reduce((s, r) => s + (r.tokensOut || 0), 0);
+
+  files['CHANGELOG.md'] = Rep.buildChangelogEntry({ version, mode, when: new Date().toISOString(), provider, model, totalCost, diffReports, metaJson, oldChangelog, isNew });
 
   const receipt = R.buildReceipt({ repo: `${OWNER}/${REPO}`, slug, files, mode, runId: RUN_ID, commit: null, provider, model, race: raceReport, smoke, security: security.counts, prompt, vanilla: T.isVanilla(testHtml, TRUSTED_DOMAINS).ok, skillsUsed: skillNames });
   files[receiptPath] = JSON.stringify(receipt, null, 2) + '\n';
@@ -1042,9 +1069,6 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
   if (resolved.cacheChanged) fullFiles['libraries_cache.json'] = JSON.stringify(resolved.cache, null, 2) + '\n';
 
   const commitSha = await step(`Commit files to ${baseDir}/`, () => Git.atomicCommit(fullFiles, [], `feat: ${slug} v${version} (${mode})`));
-  const totalCost = raceReport.reduce((s, r) => s + (r.cost || 0), 0); const totalIn = raceReport.reduce((s, r) => s + (r.tokensIn || 0), 0); const totalOut = raceReport.reduce((s, r) => s + (r.tokensOut || 0), 0);
-
-  files['CHANGELOG.md'] = Rep.buildChangelogEntry({ version, mode, when: new Date().toISOString(), provider, model, totalCost, diffReports, metaJson, oldChangelog, isNew });
   const costEntry = { ts: new Date().toISOString(), slug, mode, provider, model, runId: RUN_ID, cost: totalCost, tokensIn: totalIn, tokensOut: totalOut, score, sec: cand.sec || null, race: raceReport.map(r => ({ provider: r.provider, model: r.model, sec: r.sec, ok: r.ok, score: r.score, reason: r.reason, cost: r.cost || 0, tokensIn: r.tokensIn || 0, tokensOut: r.tokensOut || 0 })) };
 
   let costs = []; try { const raw = await readFile(COSTS_PATH); if (raw) costs = JSON.parse(raw); } catch { costs = []; }
@@ -1053,7 +1077,8 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
 
   receipt.commit = commitSha; receipt.cost = totalCost; receipt.tokensIn = totalIn; receipt.tokensOut = totalOut; files[receiptPath] = JSON.stringify(receipt, null, 2) + '\n';
 
-  const commitSha2 = await Git.atomicCommit({ [receiptPath]: files[receiptPath], [`${baseDir}/CHANGELOG.md`]: files['CHANGELOG.md'], [COSTS_PATH]: JSON.stringify(costs, null, 2) + '\n', [LB_PATH]: JSON.stringify(leaderboard, null, 2) + '\n' }, [], `chore: receipt + changelog + analytics ${slug}`);
+  // Note: Removed CHANGELOG.md from this second commit because it is already correct from the first commit
+  const commitSha2 = await Git.atomicCommit({ [receiptPath]: files[receiptPath], [COSTS_PATH]: JSON.stringify(costs, null, 2) + '\n', [LB_PATH]: JSON.stringify(leaderboard, null, 2) + '\n' }, [], `chore: receipt + analytics ${slug}`);
   await Git.syncCheckout();
 
   const body = Rep.buildSummaryComment(reportCtx({ slug, baseDir, mode, version, provider, model, raceReport, smoke, security, metaJson, resolved, totalCost, totalIn, totalOut, receipt, receiptPath, diffReports, newFiles: files }));
@@ -1070,23 +1095,26 @@ main().catch(async (err) => {
   currentError = String(err.message).slice(0, 1000); 
   steps.push({ name: 'Error', status: 'error', error: currentError, at: new Date().toISOString() }); 
   await pushProgress({ status: 'error' }, true);
-  
+
   const num = currentIssue || parseInt(process.env.ISSUE_NUMBER || '0', 10);
   const isBudget = err.name === 'BudgetError';
   const isMissing = err.message.includes('no existing file');
   const isTokenLimit = err.message.includes('413') || err.message.includes('too large');
-  
+
+  // FIX: Default to process.env to avoid scope ReferenceError
+  const projectName = process.env.DISPATCH_PROJECT || process.env.ISSUE_TITLE || 'unknown';
+
   let body;
   if (isBudget) {
     body = `⏱️ **Run Budget Exhausted**\n\nThe overall 9-minute limit for this run was reached. Try again, or split the request into smaller \`[improve]\` steps.`;
   } else if (isMissing) {
-    body = `⚠️ **Cannot Improve: App Not Found**\n\nYou tried to \`[improve]\` the app **\`${inputs?.project || 'unknown'}\`**, but it does not exist in the repository yet. This usually happens if the original \`[create]\` build failed.\n\n💡 **To fix this:** Reply to this issue with \`[create] <your prompt>\` to build it from scratch.`;
+    body = `⚠️ **Cannot Improve: App Not Found**\n\nYou tried to \`[improve]\` the app **\`${projectName}\`**, but it does not exist in the repository yet. This usually happens if the original \`[create]\` build failed.\n\n💡 **To fix this:** Reply to this issue with \`[create] <your prompt>\` to build it from scratch.`;
   } else if (isTokenLimit) {
     body = `⚠️ **Prompt Too Large**\n\nThe prompt (including the template) exceeded the AI's context limit. The template is being minified, but it is still too large for this model.\n\n💡 **To fix this:** Try again. The system will automatically fallback to GitHub Models, which has a larger context window.`;
   } else {
     body = `❌ **Fatal System Error**\n\n\`\`\`\n${currentError.slice(0, 1500)}\n\`\`\`${HINT}`;
   }
-    
+
   await finishStatus(num, body, false); 
   process.exit(1);
 });
