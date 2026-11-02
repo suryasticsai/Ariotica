@@ -866,13 +866,22 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
   }
 
   // ═════════════════════════════════════════════════════════════════
-  // TEMPLATE INJECTION
+  // TEMPLATE INJECTION (WITH MINIFIER)
   // ═════════════════════════════════════════════════════════════════
   let templateContext = '';
   if (isNew && fs.existsSync(TEMPLATE_PATH)) {
-    const template = fs.readFileSync(TEMPLATE_PATH, 'utf8');
+    let template = fs.readFileSync(TEMPLATE_PATH, 'utf8');
+    
+    // Minify the template to save tokens (strip comments and extra whitespace)
+    template = template
+      .replace(/\/\*[\s\S]*?\*\//g, '') // remove CSS/JS block comments
+      .replace(/<!--[\s\S]*?-->/g, '')  // remove HTML comments
+      .replace(/\n\s*\n/g, '\n')        // collapse multiple newlines
+      .replace(/^\s+|\s+$/gm, '')       // trim spaces at line starts/ends
+      .replace(/>\s+</g, '><');         // remove spaces between tags
+
     templateContext = `\n\n--- BASE TEMPLATE (MANDATORY) ---\nYou MUST use this exact HTML structure. Do NOT change the class names or layout. Customize the CSS variables in :root to fit the app's theme. Replace the demo content with the actual app.\n\n${template}\n--- END BASE TEMPLATE ---`;
-    console.log(`[template] Injected ${TEMPLATE_PATH} into prompt`);
+    console.log(`[template] Injected minified app-template.html (${template.length} chars)`);
   }
 
   const BUDGET = { total: 32000 };
