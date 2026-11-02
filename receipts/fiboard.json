@@ -2,22 +2,22 @@
   "schema": 2,
   "app": "fiboard",
   "files": {
-    "index.html": "847971e9df6a733976fe6e3b6e2e10c1fb4ff9a8e460c2454667f73e348ac749",
-    "style.css": "94b168a099e4f02d152ac06a173c48df8af3878363232f1925939486bae087ef",
-    "script.js": "590e709a83b0fb7c561315d8e9015bd7537fa6bd993e9c481cac22f01eb56601",
+    "index.html": "e0d3ad611a4b21068eab5d8e21c85073969935d7d01373da695de6bbe8857cff",
+    "style.css": "365dd540eccc87e46c199722d6dadd11a986ef4bf9ac94f1deae46c85039569b",
+    "script.js": "5fc3217c03c5e28a916f3290c10de50c2b4db1b43e456c057e09a6781d9a6bea",
     "icon-192.png": "29ee543f3da138e47541555695ac9fdac47e61566f0c05b420de8bc034c9da34",
     "icon-512.png": "29ee543f3da138e47541555695ac9fdac47e61566f0c05b420de8bc034c9da34",
     "manifest.json": "5fe3d0000d85ae8fac855ac1e28591c4ce261fd7af3b038d36746a1234d5a8d9",
-    "sw.js": "614b49b29a8ef1ca0bc4a1a8e001be46593851ea61624760b375269d927a6a8d",
-    "meta.json": "67651458f8f68f2dc091dad45e615ac465b2f23d9eea1e4442b45600b55b7218",
-    "CHANGELOG.md": "6e6896669d1776351105706174c1ac76cf2e46f420a1a032d89396806ed095e6"
+    "sw.js": "e573308533a1ed97fa0cd9d0c1bb9fb75655e4877cf8fb9c976cd7599024466a",
+    "meta.json": "3e8cc3e45bac4029068af669a827366597053cf8a78ff032aabb7b7ac293f3af",
+    "CHANGELOG.md": "28c584f0d2fd63762c2a5cd53c1e8cea7ed30e44c22fc6b0482ac1cfa12fc139"
   },
-  "bytes": 28373,
-  "builtAt": "2026-11-02T15:52:41.664Z",
-  "mode": "create",
+  "bytes": 63122,
+  "builtAt": "2026-11-02T18:24:49.317Z",
+  "mode": "fix",
   "repo": "suryasticsai/Ariotica",
-  "runId": "41475785914",
-  "commit": "2e8079d4a7442e8e7cfb9e10b29f3f7a81a86a25",
+  "runId": "41500161452",
+  "commit": null,
   "model": {
     "provider": "Groq",
     "name": "openai/gpt-oss-120b"
@@ -26,16 +26,16 @@
     {
       "provider": "Groq",
       "model": "openai/gpt-oss-120b",
-      "sec": 6,
+      "sec": 9,
       "ok": true,
       "score": 100,
       "reason": "",
-      "cost": 0.0026397,
-      "tokensIn": 5523,
-      "tokensOut": 2415
+      "cost": 0.0031464,
+      "tokensIn": 4206,
+      "tokensOut": 3354
     }
   ],
-  "sha256": "847971e9df6a733976fe6e3b6e2e10c1fb4ff9a8e460c2454667f73e348ac749",
+  "sha256": "e0d3ad611a4b21068eab5d8e21c85073969935d7d01373da695de6bbe8857cff",
   "skillsUsed": [],
   "checks": {
     "complete": true,
@@ -64,10 +64,7 @@
       }
     }
   },
-  "promptSha256": "ed41bff56b975445e6ad3e19d76c843324221d4c58d66e7bd22b88a5ee57471e",
-  "prompt": "Build a beautiful 3-column dashboard for tracking daily habits. Use Bootstrap grids if it helps.",
-  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js fiboard",
-  "cost": 0.0026397,
-  "tokensIn": 5523,
-  "tokensOut": 2415
+  "promptSha256": "fa08799cd45720f48742bac99c0fb2404a416f688540c6d88f3d134e4cb49042",
+  "prompt": "adjust into a beautiful 3-column dashboard for tracking daily habits. Use Bootstrap grids if it helps.",
+  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js fiboard"
 }

@@ -1,5 +1,5 @@
-/* Ariotica SW · app-fiboard-c8d58575 */
-const CACHE = "app-fiboard-c8d58575";
+/* Ariotica SW · app-fiboard-a9f9c484 */
+const CACHE = "app-fiboard-a9f9c484";
 const PRECACHE = ["./","./index.html","./style.css","./script.js","./manifest.json","./icon-192.png","./icon-512.png"];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => Promise.all(PRECACHE.map((u) => c.add(u).catch(() => {})))).then(() => self.skipWaiting())); });
 self.addEventListener('activate', (e) => { e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim())); });
