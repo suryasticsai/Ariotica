@@ -17,7 +17,7 @@
   "mode": "fix",
   "repo": "suryasticsai/Ariotica",
   "runId": "41500161452",
-  "commit": null,
+  "commit": "5b2be1bb080f1b8668715da22d83a280f067c849",
   "model": {
     "provider": "Groq",
     "name": "openai/gpt-oss-120b"
@@ -66,5 +66,8 @@
   },
   "promptSha256": "fa08799cd45720f48742bac99c0fb2404a416f688540c6d88f3d134e4cb49042",
   "prompt": "adjust into a beautiful 3-column dashboard for tracking daily habits. Use Bootstrap grids if it helps.",
-  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js fiboard"
+  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js fiboard",
+  "cost": 0.0031464,
+  "tokensIn": 4206,
+  "tokensOut": 3354
 }
