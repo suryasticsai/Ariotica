@@ -148,7 +148,6 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          # FIXED: Bumped cache version to v2 to force download of the headless shell
           key: ${{ runner.os }}-playwright-v2-${{ hashFiles('**/package.json') }}
           restore-keys: |
             ${{ runner.os }}-playwright-v2-
@@ -161,7 +160,6 @@ jobs:
           NEEDRESTART_MODE: a
         run: |
           sudo apt-get update
-          # FIXED: Added --force to ensure the headless shell is installed
           npx playwright install chromium --with-deps --force
 
       - name: Validate Agent Code
