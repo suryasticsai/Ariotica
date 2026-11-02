@@ -1,0 +1,58 @@
+<!DOCTYPE html><html lang="en"><head>
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://fonts.googleapis.com; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://cdn.jsdelivr.net https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; media-src 'self' blob:; connect-src 'self' https://cdn.jsdelivr.net; manifest-src 'self';"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Finance Dashboard</title><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Syne:wght@600;700&display=swap" integrity="sha384-efMOMOLf9BXAPAhf2aoDKaCjOB+xAR7miv+IBKpBhMblaRAJ9C34EqCSWVUtMpVI" crossorigin="anonymous"><link rel="stylesheet" href="style.css">  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-ENjdO4Dr2bkBIFxQpeoYz1HIb6+1L9gq6a7k6R9a9p6G6V9p5h6V6K3N9T9qv0T" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.0/dist/cdn.min.js" defer integrity="sha384-EjEsUfA/5AUp6AOIxGF9AopVVVwLwWKoPCOZPsblbSOTPiaTUOkSxL5rKNN5Vvd3" crossorigin="anonymous"></script>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="icon-192.png">
+  <meta name="theme-color" content="hsl(349, 70%, 50%)">
+</head><body>
+
+    <nav class="navbar navbar-expand-lg navbar-light bg-light" x-data="{open:false}">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="#">MyApp</a>
+        <button class="navbar-toggler" type="button" @click="open = !open" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" :class="{'show': open}" id="navbarSupportedContent">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item"><a class="nav-link active" aria-current="page" href="#">Home</a></li>
+            <li class="nav-item"><a class="nav-link" href="#">Features</a></li>
+            <li class="nav-item"><a class="nav-link" href="#">Pricing</a></li>
+          </ul>
+        </div>
+      </div>
+    </nav><div class="ambient" aria-hidden="true"></div><div class="app"><header class="app-bar"><div class="app-bar__top"><button type="button" class="brand" data-goto="home"><svg class="brand__mark" viewBox="0 0 32 32" aria-hidden="true"><circle cx="16" cy="16" r="11" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="16" cy="16" r="2.6" fill="currentColor"/></svg><span class="brand__name">Finance Dashboard</span></button><span class="chip">v1</span></div><nav class="nav" aria-label="Primary"><button type="button" class="nav__link is-active" data-goto="home" aria-current="page">Home</button><button type="button" class="nav__link" data-goto="second">Second</button></nav></header><main class="app-main"><section class="view" data-view="home"><p class="eyebrow">Overview</p><h1 class="display">Personal Finance <em>Dashboard</em></h1><p class="lede">Quick snapshot of your accounts and recent activity.</p><div class="stats">
+  <div>
+    <dt>Balance</dt>
+    <dd id="balance">$12,340.00</dd>
+  </div>
+  <div>
+    <dt>Income</dt>
+    <dd id="income">$4,200.00</dd>
+  </div>
+  <div>
+    <dt>Expenses</dt>
+    <dd id="expenses">$1,850.00</dd>
+  </div>
+</div>
+<div class="card">
+  <p class="eyebrow">Recent Transactions</p>
+  <ul class="list" id="tx-list">
+    <li class="list__item"><p><span class="list__title">Starbucks</span><small class="list__sub">Coffee</small></p><span class="list__value">- $5.45</span></li>
+    <li class="list__item"><p><span class="list__title">Salary</span><small class="list__sub">Acme Corp.</small></p><span class="list__value">+ $3,200.00</span></li>
+    <li class="list__item"><p><span class="list__title">Rent</span><small class="list__sub">April</small></p><span class="list__value">- $1,200.00</span></li>
+  </ul>
+</div>
+<button type="button" class="btn" id="refresh">Refresh Data</button>
+</section><section class="view" data-view="second" hidden><p class="eyebrow">Second view</p><h1 class="display">Another <em>view.</em></h1><p class="lede">Placeholder content for additional screens.</p></section></main><nav class="app-dock" aria-label="Sections"><button type="button" class="dock__item is-active" data-goto="home" aria-current="page"><svg class="stroke" viewBox="0 0 24 24" stroke-width="1.75" aria-hidden="true"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/></svg>
+Home
+</button><button type="button" class="dock__item" data-goto="second"><svg class="stroke" viewBox="0 0 24 24" stroke-width="1.75" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+Second
+</button></nav></div><script src="script.js"></script>  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+  <script>document.addEventListener("alpine:init", () => { console.log("Alpine.js initialized"); });</script>
+
+<div class='toast-container'></div>
+
+<!-- Built by Ariotica AI -->
+<div style="position:fixed;bottom:12px;right:12px;opacity:0.35;font-size:11px;font-family:monospace;color:white;pointer-events:none;z-index:9999;">⚡ Ariotica</div>
+<script>if('serviceWorker' in navigator){addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}</script>
+</body></html>

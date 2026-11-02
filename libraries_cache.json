@@ -40,6 +40,11 @@
       "sri": "sha384-Z3REaz79l2IaAZqJsSABtTbhjgOUYyV3p90XNnAPCSHg3EMTz1fouunq9WZRtj3d",
       "bytes": 43380,
       "verifiedAt": "2026-11-01T16:51:06.312Z"
+    },
+    "https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Syne:wght@600;700&display=swap": {
+      "sri": "sha384-efMOMOLf9BXAPAhf2aoDKaCjOB+xAR7miv+IBKpBhMblaRAJ9C34EqCSWVUtMpVI",
+      "bytes": 1276,
+      "verifiedAt": "2026-11-02T12:13:17.254Z"
     }
   }
 }
