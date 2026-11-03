@@ -140,7 +140,7 @@ jobs:
         run: |
           if [ -f package-lock.json ]; then npm ci; else npm install; fi
 
-      # FIX: Always install Playwright (cached). Removing the `if` condition prevents Cyclops from silently crashing on issue events.
+      # Playwright ALWAYS installs now so Cyclops never crashes silently.
       - name: Cache Playwright Browsers
         uses: actions/cache@v4
         with:
@@ -172,11 +172,14 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
 
-          # Skritimai Integration
+          # --- SKRITIMAI INTEGRATION (Mapped to your UI layout) ---
+          SKRITIMAI_URL: ${{ secrets.SKRITIMAI_URL }}
+          SKRITIMAI_BASE_URL: ${{ secrets.SKRITIMAI_URL }} # Backup fallback
           SKRITIMAI_API_KEY: ${{ secrets.SKRITIMAI_API_KEY }}
-          SKRITIMAI_GIST_ID: ${{ vars.SKRITIMAI_GIST_ID }}
-          SKRITIMAI_BASE_URL: ${{ vars.SKRITIMAI_BASE_URL }}
-
+          SKRITIMAI_GIST_ID: ${{ secrets.SKRITIMAI_GIST_ID }}
+          SKRITIMAI_KINDS: ${{ secrets.SKRITIMAI_KINDS }}
+          SKRITIMAI_TIMEOUT_MS: ${{ vars.SKRITIMAI_TIMEOUT_MS }}
+          
           # Provider Overrides
           GROQ_REASONING_EFFORT: ${{ secrets.GROQ_REASONING_EFFORT }}
           OPENROUTER_MODEL: ${{ secrets.OPENROUTER_MODEL }}
@@ -207,7 +210,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # 3-attempt retry loop to handle race conditions with concurrent builds
           for i in 1 2 3; do
             git fetch -q origin main 
             git reset -q --hard origin/main
@@ -216,7 +218,6 @@ jobs:
             git diff --staged --quiet && echo "No index changes to commit." && exit 0
             git commit -qm "chore: rebuild knowledge index"
             
-            # If a parallel build pushed just after our reset, pull the latest and rebase before pushing
             if git pull -q --rebase origin main && git push -q; then
               exit 0
             fi
@@ -266,7 +267,6 @@ jobs:
           ACTOR: ${{ github.actor }}
           RUN_ID: ${{ github.run_id }}
         run: |
-          # Extract project slug robustly
           if [ -n "${{ inputs.project }}" ]; then
             PROJECT="${{ inputs.project }}"
           else
