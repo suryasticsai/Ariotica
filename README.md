@@ -29,7 +29,7 @@
   [![Generate Project](https://github.com/suryasticsai/Ariotica/actions/workflows/ai-cron.yml/badge.svg)](https://github.com/suryasticsai/Ariotica/actions/workflows/ai-cron.yml)
 </div>
 
-  An autonomous agent that turns GitHub Issues into fully functional, single-file vanilla JS apps. It writes code, tests it in a headless browser, scans it for vulnerabilities, and fixes its own bugs.
+  An autonomous agent that turns GitHub Issues into fully functional, vanilla JS apps. It writes code, tests it in a headless browser, scans it for vulnerabilities, and fixes its own bugs.
 
   [![Live Demo](https://img.shields.io/badge/Live_Dashboard-suryasticsai.github.io/Ariotica-5ab552?style=for-the-badge&logo=github)](https://suryasticsai.github.io/Ariotica/)
   [![Vanilla JS](https://img.shields.io/badge/Vanilla_JS-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](#)
@@ -41,6 +41,8 @@
 ---
 
 ## 🚀 What is Ariotica?
+
+Ariotica isn't just a wrapper around an LLM. It is an end-to-end, autonomous software engineering pipeline. Every app is built, tested, audited, and deployed within a single GitHub Actions runner
 
 Ariotica turns a GitHub Issue into a tested, installable, and deployed web app. It uses multiple LLMs (Groq, OpenRouter, HuggingFace) in a **Model Race**, tests the output in a headless browser (**Self-Healing**), and commits the winning code to GitHub Pages.
 
@@ -57,6 +59,76 @@ It's not just a code generator; it's an autonomous software engineer that manage
 *   **📸 Live Previews:** Automatically waits for GitHub Pages to deploy and posts a clickable screenshot.
 *   **🛠️ The Darwin Protocol:** The agent can modify its own source code (`generate.js`, etc.) via the `[evolve]` command.
 
+---
+## 🏗️ Architecture & Advanced Capabilities
+
+### 👁️ Cyclops QA (Visual & Runtime Auditing)
+Before any app is committed, it must pass the **Cyclops** agent. 
+- **Headless Testing:** Playwright renders the app in a real Chromium browser.
+- **Runtime Error Catching:** Captures `console.error` and uncaught JS exceptions (e.g., missing DOM elements, undefined variables).
+- **Structural Checks:** Automatically detects horizontal overflow (mobile responsiveness breaks) on both 1280px and 375px viewports.
+- **Visual Critiques:** A vision model looks at the screenshot and critiques contrast, spacing, and hierarchy, feeding CSS fixes back to the builder.
+
+### ⚡ Atomic Git Operations & Safe Deploys
+We never leave the repo in a broken state.
+- **Atomic Commits:** Uses the GitHub Trees API to create a single, atomic commit. If a build fails halfway, *nothing* is committed.
+- **Zero Stale Checkouts:** After an API commit, `syncCheckout()` force-syncs the local runner so the Knowledge Index and Artifacts are always up to date.
+- **No Destructive Rollbacks:** We use a "publish nothing on failure" strategy instead of `git reset --hard`, preventing parallel builds from wiping each other out.
+
+### 📱 True PWA & Content-Hashed Caching
+Every app generated is automatically a Progressive Web App.
+- **Auto-Injected Manifests:** Generates `manifest.json`, `sw.js`, and AI-generated icons.
+- **Content-Hashed Service Workers:** The SW cache name is a `sha256` hash of the HTML, CSS, JS, and icons. When the app updates, the cache invalidates instantly—no more users stuck on `v1`.
+- **Offline First:** Cache-first strategy for assets, network-first for HTML navigation.
+
+### 🧠 The RAG Knowledge Engine
+Ariotica learns from every build.
+- **BM25 Search:** Past code, issue discussions, and skills are indexed into `knowledge/index.json`.
+- **Skill Synthesis:** If you paste a URL, Ariotica scrapes the site, synthesizes a markdown "Skill" file, and saves it to `knowledge/skills/` for future use.
+- **Draft vs. Verified:** Automatically flags new skills as `draft`, requiring human approval before the AI can rely on them.
+
+### 🏎️ Multi-Model Racing & Health
+We don't trust a single LLM.
+- **Provider Racing:** Groq, GitHub Models, OpenRouter, and Skritimai all receive the prompt simultaneously. The fastest valid response wins.
+- **Health & Cooldowns:** If a model returns a 429 (Rate Limit) or 500 error, it's put on a cooldown or permanently disabled for the run.
+- **Budget Enforcement:** `RUN_BUDGET_MS` ensures a run never exceeds a specific time limit, gracefully aborting if the deadline is reached.
+
+### 🛡️ The Template Engine
+The AI cannot destroy the layout.
+- **Strict Adherence:** The system forces the LLM to use the custom **Letterhead** base template.
+- **CSS Injection Guardrail:** Even if the AI lazily writes `/* rest unchanged */` in the CSS, the pipeline automatically injects the full template CSS before the commit, guaranteeing a beautiful UI.
+- **Sanitizer:** Strips hallucinated `integrity="..."` hashes (which block loading) and scans for malicious scripts.
+
+---
+
+## 🎮 Command Guide
+
+Interact with the agent entirely through GitHub Issues. 
+1. Create an issue titled: `[BUILD] my-app-name [create]`
+2. Add instructions in the body.
+3. The agent will reply with live progress, screenshots, and a live link.
+
+### Supported Commands (Reply as comments)
+| Command | Action |
+| :--- | :--- |
+| `[improve] <prompt>` | Enhances the app, bumps the minor version, and updates the changelog. |
+| `[fix] <bug>` | Targeted bug fix. Aborts if it introduces a regression. |
+| `[audit]` | Runs a security scan and fixes vulnerabilities. |
+| `[inspire] <prompt>` | Searches GitHub for highly-starred similar apps and builds a brand new app based on them. |
+| `[revert] <version>` | Rolls the app back to a specific version via Git history + Receipts. |
+| `[delete]` | Deletes the app folder, PWA files, and receipt atomically. |
+| `[skill] <topic>` | Generates a dense markdown cheatsheet and saves it to the Knowledge Library. |
+| `[ask] <question>` | Searches the repo's code and issue history (BM25) to answer you. |
+| `[leaderboard]` | Shows which LLM is currently winning on speed, cost, and win-rate. |
+
+---
+
+## 📊 Analytics
+Every run generates a **Receipt** (`receipts/<slug>.json`) containing the `sha256` of the output, the exact tokens/cost, and the models used. 
+The `analytics/leaderboard.json` tracks lifetime performance:
+- **Win Rate:** Which model passes Cyclops/grader most often.
+- **Avg Cost:** Total spend divided by successful builds.
+- **Avg Speed:** Seconds per generation. 
 ---
 
 ## 🎮 How to Use (Commands)
