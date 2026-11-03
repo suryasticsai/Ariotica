@@ -1,6 +1,6 @@
 {
-  "updatedAt": "2026-11-02T18:24:58.375Z",
-  "totalBuilds": 34,
+  "updatedAt": "2026-11-03T21:43:57.825Z",
+  "totalBuilds": 35,
   "models": {
     "Groq/openai/gpt-oss-120b": {
       "provider": "Groq",
@@ -122,23 +122,41 @@
       "avgScore": 0,
       "avgSec": 0,
       "winRate": 0
+    },
+    "Groq/openai/gpt-oss-20b": {
+      "provider": "Groq",
+      "model": "openai/gpt-oss-20b",
+      "wins": 1,
+      "losses": 0,
+      "cancels": 0,
+      "totalScore": 100,
+      "scoredCount": 1,
+      "totalSec": 18,
+      "timedCount": 1,
+      "totalCost": 0,
+      "totalIn": 5762,
+      "totalOut": 4915,
+      "lastSeen": "2026-11-03T21:43:57.578Z",
+      "avgScore": 100,
+      "avgSec": 18,
+      "winRate": 1
     }
   },
   "providers": {
     "Groq": {
-      "wins": 34,
+      "wins": 35,
       "losses": 4,
       "cancels": 0,
-      "totalScore": 3560,
-      "scoredCount": 38,
-      "totalSec": 382,
-      "timedCount": 37,
+      "totalScore": 3660,
+      "scoredCount": 39,
+      "totalSec": 400,
+      "timedCount": 38,
       "totalCost": 0.1321242,
-      "totalIn": 159908,
-      "totalOut": 144184,
-      "avgScore": 93.6842105263158,
-      "avgSec": 10.324324324324325,
-      "winRate": 0.8947368421052632
+      "totalIn": 165670,
+      "totalOut": 149099,
+      "avgScore": 93.84615384615384,
+      "avgSec": 10.526315789473685,
+      "winRate": 0.8974358974358975
     },
     "OpenRouter": {
       "wins": 2,

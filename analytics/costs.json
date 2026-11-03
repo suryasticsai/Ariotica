@@ -1092,5 +1092,31 @@
         "tokensOut": 3354
       }
     ]
+  },
+  {
+    "ts": "2026-11-03T21:43:57.578Z",
+    "slug": "teamboard",
+    "mode": "create",
+    "provider": "Groq",
+    "model": "openai/gpt-oss-20b",
+    "runId": "41724036844",
+    "cost": 0,
+    "tokensIn": 5762,
+    "tokensOut": 4915,
+    "score": 80,
+    "sec": 18,
+    "race": [
+      {
+        "provider": "Groq",
+        "model": "openai/gpt-oss-20b",
+        "sec": 18,
+        "ok": true,
+        "score": 100,
+        "reason": "",
+        "cost": 0,
+        "tokensIn": 5762,
+        "tokensOut": 4915
+      }
+    ]
   }
 ]
