@@ -1,0 +1,349 @@
+/* ===== Template CSS (auto-injected) ===== */
+/* 
+      ==========================================================================
+      LETTERHEAD / BASE TEMPLATE
+      ⚠️ AI INSTRUCTION: 
+      1. Change the --accent and --bg tokens in :root to match the app's theme.
+      2. Move all this CSS into style.css.
+      3. If building a dashboard, you may change .app max-width to 100%.
+      ==========================================================================
+    */
+
+    /* ── 1. Tokens ─────────────────────────────────────────────────────────── */
+    :root {
+      --bg: #06080d;
+      --surface: #141b26;
+      --text: #e8edf4;
+      --muted: #93a0b3;
+      --accent: #e7a15a; /* AI: Change this to fit the prompt */
+
+      --line: color-mix(in oklab, var(--text) 12%, transparent);
+      --line-strong: color-mix(in oklab, var(--text) 22%, transparent);
+
+      --sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+      --display: "Syne", "Outfit", ui-sans-serif, sans-serif;
+
+      --r-sm: 0.75rem;
+      --r-md: 1.1rem;
+      --r-pill: 999px;
+
+      --pad: 1.15rem;
+      --gap: 1.15rem;
+      --ease: cubic-bezier(0.2, 0, 0, 1);
+    }
+
+    /* ── 2. Reset ──────────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--sans);
+      font-size: 1rem;
+      line-height: 1.5;
+      color-scheme: dark;
+      -webkit-font-smoothing: antialiased;
+    }
+    h1, h2, h3, p, ul, ol, dl, dd, figure { margin: 0; }
+    ul, ol { padding: 0; list-style: none; }
+    button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+    svg.stroke { fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+    img { max-width: 100%; display: block; }
+
+    /* ── 3. Typography ─────────────────────────────────────────────────────── */
+    .eyebrow {
+      color: var(--muted); font-size: 0.75rem; font-weight: 500;
+      letter-spacing: 0.2em; text-transform: uppercase;
+    }
+    .display {
+      margin-top: 0.45rem; font-family: var(--display); font-weight: 700;
+      font-size: clamp(2rem, 8vw, 2.5rem); line-height: 0.95; letter-spacing: -0.045em;
+    }
+    .display em { font-style: normal; color: color-mix(in oklab, var(--text) 68%, var(--muted)); }
+    .lede { margin-top: 0.75rem; color: var(--muted); font-size: 0.9rem; }
+
+    /* ── 4. Shell ──────────────────────────────────────────────────────────── */
+    .ambient {
+      position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background: radial-gradient(ellipse at 30% 0%, color-mix(in oklab, var(--accent) 9%, transparent), transparent 62%),
+                  linear-gradient(118deg, transparent 30%, color-mix(in oklab, var(--text) 6%, transparent) 47%, color-mix(in oklab, var(--accent) 8%, transparent) 53%, transparent 70%);
+    }
+    .ambient::before, .ambient::after {
+      content: ""; position: absolute; inset: 0;
+      background-repeat: repeat; animation: drift 140s linear infinite;
+    }
+    .ambient::before {
+      opacity: 0.75;
+      background-image: radial-gradient(1.2px 1.2px at 12px 40px, var(--text) 55%, transparent 58%), radial-gradient(1.2px 1.2px at 80px 16px, var(--text) 55%, transparent 58%), radial-gradient(1px 1px at 140px 90px, var(--text) 55%, transparent 58%), radial-gradient(1.3px 1.3px at 210px 30px, var(--text) 55%, transparent 58%), radial-gradient(1px 1px at 40px 140px, var(--muted) 55%, transparent 58%), radial-gradient(1.2px 1.2px at 170px 160px, var(--text) 55%, transparent 58%), radial-gradient(1px 1px at 250px 120px, var(--text) 55%, transparent 58%), radial-gradient(1.4px 1.4px at 100px 200px, var(--text) 55%, transparent 58%), radial-gradient(1.6px 1.6px at 300px 70px, var(--accent) 60%, transparent 64%), radial-gradient(1px 1px at 60px 220px, var(--text) 55%, transparent 58%);
+      background-size: 340px 260px;
+    }
+    .ambient::after {
+      animation-duration: 90s; animation-direction: reverse;
+      background-image: radial-gradient(1.4px 1.4px at 24px 72px, var(--text) 60%, transparent 64%), radial-gradient(1.2px 1.2px at 96px 28px, var(--text) 60%, transparent 64%), radial-gradient(2.2px 2.2px at 70px 180px, var(--text) 65%, transparent 68%), radial-gradient(14px 14px at 70px 180px, color-mix(in oklab, var(--text) 26%, transparent), transparent 70%), radial-gradient(1.8px 1.8px at 190px 210px, var(--text) 60%, transparent 64%), radial-gradient(2.6px 2.6px at 310px 40px, var(--text) 70%, transparent 72%), radial-gradient(16px 16px at 310px 40px, color-mix(in oklab, var(--text) 36%, transparent), transparent 70%), radial-gradient(2.4px 2.4px at 360px 220px, var(--accent) 80%, transparent 68%), radial-gradient(18px 18px at 360px 220px, color-mix(in oklab, var(--accent) 34%, transparent), transparent 70%);
+      background-size: 420px 340px;
+    }
+
+    .app {
+      position: relative; z-index: 1; display: flex; flex-direction: column;
+      height: 100dvh; max-width: 46rem; margin-inline: auto;
+      background: color-mix(in oklab, var(--bg) 74%, transparent);
+      border-inline: 1px solid var(--line); backdrop-filter: blur(3px);
+    }
+    @media (max-width: 46rem) { .app { border-inline: 0; } }
+
+    /* ── 5. Header & Nav ───────────────────────────────────────────────────── */
+    .app-bar {
+      flex: none; padding: 0.5rem var(--pad) 0;
+      background: color-mix(in oklab, var(--bg) 55%, transparent);
+      border-bottom: 1px solid var(--line);
+    }
+    .app-bar__top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 2.75rem; }
+    .brand { display: inline-flex; align-items: center; gap: 0.6rem; padding: 0; color: var(--text); }
+    
+    /* AI: The logo is injected automatically as icon-192.png */
+    .brand__mark { width: 1.6rem; height: 1.6rem; border-radius: 0.4rem; object-fit: cover; }
+    .brand__name { font-family: var(--display); font-weight: 700; font-size: 1.15rem; letter-spacing: -0.04em; }
+
+    .nav { display: flex; gap: 0.5rem; }
+    .nav__link {
+      position: relative; flex: 1; min-height: 2.75rem; padding: 0.35rem 0 0.7rem;
+      color: var(--muted); font-size: 0.875rem; font-weight: 500; transition: color 180ms ease-out;
+    }
+    .nav__link:hover { color: var(--text); }
+    .nav__link.is-active { color: var(--text); }
+    .nav__link.is-active::after {
+      content: ""; position: absolute; inset-inline: 18%; bottom: 0.4rem;
+      height: 2px; border-radius: var(--r-pill); background: var(--accent);
+    }
+
+    /* ── 6. Main Content ───────────────────────────────────────────────────── */
+    .app-main { flex: 1; overflow-y: auto; padding: var(--pad) var(--pad) 2.5rem; scrollbar-width: thin; scrollbar-color: color-mix(in oklab, var(--text) 28%, transparent) transparent; }
+
+    /* ── 7. Dock ───────────────────────────────────────────────────────────── */
+    .app-dock {
+      flex: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+      align-items: end; padding: 0.35rem 0.5rem calc(0.35rem + env(safe-area-inset-bottom));
+      background: color-mix(in oklab, var(--bg) 82%, transparent);
+      border-top: 1px solid var(--line); backdrop-filter: blur(18px);
+    }
+    .dock__item { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; min-height: 3.25rem; padding: 0.4rem 0; color: var(--muted); font-size: 0.7rem; font-weight: 500; transition: color 180ms ease-out, scale 150ms ease-out; }
+    .dock__item:hover, .dock__item.is-active { color: var(--text); }
+    .dock__item:active { scale: 0.94; }
+    .dock__item svg { width: 1.25rem; height: 1.25rem; }
+
+    /* ── 8. Components ─────────────────────────────────────────────────────── */
+    .card { margin-top: var(--gap); padding: 1rem; border: 1px solid var(--line); border-radius: var(--r-md); background: color-mix(in oklab, var(--surface) 72%, transparent); }
+    .chip { padding: 0.2rem 0.6rem; border: 1px solid var(--line-strong); border-radius: var(--r-pill); color: var(--muted); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; }
+    
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; min-height: 2.75rem; padding: 0 1.1rem; border-radius: var(--r-pill); background: var(--accent); color: var(--bg); font-weight: 600; transition: scale 150ms ease-out, filter 180ms ease-out; }
+    .btn:hover { filter: brightness(1.07); }
+    .btn:active { scale: 0.96; }
+    .btn--ghost { background: color-mix(in oklab, var(--surface) 55%, transparent); border: 1px solid var(--line-strong); color: var(--text); }
+
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(5rem, 1fr)); gap: 0.75rem; margin-top: var(--gap); }
+    .stats dt { color: var(--muted); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; }
+    .stats dd { margin-top: 0.15rem; font-family: var(--display); font-weight: 700; font-size: 1.25rem; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+
+    .list { margin-top: var(--gap); }
+    .list__item { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; min-height: 3.25rem; border-top: 1px solid var(--line); }
+    .list__item:last-child { border-bottom: 1px solid var(--line); }
+    .list__title { font-weight: 500; }
+    .list__sub { display: block; color: var(--muted); font-size: 0.82rem; }
+    .list__value { font-family: var(--display); font-weight: 700; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+
+    .switch { position: relative; flex: none; width: 2.75rem; height: 1.6rem; border-radius: var(--r-pill); background: color-mix(in oklab, var(--text) 18%, transparent); transition: background-color 180ms ease-out; }
+    .switch::after { content: ""; position: absolute; top: 0.18rem; left: 0.18rem; width: 1.24rem; height: 1.24rem; border-radius: var(--r-pill); background: var(--text); transition: translate 180ms ease-out, background-color 180ms ease-out; }
+    .switch[aria-checked="true"] { background: var(--accent); }
+    .switch[aria-checked="true"]::after { translate: 1.12rem 0; background: var(--bg); }
+
+    /* Utility Grid (Saves AI from writing broken flexbox) */
+    .grid { display: grid; gap: var(--gap); grid-template-columns: 1fr; }
+    @media (min-width: 600px) { .grid--2 { grid-template-columns: 1fr 1fr; } .grid--3 { grid-template-columns: repeat(3, 1fr); } }
+
+    /* ── 9. Motion ─────────────────────────────────────────────────────────── */
+    .view { animation: rise 420ms var(--ease) both; }
+    .view[hidden] { display: none; }
+    @keyframes drift { to { background-position: -420px 280px; } }
+    @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+    }
+
+/* ===== AI CSS Overrides ===== */
+/*
+      ==========================================================================
+      LETTERHEAD / BASE TEMPLATE
+      ⚠️ AI INSTRUCTION: 
+      1. Change the --accent and --bg tokens in :root to match the app's theme.
+      2. Move all this CSS into style.css.
+      3. If building a dashboard, you may change .app max-width to 100%.
+      ==========================================================================
+    */
+:root {
+--bg: #0d1b2a;
+--surface: #1b263b;
+--text: #e0e1dd;
+--muted: #8c99a5;
+--accent: #3b82f6;
+--line: color-mix(in oklab, var(--text) 12%, transparent);
+--line-strong: color-mix(in oklab, var(--text) 22%, transparent);
+--sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+--display: "Syne", "Outfit", ui-sans-serif, sans-serif;
+--r-sm: 0.75rem;
+--r-md: 1.1rem;
+--r-pill: 999px;
+--pad: 1.15rem;
+--gap: 1.15rem;
+--ease: cubic-bezier(0.2, 0, 0, 1);
+}
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+margin: 0;
+background: var(--bg);
+color: var(--text);
+font-family: var(--sans);
+font-size: 1rem;
+line-height: 1.5;
+color-scheme: dark;
+-webkit-font-smoothing: antialiased;
+}
+h1, h2, h3, p, ul, ol, dl, dd, figure { margin: 0; }
+ul, ol { padding: 0; list-style: none; }
+button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; }
+svg.stroke { fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 4px; }
+img { max-width: 100%; display: block; }
+.eyebrow {
+color: var(--muted); font-size: 0.75rem; font-weight: 500;
+letter-spacing: 0.2em; text-transform: uppercase;
+}
+.display {
+margin-top: 0.45rem; font-family: var(--display); font-weight: 700;
+font-size: clamp(2rem, 8vw, 2.5rem); line-height: 0.95; letter-spacing: -0.045em;
+}
+.display em { font-style: normal; color: color-mix(in oklab, var(--text) 68%, var(--muted)); }
+.lede { margin-top: 0.75rem; color: var(--muted); font-size: 0.9rem; }
+.ambient {
+position: fixed; inset: 0; z-index: 0; pointer-events: none;
+background: radial-gradient(ellipse at 30% 0%, color-mix(in oklab, var(--accent) 9%, transparent), transparent 62%),
+linear-gradient(118deg, transparent 30%, color-mix(in oklab, var(--text) 6%, transparent) 47%, color-mix(in oklab, var(--accent) 8%, transparent) 53%, transparent 70%);
+}
+.ambient::before, .ambient::after {
+content: ""; position: absolute; inset: 0;
+background-repeat: repeat; animation: drift 140s linear infinite;
+}
+.ambient::before {
+opacity: 0.75;
+background-image: radial-gradient(1.2px 1.2px at 12px 40px, var(--text) 55%, transparent 58%), radial-gradient(1.2px 1.2px at 80px 16px, var(--text) 55%, transparent 58%), radial-gradient(1px 1px at 140px 90px, var(--text) 55%, transparent 58%), radial-gradient(1.3px 1.3px at 210px 30px, var(--text) 55%, transparent 58%), radial-gradient(1px 1px at 40px 140px, var(--muted) 55%, transparent 58%), radial-gradient(1.2px 1.2px at 170px 160px, var(--text) 55%, transparent 58%), radial-gradient(1px 1px at 250px 120px, var(--text) 55%, transparent 58%), radial-gradient(1.4px 1.4px at 100px 200px, var(--text) 55%, transparent 58%), radial-gradient(1.6px 1.6px at 300px 70px, var(--accent) 60%, transparent 64%), radial-gradient(1px 1px at 60px 220px, var(--text) 55%, transparent 58%);
+background-size: 340px 260px;
+}
+.ambient::after {
+animation-duration: 90s; animation-direction: reverse;
+background-image: radial-gradient(1.4px 1.4px at 24px 72px, var(--text) 60%, transparent 64%), radial-gradient(1.2px 1.2px at 96px 28px, var(--text) 60%, transparent 64%), radial-gradient(2.2px 2.2px at 70px 180px, var(--text) 65%, transparent 68%), radial-gradient(14px 14px at 70px 180px, color-mix(in oklab, var(--text) 26%, transparent), transparent 70%), radial-gradient(1.8px 1.8px at 190px 210px, var(--text) 60%, transparent 64%), radial-gradient(2.6px 2.6px at 310px 40px, var(--text) 70%, transparent 72%), radial-gradient(16px 16px at 310px 40px, color-mix(in oklab, var(--text) 36%, transparent), transparent 70%), radial-gradient(2.4px 2.4px at 360px 220px, var(--accent) 80%, transparent 68%), radial-gradient(18px 18px at 360px 220px, color-mix(in oklab, var(--accent) 34%, transparent), transparent 70%);
+background-size: 420px 340px;
+}
+.app {
+position: relative; z-index: 1; display: flex; flex-direction: column;
+height: 100dvh; max-width: 46rem; margin-inline: auto;
+background: color-mix(in oklab, var(--bg) 74%, transparent);
+border-inline: 1px solid var(--line); backdrop-filter: blur(3px);
+}
+@media (max-width: 46rem) { .app { border-inline: 0; } }
+.app-bar {
+flex: none; padding: 0.5rem var(--pad) 0;
+background: color-mix(in oklab, var(--bg) 55%, transparent);
+border-bottom: 1px solid var(--line);
+}
+.app-bar__top { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 2.75rem; }
+.brand { display: inline-flex; align-items: center; gap: 0.6rem; padding: 0; color: var(--text); }
+.brand__mark { width: 1.6rem; height: 1.6rem; border-radius: 0.4rem; object-fit: cover; }
+.brand__name { font-family: var(--display); font-weight: 700; font-size: 1.15rem; letter-spacing: -0.04em; }
+.nav { display: flex; gap: 0.5rem; }
+.nav__link {
+position: relative; flex: 1; min-height: 2.75rem; padding: 0.35rem 0 0.7rem;
+color: var(--muted); font-size: 0.875rem; font-weight: 500; transition: color 180ms ease-out;
+}
+.nav__link:hover { color: var(--text); }
+.nav__link.is-active { color: var(--text); }
+.nav__link.is-active::after {
+content: ""; position: absolute; inset-inline: 18%; bottom: 0.4rem;
+height: 2px; border-radius: var(--r-pill); background: var(--accent);
+}
+.app-main { flex: 1; overflow-y: auto; padding: var(--pad) var(--pad) 2.5rem; scrollbar-width: thin; scrollbar-color: color-mix(in oklab, var(--text) 28%, transparent) transparent; }
+.app-dock {
+flex: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+align-items: end; padding: 0.35rem 0.5rem calc(0.35rem + env(safe-area-inset-bottom));
+background: color-mix(in oklab, var(--bg) 82%, transparent);
+border-top: 1px solid var(--line); backdrop-filter: blur(18px);
+}
+.dock__item { display: flex; flex-direction: column; align-items: center; gap: 0.25rem; min-height: 3.25rem; padding: 0.4rem 0; color: var(--muted); font-size: 0.7rem; font-weight: 500; transition: color 180ms ease-out, scale 150ms ease-out; }
+.dock__item:hover, .dock__item.is-active { color: var(--text); }
+.dock__item:active { scale: 0.94; }
+.dock__item svg { width: 1.25rem; height: 1.25rem; }
+.card { margin-top: var(--gap); padding: 1rem; border: 1px solid var(--line); border-radius: var(--r-md); background: color-mix(in oklab, var(--surface) 72%, transparent); }
+.chip { padding: 0.2rem 0.6rem; border: 1px solid var(--line-strong); border-radius: var(--r-pill); color: var(--muted); font-size: 0.7rem; letter-spacing: 0.14em; text-transform: uppercase; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; min-height: 2.75rem; padding: 0 1.1rem; border-radius: var(--r-pill); background: var(--accent); color: var(--bg); font-weight: 600; transition: scale 150ms ease-out, filter 180ms ease-out; }
+.btn:hover { filter: brightness(1.07); }
+.btn:active { scale: 0.96; }
+.btn--ghost { background: color-mix(in oklab, var(--surface) 55%, transparent); border: 1px solid var(--line-strong); color: var(--text); }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(5rem, 1fr)); gap: 0.75rem; margin-top: var(--gap); }
+.stats dt { color: var(--muted); font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.stats dd { margin-top: 0.15rem; font-family: var(--display); font-weight: 700; font-size: 1.25rem; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.list { margin-top: var(--gap); }
+.list__item { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; min-height: 3.25rem; border-top: 1px solid var(--line); }
+.list__item:last-child { border-bottom: 1px solid var(--line); }
+.list__title { font-weight: 500; }
+.list__sub { display: block; color: var(--muted); font-size: 0.82rem; }
+.list__value { font-family: var(--display); font-weight: 700; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.switch { position: relative; flex: none; width: 2.75rem; height: 1.6rem; border-radius: var(--r-pill); background: color-mix(in oklab, var(--text) 18%, transparent); transition: background-color 180ms ease-out; }
+.switch::after { content: ""; position: absolute; top: 0.18rem; left: 0.18rem; width: 1.24rem; height: 1.24rem; border-radius: var(--r-pill); background: var(--text); transition: translate 180ms ease-out, background-color 180ms ease-out; }
+.switch[aria-checked="true"] { background: var(--accent); }
+.switch[aria-checked="true"]::after { translate: 1.12rem 0; background: var(--bg); }
+.grid { display: grid; gap: var(--gap); grid-template-columns: 1fr; }
+@media (min-width: 600px) { .grid--2 { grid-template-columns: 1fr 1fr; } .grid--3 { grid-template-columns: repeat(3, 1fr); } }
+.view { animation: rise 420ms var(--ease) both; }
+.view[hidden] { display: none; }
+@keyframes drift { to { background-position: -420px 280px; } }
+@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+*, *::before, *::after { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+}
+
+.toast-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+.toast {
+  pointer-events: auto;
+  min-width: 250px;
+  padding: 0.75rem 1rem;
+  background: #323232;
+  color: #fff;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  font-family: sans-serif;
+  opacity: 0;
+  transform: translateY(-10px);
+  transition: all 0.3s ease;
+}
+.toast.toast-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+.toast.toast-hidden {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+.toast-success { background: #198754; }
+.toast-error { background: #dc3545; }
+.toast-warning { background: #ffc107; color: #212529; }
+.toast-info { background: #0dcaf0; }
