@@ -367,7 +367,9 @@ async function gradeHtml(text) {
 }
 
 const structurallyBad = (c) => !c.grade.files || !c.grade.files['index.html'] || !T.isVanilla(c.grade.html, TRUSTED_DOMAINS).ok;
-const generate = (userText, kind = 'generate') => askAI(genMessages(userText), { json: true, grade: gradeHtml, onEvent: aiEvents(), kind });
+
+// FIX: generate() now accepts extraOpts so we can pass maxTokens
+const generate = (userText, kind = 'generate', extraOpts = {}) => askAI(genMessages(userText), { json: true, grade: gradeHtml, onEvent: aiEvents(), kind, ...extraOpts });
 
 async function readFile(p) {
   try { const { data } = await octokit.repos.getContent({ owner: OWNER, repo: REPO, path: p, ref: BRANCH }); if (Array.isArray(data)) return null; return Buffer.from(data.content, 'base64').toString('utf8'); }
@@ -698,7 +700,6 @@ module.exports = {
     oldMeta.revertedAt = new Date().toISOString();
     revertedFiles['meta.json'] = JSON.stringify(oldMeta, null, 2);
 
-    // BUG 2 FIX: Build changelog BEFORE receipt so it gets hashed
     const oldChangelog = await readFile(changelogPath) || '';
     const newChangelog = Rep.buildChangelogEntry({
       version: newVersion, mode: 'revert', when: new Date().toISOString(),
@@ -879,7 +880,6 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
   if (isNew && fs.existsSync(TEMPLATE_PATH)) {
     let template = fs.readFileSync(TEMPLATE_PATH, 'utf8');
 
-    // FIX 3: Preserve AI INSTRUCTION comments
     const preserved = [];
     template = template.replace(/<!--\s*⚠️[\s\S]*?-->/g, (match) => {
       preserved.push(match);
@@ -890,7 +890,6 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
       return `@@AI_INSTR_${preserved.length - 1}@@`;
     });
 
-    // Strip everything else
     template = template
       .replace(/\/\*[\s\S]*?\*\//g, '')
       .replace(/<!--[\s\S]*?-->/g, '')
@@ -898,7 +897,6 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
       .replace(/^\s+|\s+$/gm, '')
       .replace(/>\s+</g, '><');
 
-    // Restore AI INSTRUCTION comments
     template = template.replace(/@@AI_INSTR_(\d+)@@/g, (_, i) => preserved[parseInt(i)]);
 
     templateContext = `\n\n--- BASE TEMPLATE (MANDATORY) ---\nYou MUST use this exact HTML structure. Do NOT change the class names or layout. Customize the CSS variables in :root to fit the app's theme. Replace the demo content with the actual app.\n\n${template}\n--- END BASE TEMPLATE ---`;
@@ -998,10 +996,10 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
           const errorText = hasErrors ? `\nCONSOLE/RUNTIME ERRORS:\n${errors.map(e => '- ' + e).join('\n')}` : '';
           const critiqueText = hasCritique ? `\nVISUAL CRITIQUE:\n${critique}` : '';
 
-          // FIX: Removed RULES to save tokens and prevent 413 errors
+          // FIX 2: Removed ${RULES} to save tokens, added maxTokens limit to prevent 413
           const fixPrompt = `Fix the following visual and runtime issues in this app.\n\nISSUES:\n${critiqueText}${errorText}\n\nHTML:\n${files['index.html']}\n\nCSS:\n${files['style.css']}\n\nJS:\n${files['script.js'] || ''}\n\nReturn ONLY {"files": {"index.html": "...", "style.css": "...", "script.js": "..."}}`;
 
-          const fixRes = await step('Cyclops: Patching UI', () => generate(fixPrompt, 'edit'));
+          const fixRes = await step('Cyclops: Patching UI', () => generate(fixPrompt, 'edit', { maxTokens: 4000 }));
 
           if (fixRes && fixRes.grade && fixRes.grade.files && fixRes.grade.smoke.ok && !structurallyBad(fixRes)) {
             Object.assign(files, fixRes.grade.files);
@@ -1016,7 +1014,7 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
     } catch (e) { console.log('[Cyclops] skipped:', e.message); }
   }
 
-  // 🎨 FIX 1: ENSURE TEMPLATE CSS IS PRESENT (AI often forgets)
+  // 🎨 FIX 1: ENSURE TEMPLATE CSS IS PRESENT
   if (fs.existsSync(TEMPLATE_PATH)) {
     const templateHtmlRaw = fs.readFileSync(TEMPLATE_PATH, 'utf8');
     const m = templateHtmlRaw.match(/<style>([\s\S]*?)<\/style>/i);
@@ -1028,7 +1026,6 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
     }
   }
 
-  // Ensure the CSS and JS links exist in HTML
   if (!files['index.html'].includes('href="style.css"')) {
     files['index.html'] = files['index.html'].replace(/<\/head>/i, '<link rel="stylesheet" href="style.css">\n</head>');
   }
@@ -1036,7 +1033,6 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
     files['index.html'] = files['index.html'].replace(/<\/body>/i, '<script src="script.js"></script>\n</body>');
   }
 
-  // Rebuild testHtml to reflect the injected CSS and JS for the security scan
   let rebuiltTestHtml = files['index.html'];
   if (files['style.css']) {
     const cssRegex = /<link[^>]*href=["'](?:\.\/)?style\.css["'][^>]*>/i;
@@ -1068,7 +1064,6 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
   try { resolved = await Lib.resolveHtml(files['index.html']); } catch (e) { await finishStatus(issue, `❌ **Library failed:**\n\n\`\`\`\n${e.message}\n\`\`\``, false); process.exit(2); }
   files['index.html'] = resolved.html;
 
-  // 🛡️ FIX 2: Strip hallucinated integrity hashes
   files['index.html'] = files['index.html'].replace(/\s+integrity=["'][^"']*["']/g, '');
 
   let currentHtml = files['index.html'];
@@ -1087,7 +1082,6 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
   if (!currentHtml.includes('serviceWorker.register')) currentHtml = currentHtml.replace('</body>', `<script>if('serviceWorker' in navigator){addEventListener('load',()=>{navigator.serviceWorker.register('sw.js').catch(()=>{})})}</script>\n</body>`);
   files['index.html'] = currentHtml;
 
-  // BUG 3 FIX: Add icons to staticHash
   const staticHash = (() => { const h = crypto.createHash('sha256'); for (const name of ['index.html', 'style.css', 'script.js', 'manifest.json', 'icon-192.png', 'icon-512.png'].sort()) { if (!files[name]) continue; h.update(name); h.update('\0'); h.update(files[name]); h.update('\0'); } return h.digest('hex'); })();
   const precache = ['./', './index.html']; if (files['style.css']) precache.push('./style.css'); if (files['script.js']) precache.push('./script.js'); if (files['manifest.json']) precache.push('./manifest.json'); if (files['icon-192.png']) precache.push('./icon-192.png'); if (files['icon-512.png']) precache.push('./icon-512.png');
   const cacheName = `app-${slug}-${staticHash.slice(0, 8)}`;
@@ -1116,7 +1110,6 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
   if (idx === -1) freshManifest.push(entry); else freshManifest[idx] = Object.assign({}, freshManifest[idx], entry);
   files[MANIFEST_PATH] = JSON.stringify(freshManifest, null, 2) + '\n';
 
-  // FIX 1: Sanitize only AI-generated files to prevent system files (receipts, projects.json) from being dropped
   const aiFiles = { 
     'index.html': files['index.html'], 
     'style.css': files['style.css'], 
@@ -1161,7 +1154,6 @@ main().catch(async (err) => {
   const isMissing = err.message.includes('no existing file');
   const isTokenLimit = err.message.includes('413') || err.message.includes('too large');
 
-  // FIX: Default to process.env to avoid scope ReferenceError
   const projectName = process.env.DISPATCH_PROJECT || process.env.ISSUE_TITLE || 'unknown';
 
   let body;
