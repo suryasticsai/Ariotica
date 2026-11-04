@@ -172,14 +172,12 @@ jobs:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           FIRECRAWL_API_KEY: ${{ secrets.FIRECRAWL_API_KEY }}
 
-          # --- SKRITIMAI INTEGRATION (Mapped to your UI layout) ---
-          SKRITIMAI_URL: ${{ secrets.SKRITIMAI_URL }}
-          SKRITIMAI_BASE_URL: ${{ secrets.SKRITIMAI_URL }} # Backup fallback
+          # --- SKRITIMAI INTEGRATION (Mapped to your Worker URL) ---
+          SKRITIMAI_BASE_URL: ${{ secrets.SKRITIMAI_BASE_URL }}
           SKRITIMAI_API_KEY: ${{ secrets.SKRITIMAI_API_KEY }}
-          SKRITIMAI_GIST_ID: ${{ secrets.SKRITIMAI_GIST_ID }}
           SKRITIMAI_KINDS: ${{ secrets.SKRITIMAI_KINDS }}
           SKRITIMAI_TIMEOUT_MS: ${{ vars.SKRITIMAI_TIMEOUT_MS }}
-          
+
           # Provider Overrides
           GROQ_REASONING_EFFORT: ${{ secrets.GROQ_REASONING_EFFORT }}
           OPENROUTER_MODEL: ${{ secrets.OPENROUTER_MODEL }}
