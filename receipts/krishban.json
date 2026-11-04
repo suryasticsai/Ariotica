@@ -1,0 +1,72 @@
+{
+  "schema": 2,
+  "app": "krishban",
+  "files": {
+    "index.html": "bacee63138671f0379d3e1e40873aa146c4d49f9cb79c3376f69e6e470762ac7",
+    "style.css": "e266e93da0d0a36ee0a9ab31aa6de169e5d29c6690c454f2e66318fbdfc4b489",
+    "script.js": "8caa64d3d345eb9338714356c345656ef4a63da915f6b21acaaf78a70e32e6e2",
+    "icon-192.png": "f8bb58ae1236923e9d519ca3af2071d6c119735f5d6ad4404724599031c1b1f9",
+    "icon-512.png": "f8bb58ae1236923e9d519ca3af2071d6c119735f5d6ad4404724599031c1b1f9",
+    "manifest.json": "9186e4d3cc684ca1da8c0087269d4c956af377b66dea576c3d0e7774b1924c5a",
+    "sw.js": "75dc747c95cbe5f2dfced3003f87ae2ffb477b439ca6fd7a28522d9e2d6486d5",
+    "meta.json": "945b2941d244010ed5673478cb54fa41e6c844d9ffba2802b38b056031b5908d",
+    "CHANGELOG.md": "6ec0f9ec5d32d8db703a105ed0738c5661a61442274ebd72d930bb4f77ce44c3"
+  },
+  "bytes": 39215,
+  "builtAt": "2026-11-04T07:39:52.811Z",
+  "mode": "create",
+  "repo": "suryasticsai/Ariotica",
+  "runId": "41793715408",
+  "commit": null,
+  "model": {
+    "provider": "Groq",
+    "name": "openai/gpt-oss-120b"
+  },
+  "race": [
+    {
+      "provider": "Groq",
+      "model": "openai/gpt-oss-120b",
+      "sec": 7,
+      "ok": true,
+      "score": 100,
+      "reason": "",
+      "cost": 0.0023667,
+      "tokensIn": 3303,
+      "tokensOut": 2495
+    }
+  ],
+  "sha256": "bacee63138671f0379d3e1e40873aa146c4d49f9cb79c3376f69e6e470762ac7",
+  "skillsUsed": [
+    "webrtc"
+  ],
+  "checks": {
+    "complete": true,
+    "vanilla": true,
+    "externalRefs": [
+      "https://fonts.googleapis.com",
+      "https://fonts.gstatic.com",
+      "https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600&family=Syne:wght@600;700&display=swap",
+      "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css",
+      "https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"
+    ],
+    "connectsTo": [],
+    "zeroDeps": false,
+    "smoke": "pass",
+    "smokeErrors": [],
+    "scan": {
+      "total": 1,
+      "high": 0,
+      "medium": 1,
+      "low": 0,
+      "byTool": {
+        "custom": 0,
+        "eslint": 1,
+        "sparrow": 0,
+        "externals": 0
+      }
+    }
+  },
+  "promptSha256": "517916bf4bec8f479e96e1535bcdadb6d66827d19d703d4c6a75ae8660354b03",
+  "prompt": "Build an interesting Kanban board with 3 columns use Bootstrap, add to do editable draggable, dark and light mode IST time on top right 3 different sections one for each unique section more like Jira Lite board with stunning kanban, table, ",
+  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js krishban"
+}
