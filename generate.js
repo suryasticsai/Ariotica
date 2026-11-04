@@ -916,7 +916,7 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
   const overhead = RULES.length + ask.length + filesCtx.length + templateContext.length;
   let room = BUDGET.total - overhead;
   if (room < 0) {
-    console.warn(`[budget] Overhead (${overhead}) already exceeds budget (${BUDGET.total}).`);
+    console.warn(`[budget] WARNING: Overhead (${overhead}) already exceeds budget (${BUDGET.total}).`);
     room = 0;
   }
 
@@ -994,12 +994,13 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
 
         if (hasCritique || hasErrors) {
           console.log(`[Cyclops] Applying fixes...`);
-          
+
           const errorText = hasErrors ? `\nCONSOLE/RUNTIME ERRORS:\n${errors.map(e => '- ' + e).join('\n')}` : '';
           const critiqueText = hasCritique ? `\nVISUAL CRITIQUE:\n${critique}` : '';
 
-          const fixPrompt = `${RULES}\n\nWe need to fix the following issues:\n${critiqueText}${errorText}\n\nHTML:\n${files['index.html']}\n\nCSS:\n${files['style.css']}\n\nReturn ONLY {"files": {"index.html": "...", "style.css": "...", "script.js": "..."}}`;
-          
+          // FIX: Removed RULES to save tokens and prevent 413 errors
+          const fixPrompt = `Fix the following visual and runtime issues in this app.\n\nISSUES:\n${critiqueText}${errorText}\n\nHTML:\n${files['index.html']}\n\nCSS:\n${files['style.css']}\n\nJS:\n${files['script.js'] || ''}\n\nReturn ONLY {"files": {"index.html": "...", "style.css": "...", "script.js": "..."}}`;
+
           const fixRes = await step('Cyclops: Patching UI', () => generate(fixPrompt, 'edit'));
 
           if (fixRes && fixRes.grade && fixRes.grade.files && fixRes.grade.smoke.ok && !structurallyBad(fixRes)) {
@@ -1022,7 +1023,6 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
     if (m) {
       const templateCss = m[1].trim();
       const aiCss = files['style.css'] || '';
-      // Idempotent injection: AI overrides win via cascade, template provides base
       files['style.css'] = `/* ===== Template CSS (auto-injected) ===== */\n${templateCss}\n\n/* ===== AI CSS Overrides ===== */\n${aiCss}`;
       console.log(`[css] Injected template CSS (${templateCss.length}) + AI CSS (${aiCss.length})`);
     }
@@ -1101,7 +1101,6 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
   const diffReports = isNew ? [] : Rep.buildChangeReport(oldForDiff, files, false);
   const oldChangelog = await readFile(changelogPath) || '';
 
-  // BUG 1 FIX: Calculate totalCost BEFORE receipt and changelog to ensure they hash correctly
   const totalCost = raceReport.reduce((s, r) => s + (r.cost || 0), 0); 
   const totalIn = raceReport.reduce((s, r) => s + (r.tokensIn || 0), 0); 
   const totalOut = raceReport.reduce((s, r) => s + (r.tokensOut || 0), 0);
@@ -1139,7 +1138,6 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
 
   receipt.commit = commitSha; receipt.cost = totalCost; receipt.tokensIn = totalIn; receipt.tokensOut = totalOut; files[receiptPath] = JSON.stringify(receipt, null, 2) + '\n';
 
-  // Note: Removed CHANGELOG.md from this second commit because it is already correct from the first commit
   const commitSha2 = await Git.atomicCommit({ [receiptPath]: files[receiptPath], [COSTS_PATH]: JSON.stringify(costs, null, 2) + '\n', [LB_PATH]: JSON.stringify(leaderboard, null, 2) + '\n' }, [], `chore: receipt + analytics ${slug}`);
   await Git.syncCheckout();
 
