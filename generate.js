@@ -367,8 +367,6 @@ async function gradeHtml(text) {
 }
 
 const structurallyBad = (c) => !c.grade.files || !c.grade.files['index.html'] || !T.isVanilla(c.grade.html, TRUSTED_DOMAINS).ok;
-
-// FIX: generate() now accepts extraOpts so we can pass maxTokens
 const generate = (userText, kind = 'generate', extraOpts = {}) => askAI(genMessages(userText), { json: true, grade: gradeHtml, onEvent: aiEvents(), kind, ...extraOpts });
 
 async function readFile(p) {
@@ -890,6 +888,10 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
       return `@@AI_INSTR_${preserved.length - 1}@@`;
     });
 
+    // 🛡️ FIX 1: Strip the entire <style> block. The AI doesn't need to read it 
+    // because we auto-inject it later anyway. This saves ~4,000 tokens!
+    template = template.replace(/<style>[\s\S]*?<\/style>/gi, '<!-- CSS is auto-injected by the system -->');
+
     template = template
       .replace(/\/\*[\s\S]*?\*\//g, '')
       .replace(/<!--[\s\S]*?-->/g, '')
@@ -930,7 +932,8 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
   const libPart = take(LIB_PROMPT, 2000);
   const inspirePart = take(inspirationCtx, 2000);
   const scrapedPart = take(scrapedContext, 4000);
-  const skillPart = take(skillCtx, 6000);
+  // 🛡️ FIX 2: Reduced from 6000 to prevent token bloat
+  const skillPart = take(skillCtx, 2500);
 
   if (skillCtx && skillPart.length < 500) { skillNames = []; ACTIVE_SKILLS = []; }
 
@@ -996,10 +999,9 @@ INSTRUCTION: Analyze the above blueprint. If it uses a CDN bundle, YOU MUST use 
           const errorText = hasErrors ? `\nCONSOLE/RUNTIME ERRORS:\n${errors.map(e => '- ' + e).join('\n')}` : '';
           const critiqueText = hasCritique ? `\nVISUAL CRITIQUE:\n${critique}` : '';
 
-          // FIX 2: Removed ${RULES} to save tokens, added maxTokens limit to prevent 413
           const fixPrompt = `Fix the following visual and runtime issues in this app.\n\nISSUES:\n${critiqueText}${errorText}\n\nHTML:\n${files['index.html']}\n\nCSS:\n${files['style.css']}\n\nJS:\n${files['script.js'] || ''}\n\nReturn ONLY {"files": {"index.html": "...", "style.css": "...", "script.js": "..."}}`;
 
-          const fixRes = await step('Cyclops: Patching UI', () => generate(fixPrompt, 'edit', { maxTokens: 4000 }));
+          const fixRes = await step('Cyclops: Patching UI', () => generate(fixPrompt, 'edit', { maxTokens: 2500 }));
 
           if (fixRes && fixRes.grade && fixRes.grade.files && fixRes.grade.smoke.ok && !structurallyBad(fixRes)) {
             Object.assign(files, fixRes.grade.files);
