@@ -17,7 +17,7 @@
   "mode": "create",
   "repo": "suryasticsai/Ariotica",
   "runId": "41793715408",
-  "commit": null,
+  "commit": "70d15852025ecbd81f85c7ff52da0ad93b53eb34",
   "model": {
     "provider": "Groq",
     "name": "openai/gpt-oss-120b"
@@ -68,5 +68,8 @@
   },
   "promptSha256": "517916bf4bec8f479e96e1535bcdadb6d66827d19d703d4c6a75ae8660354b03",
   "prompt": "Build an interesting Kanban board with 3 columns use Bootstrap, add to do editable draggable, dark and light mode IST time on top right 3 different sections one for each unique section more like Jira Lite board with stunning kanban, table, ",
-  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js krishban"
+  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js krishban",
+  "cost": 0.0023667,
+  "tokensIn": 3303,
+  "tokensOut": 2495
 }

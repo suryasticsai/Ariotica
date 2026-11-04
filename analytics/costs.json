@@ -1170,5 +1170,31 @@
         "tokensOut": 2576
       }
     ]
+  },
+  {
+    "ts": "2026-11-04T07:40:01.110Z",
+    "slug": "krishban",
+    "mode": "create",
+    "provider": "Groq",
+    "model": "openai/gpt-oss-120b",
+    "runId": "41793715408",
+    "cost": 0.0023667,
+    "tokensIn": 3303,
+    "tokensOut": 2495,
+    "score": 90,
+    "sec": 7,
+    "race": [
+      {
+        "provider": "Groq",
+        "model": "openai/gpt-oss-120b",
+        "sec": 7,
+        "ok": true,
+        "score": 100,
+        "reason": "",
+        "cost": 0.0023667,
+        "tokensIn": 3303,
+        "tokensOut": 2495
+      }
+    ]
   }
 ]
