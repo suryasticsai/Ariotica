@@ -17,7 +17,7 @@
   "mode": "create",
   "repo": "suryasticsai/Ariotica",
   "runId": "41770255346",
-  "commit": null,
+  "commit": "f590315f7afc6e4a65b3f70e29a9d171d6922852",
   "model": {
     "provider": "Groq",
     "name": "openai/gpt-oss-120b"
@@ -68,5 +68,8 @@
   },
   "promptSha256": "445b64f794fba9f9af9dcd1fd9d03ee6345ec07cd704015284c6946ac0930790",
   "prompt": "Build a \"Focus Board\" productivity app. \n- Use a 3-column layout (via Bootstrap grid) for task categories: \"To Do\", \"In Progress\", and \"Done\".\n- Include a large, visually appealing circular timer (Pomodoro style) in the center with Start, P",
-  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js focusboard"
+  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js focusboard",
+  "cost": 0.00243435,
+  "tokensIn": 3349,
+  "tokensOut": 2576
 }

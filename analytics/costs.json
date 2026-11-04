@@ -1144,5 +1144,31 @@
         "tokensOut": 4933
       }
     ]
+  },
+  {
+    "ts": "2026-11-04T03:58:45.902Z",
+    "slug": "focusboard",
+    "mode": "create",
+    "provider": "Groq",
+    "model": "openai/gpt-oss-120b",
+    "runId": "41770255346",
+    "cost": 0.00243435,
+    "tokensIn": 3349,
+    "tokensOut": 2576,
+    "score": 100,
+    "sec": 7,
+    "race": [
+      {
+        "provider": "Groq",
+        "model": "openai/gpt-oss-120b",
+        "sec": 7,
+        "ok": true,
+        "score": 100,
+        "reason": "",
+        "cost": 0.00243435,
+        "tokensIn": 3349,
+        "tokensOut": 2576
+      }
+    ]
   }
 ]
