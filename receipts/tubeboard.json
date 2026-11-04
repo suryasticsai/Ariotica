@@ -17,7 +17,7 @@
   "mode": "create",
   "repo": "suryasticsai/Ariotica",
   "runId": "41760516359",
-  "commit": null,
+  "commit": "677c4864fbbe35822d1c1873cc1e1dd4291eb3e7",
   "model": {
     "provider": "Groq",
     "name": "openai/gpt-oss-120b"
@@ -66,5 +66,8 @@
   },
   "promptSha256": "e6dec1edbd7659ee46e142533ef4efe0b629381cd19f4b1edcd44822ceb8b445",
   "prompt": "Build a super cool editable 3-column habit tracker. Use Bootstrap for the layout grid.",
-  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js tubeboard"
+  "note": "Written by the Ariotica workflow. Verify with: node verify-receipt.js tubeboard",
+  "cost": 0.0045642,
+  "tokensIn": 5763,
+  "tokensOut": 4933
 }
