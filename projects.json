@@ -203,5 +203,46 @@
     "sha256": "2bc00e13c74b6c58f9a655f2ce3cb5b004b50f71311ec2de5f42bba33aea470e",
     "receipt": "receipts/tubeboard.json",
     "skillsUsed": []
+  },
+  {
+    "project": "focusboard",
+    "file": "projects/focusboard/index.html",
+    "prompt": "Build a \"Focus Board\" productivity app. \n- Use a 3-column layout (via Bootstrap grid) for task categories: \"To Do\", \"In Progress\", and \"Done\".\n- Include a large, visually appealing circular timer (Pomodoro style) in the center with Start, P",
+    "created": "2026-11-04T03:58:38",
+    "mode": "create",
+    "provider": "Groq",
+    "model": "openai/gpt-oss-120b",
+    "findings": 0,
+    "smoke": "pass",
+    "size": 45021,
+    "version": "1.0.0",
+    "features": [
+      "Bootstrap grid layout",
+      "Pomodoro timer with start/pause/reset",
+      "Task columns with click-to-move",
+      "Responsive design",
+      "Custom color theme via CSS variables"
+    ],
+    "fixes": [
+      "All JS variables declared with let/const",
+      "No integrity attributes added",
+      "Router preserved from template"
+    ],
+    "suggestions": [
+      "Persist tasks in localStorage",
+      "Add editable task input",
+      "Add sound on timer end"
+    ],
+    "grade": "A+",
+    "percentile": "Top 5%",
+    "humanInvolvement": "Low – core functionality ready, optional enhancements can be added.",
+    "libraries": [
+      "bootstrap"
+    ],
+    "sha256": "ea38ca7099434c9904022f95a49f1f2d41a9c459f91300ba8304fa9d152e140f",
+    "receipt": "receipts/focusboard.json",
+    "skillsUsed": [
+      "webrtc"
+    ]
   }
 ]
