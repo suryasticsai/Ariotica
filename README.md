@@ -259,17 +259,19 @@ AI toolmaker · independent developer · automation architect
 "I didn't want another AI that tells me how to write code.
 I wanted one that actually does the work."
 
-https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white
-https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white
-https://img.shields.io/badge/Medium-000000?style=for-the-badge&logo=medium&logoColor=white
+[![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/suryasticsai)
+[![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/suryasticsai)
+[![Medium](https://img.shields.io/badge/Medium-000000?style=for-the-badge&logo=medium&logoColor=white)](https://suryasticsai.medium.com/)
+[![Hugging Face](https://img.shields.io/badge/Hugging_Face-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black)](https://huggingface.co/Suryasticsai)
+[![Portfolio](https://img.shields.io/badge/Portfolio-2563EB?style=for-the-badge&logo=googlechrome&logoColor=white)](https://suryasticsai.8b.io/)
+[![Alkembic](https://img.shields.io/badge/Alkembic-8B5CF6?style=for-the-badge&logo=netlify&logoColor=white)](https://alkembic.netlify.app/)
 
 <br/>
 
-The agent writes software. The human wrote the agent.
+**The agent writes software. The human wrote the agent.**
 
 <sub>Built with JavaScript. Powered by GitHub. Designed to ship. © 2026 Surya</sub>
 
 <img src="https://capsule-render.vercel.app/api?type=waving&height=110&color=0:5ab552,50:1f6f3a,100:0b1410&section=footer" alt="" width="100%" />
 
 </div>
-```
