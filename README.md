@@ -1,5 +1,4 @@
-::: {align="center"}
-`<img src="https://capsule-render.vercel.app/api?type=waving&height=190&color=0:0b1410,50:1f6f3a,100:5ab552&text=ARIOTICA&fontColor=e6f2ea&fontSize=64&fontAlignY=38&desc=The%20AI%20developer%20that%20lives%20in%20your%20repo&descAlignY=60&descSize=18" alt="Ariotica — the AI developer that lives in your repo" width="100%" />`{=html}
+<img src="https://capsule-render.vercel.app/api?type=waving&height=190&color=0:0b1410,50:1f6f3a,100:5ab552&text=ARIOTICA&fontColor=e6f2ea&fontSize=64&fontAlignY=38&desc=The%20AI%20developer%20that%20lives%20in%20your%20repo&descAlignY=60&descSize=18" alt="Ariotica — the AI developer that lives in your repo" width="100%" />`{=html}
 
 `<img src="https://raw.githubusercontent.com/suryasticsai/Ariotica/main/Ariotica-logo.png" alt="Ariotica logo" width="150" />`{=html}
 
@@ -373,5 +372,4 @@ The agent writes software. The human wrote the agent.
 `<sub>`{=html}Built with JavaScript. Powered by GitHub. Designed to
 ship. © 2026 Surya`</sub>`{=html}
 
-`<img src="https://capsule-render.vercel.app/api?type=waving&height=110&color=0:5ab552,50:1f6f3a,100:0b1410&section=footer" alt="" width="100%" />`{=html}
-:::
+`<img src="https://capsule-render.vercel.app/api?type=waving&height=110&color=0:5ab552,50:1f6f3a,100:0b1410&section=footer" alt="" width="100%" />`
