@@ -1,374 +1,377 @@
-<div align="center">
+::: {align="center"}
+`<img src="https://capsule-render.vercel.app/api?type=waving&height=190&color=0:0b1410,50:1f6f3a,100:5ab552&text=ARIOTICA&fontColor=e6f2ea&fontSize=64&fontAlignY=38&desc=The%20AI%20developer%20that%20lives%20in%20your%20repo&descAlignY=60&descSize=18" alt="Ariotica — the AI developer that lives in your repo" width="100%" />`{=html}
 
-<img src="https://capsule-render.vercel.app/api?type=waving&height=190&color=0:0b1410,50:1f6f3a,100:5ab552&text=ARIOTICA&fontColor=e6f2ea&fontSize=64&fontAlignY=38&desc=The%20AI%20developer%20that%20lives%20in%20your%20repo&descAlignY=60&descSize=18" alt="Ariotica — the AI developer that lives in your repo" width="100%" />
+`<img src="https://raw.githubusercontent.com/suryasticsai/Ariotica/main/Ariotica-logo.png" alt="Ariotica logo" width="150" />`{=html}
 
-<img src="https://raw.githubusercontent.com/suryasticsai/Ariotica/main/Ariotica-logo.png" alt="Ariotica logo" width="150" />
+`<a href="https://suryasticsai.github.io/Ariotica/">`{=html}
+`<img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=20&pause=1400&color=5AB552&center=true&vCenter=true&width=640&lines=Open+an+issue.+Get+a+working+app.;Comment+%5Bfix%5D+%E2%80%94+it+patches+itself.;Comment+%5Bask%5D+%E2%80%94+it+answers+from+your+repo.;No+server.+No+database.+No+framework." alt="Open an issue. Get a working app." />`{=html}
+`</a>`{=html}
 
-<a href="https://suryasticsai.github.io/Ariotica/">
-  <img src="https://readme-typing-svg.demolab.com?font=JetBrains+Mono&weight=600&size=20&pause=1400&color=5AB552&center=true&vCenter=true&width=640&lines=Open+an+issue.+Get+a+working+app.;Comment+%5Bfix%5D+%E2%80%94+it+patches+itself.;Comment+%5Bask%5D+%E2%80%94+it+answers+from+your+repo.;No+server.+No+database.+No+framework." alt="Open an issue. Get a working app. No server. No database. No framework." />
-</a>
-
-<br/>
+`<br/>`{=html}
 
 [![Launch](https://img.shields.io/badge/▶_LAUNCH_THE_DASHBOARD-0b1410?style=for-the-badge&logo=github&logoColor=5ab552)](https://suryasticsai.github.io/Ariotica/)
-[![Assign a task](https://img.shields.io/badge/ASSIGN_A_TASK-238636?style=for-the-badge&logo=github&logoColor=white)](https://github.com/suryasticsai/Ariotica/issues/new)
+[![Assign a
+task](https://img.shields.io/badge/ASSIGN_A_TASK-238636?style=for-the-badge&logo=github&logoColor=white)](https://github.com/suryasticsai/Ariotica/issues/new)
 
-![Vanilla JS](https://img.shields.io/badge/Vanilla_JS-F7DF1E?style=flat-square&logo=javascript&logoColor=black)
-![GitHub Actions](https://img.shields.io/badge/Runs_on-GitHub_Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white)
-![No server](https://img.shields.io/badge/Servers-0-1f6f3a?style=flat-square)
-![No database](https://img.shields.io/badge/Databases-0-1f6f3a?style=flat-square)
-![Bring your own model](https://img.shields.io/badge/Models-bring_your_own-5ab552?style=flat-square)
+![Vanilla
+JS](https://img.shields.io/badge/Vanilla_JS-F7DF1E?style=flat-square&logo=javascript&logoColor=black)
+![GitHub
+Actions](https://img.shields.io/badge/Runs_on-GitHub_Actions-2088FF?style=flat-square&logo=githubactions&logoColor=white)
+![No
+server](https://img.shields.io/badge/Servers-0-1f6f3a?style=flat-square)
+![No
+database](https://img.shields.io/badge/Databases-0-1f6f3a?style=flat-square)
+![Bring your own
+model](https://img.shields.io/badge/Models-bring_your_own-5ab552?style=flat-square)
+:::
 
-</div>
+------------------------------------------------------------------------
 
----
+::: {align="center"}
+```{=html}
+<p>
+```
+`<b>`{=html}A live AI developer that lives in your GitHub repo. Issues
+in, working apps out.`</b>`{=html}
+```{=html}
+</p>
+```
+[![Tests](https://github.com/suryasticsai/Ariotica/actions/workflows/test.yml/badge.svg)](https://github.com/suryasticsai/Ariotica/actions/workflows/test.yml)
+[![Generate
+Project](https://github.com/suryasticsai/Ariotica/actions/workflows/ai-cron.yml/badge.svg)](https://github.com/suryasticsai/Ariotica/actions/workflows/ai-cron.yml)
+:::
 
-  <p><b>A live AI developer that lives in your GitHub repo. Issues in, working apps out.</b></p>
-
-  [![Tests](https://github.com/suryasticsai/Ariotica/actions/workflows/test.yml/badge.svg)](https://github.com/suryasticsai/Ariotica/actions/workflows/test.yml)
-  [![Generate Project](https://github.com/suryasticsai/Ariotica/actions/workflows/ai-cron.yml/badge.svg)](https://github.com/suryasticsai/Ariotica/actions/workflows/ai-cron.yml)
-</div>
-
-  An autonomous agent that turns GitHub Issues into fully functional, vanilla JS apps. It writes code, tests it in a headless browser, scans it for vulnerabilities, and fixes its own bugs.
-
-  [![Live Demo](https://img.shields.io/badge/Live_Dashboard-suryasticsai.github.io/Ariotica-5ab552?style=for-the-badge&logo=github)](https://suryasticsai.github.io/Ariotica/)
-  [![Vanilla JS](https://img.shields.io/badge/Vanilla_JS-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)](#)
-  [![Zero Cost](https://img.shields.io/badge/100%25_Free-00a86b?style=for-the-badge)](https://github.com/suryasticsai/Ariotica)
-  [![AI Agents](https://img.shields.io/badge/AI_Agentic_Workflow-blueviolet?style=for-the-badge)](#)
-
-</div>
-
----
+------------------------------------------------------------------------
 
 ## 🚀 What is Ariotica?
 
-Ariotica isn't just a wrapper around an LLM. It is an end-to-end, autonomous software engineering pipeline. Every app is built, tested, audited, and deployed within a single GitHub Actions runner
+Ariotica is not a wrapper around an LLM. It's a **fully autonomous
+software engineering pipeline** that lives entirely inside a GitHub
+Actions runner. Every app is built, tested in a headless browser,
+security-scanned, and deployed --- with **zero servers, zero databases,
+and zero frameworks**.
 
-Ariotica turns a GitHub Issue into a tested, installable, and deployed web app. It uses multiple LLMs (Groq, OpenRouter, HuggingFace) in a **Model Race**, tests the output in a headless browser (**Self-Healing**), and commits the winning code to GitHub Pages.
+It's the kind of agent that manages its own deployments, tracks its own
+API costs, maintains its own version history, and **learns from its own
+mistakes**.
 
-It's not just a code generator; it's an autonomous software engineer that manages its own deployments, tracks its own API costs, maintains a version history, and learns from its own skills.
+------------------------------------------------------------------------
 
-## ✨ Core Features
+## ✨ The Super Features
 
-*   **🏁 Model Race:** Multiple AI models answer at once. The first one to pass the tests wins.
-*   **🩺 Self-Healing:** Generated apps are loaded into a headless DOM. Runtime errors are fed back to the AI to fix before committing.
-*   **📦 Library Allowlist:** Automatically injects SRI hashes and updates Content Security Policy (CSP) when the AI uses approved CDNs (Vue, Bootstrap, PeerJS, Chart.js).
-*   **🧠 RAG Skill System:** Teach Ariotica new tricks (like WebRTC). It automatically searches its skill library and injects the relevant cheatsheet into the prompt.
-*   **📊 Analytics & Leaderboard:** Tracks token usage, API costs, and model win rates over time.
-*   **🔄 Undo Button:** Revert any app to a previous version ID (`v1.0.1`) with a single command.
-*   **📸 Live Previews:** Automatically waits for GitHub Pages to deploy and posts a clickable screenshot.
-*   **🛠️ The Darwin Protocol:** The agent can modify its own source code (`generate.js`, etc.) via the `[evolve]` command.
+### 👁️ Cyclops QA --- Full Visual & Runtime Auditing
 
----
-## 🏗️ Architecture & Advanced Capabilities
+Before any app is committed, it must survive **Cyclops** --- the agent's
+autonomous QA engineer. - **Headless Playwright Browser:** The app is
+loaded in a real Chromium instance (1280×800 desktop, then 375×812
+mobile). - **Runtime Error Capture:** Catches every `console.error`,
+uncaught exception, and failed network request. - **Structural
+Validation:** Detects horizontal overflow (the #1 mobile layout killer),
+missing page titles, and broken asset loading. - **Visual Critique:**
+Groq's `llama-3.2-11b-vision-instruct` (the current production model)
+analyzes the screenshot and returns a list of CSS/HTML fixes. -
+**Automatic Repair:** The AI receives both the critique and any runtime
+errors, then patches the code and re-tests.
 
-### 👁️ Cyclops QA (Visual & Runtime Auditing)
-Before any app is committed, it must pass the **Cyclops** agent. 
-- **Headless Testing:** Playwright renders the app in a real Chromium browser.
-- **Runtime Error Catching:** Captures `console.error` and uncaught JS exceptions (e.g., missing DOM elements, undefined variables).
-- **Structural Checks:** Automatically detects horizontal overflow (mobile responsiveness breaks) on both 1280px and 375px viewports.
-- **Visual Critiques:** A vision model looks at the screenshot and critiques contrast, spacing, and hierarchy, feeding CSS fixes back to the builder.
+### 🏁 Model Racing with Health Checks
 
-### ⚡ Atomic Git Operations & Safe Deploys
-We never leave the repo in a broken state.
-- **Atomic Commits:** Uses the GitHub Trees API to create a single, atomic commit. If a build fails halfway, *nothing* is committed.
-- **Zero Stale Checkouts:** After an API commit, `syncCheckout()` force-syncs the local runner so the Knowledge Index and Artifacts are always up to date.
-- **No Destructive Rollbacks:** We use a "publish nothing on failure" strategy instead of `git reset --hard`, preventing parallel builds from wiping each other out.
+Ariotica doesn't trust a single LLM. Four providers receive the prompt
+**simultaneously**: - **Groq** (fastest, `openai/gpt-oss-120b`) -
+**Skritimai** (your private Kaggle engine via Cloudflare Worker) -
+**GitHub Models** (`gpt-4o-mini`, `DeepSeek-R1`) - **OpenRouter** (free
+tier models)
 
-### 📱 True PWA & Content-Hashed Caching
-Every app generated is automatically a Progressive Web App.
-- **Auto-Injected Manifests:** Generates `manifest.json`, `sw.js`, and AI-generated icons.
-- **Content-Hashed Service Workers:** The SW cache name is a `sha256` hash of the HTML, CSS, JS, and icons. When the app updates, the cache invalidates instantly—no more users stuck on `v1`.
-- **Offline First:** Cache-first strategy for assets, network-first for HTML navigation.
+**The first model to pass Cyclops wins the race.** The others are
+instantly cancelled to save tokens. If a provider returns 503/502/429,
+it's put on cooldown or permanently disabled for that run.
 
-### 🧠 The RAG Knowledge Engine
-Ariotica learns from every build.
-- **BM25 Search:** Past code, issue discussions, and skills are indexed into `knowledge/index.json`.
-- **Skill Synthesis:** If you paste a URL, Ariotica scrapes the site, synthesizes a markdown "Skill" file, and saves it to `knowledge/skills/` for future use.
-- **Draft vs. Verified:** Automatically flags new skills as `draft`, requiring human approval before the AI can rely on them.
+### 🧠 Skritimai --- Your Private, Free, GPU-Powered Brain
 
-### 🏎️ Multi-Model Racing & Health
-We don't trust a single LLM.
-- **Provider Racing:** Groq, GitHub Models, OpenRouter, and Skritimai all receive the prompt simultaneously. The fastest valid response wins.
-- **Health & Cooldowns:** If a model returns a 429 (Rate Limit) or 500 error, it's put on a cooldown or permanently disabled for the run.
-- **Budget Enforcement:** `RUN_BUDGET_MS` ensures a run never exceeds a specific time limit, gracefully aborting if the deadline is reached.
+Ariotica integrates with **Skritimai**, an OpenAI-compatible Cloudflare
+Worker that proxies your Kaggle GPU notebook. - **Fast-Skip Health
+Check:** Every build pings `/v1/models` in 2.5s. If Kaggle is asleep,
+the response is 503, and Skritimai is dropped from the race instantly
+(no blocking). - **Zero Paid Tokens:** When Kaggle is awake, Skritimai
+competes with Groq for free --- saving your Groq quota for later. -
+**Direct URL Mode:** No more Gist polling. Just `SKRITIMAI_BASE_URL` →
+Cloudflare Worker → Kaggle. - **Timeout-Tuned:** `SKRITIMAI_TIMEOUT_MS`
+(default 180s) lets your Kaggle instance finish even on slow cold
+starts.
 
-### 🛡️ The Template Engine
-The AI cannot destroy the layout.
-- **Strict Adherence:** The system forces the LLM to use the custom **Letterhead** base template.
-- **CSS Injection Guardrail:** Even if the AI lazily writes `/* rest unchanged */` in the CSS, the pipeline automatically injects the full template CSS before the commit, guaranteeing a beautiful UI.
-- **Sanitizer:** Strips hallucinated `integrity="..."` hashes (which block loading) and scans for malicious scripts.
+### 🎨 The Template Guardrail Engine
 
----
+The AI **cannot** destroy your layout. - **Letterhead Base:** Every app
+inherits a beautiful, dark-mode, mobile-first template. - **Stripped
+Prompt Injection:** The prompt only shows the HTML *structure* (\~4,700
+chars) --- the massive `<style>` block is auto-injected server-side,
+saving \~4,000 tokens per request. - **CSS Override Cascade:** If the AI
+forgets to include the CSS, the full template CSS is prepended
+automatically. AI overrides still win via cascade. - **Hallucination
+Scrubber:** Strips any `integrity="..."` hashes the AI invents (which
+would block fonts/CDN loading).
+
+### 📱 True PWA with Content-Hashed Caching
+
+Every app is automatically an installable Progressive Web App. -
+**Auto-Injected Manifest:** Generates `manifest.json`, `sw.js`, and
+AI-generated icons (Pollinations → DiceBear fallback). -
+**Content-Hashed Cache:** The service worker cache name is a `sha256`
+hash of `index.html + style.css + script.js + manifest.json + icons`.
+When the app updates, users get the new version instantly --- no more
+"stuck on v1" bugs. - **Offline-First:** Cache-first for assets,
+network-first for HTML navigation.
+
+### ⚡ Atomic Git Operations
+
+Zero risk of corrupting the repo. - **Single-Commit Trees:** Uses the
+GitHub Trees API to create one atomic commit containing all files. If
+the build fails mid-way, **nothing** is committed. - **Atomic
+Deletion:** `deletedPaths` support --- the `[delete]` command removes
+the entire app folder + PWA files + receipt in a single commit. -
+**Stale-Checkout Killer:** After any API commit, `syncCheckout()`
+force-syncs the local runner so the Knowledge Index and Artifacts are
+always fresh. - **No Destructive Rollbacks:** We never
+`git reset --hard`. Parallel builds can't wipe each other out.
+
+### 🧠 RAG Knowledge Engine (BM25)
+
+Ariotica remembers every app it has ever built. - **BM25 Search:** Every
+file, issue, and skill is indexed into `knowledge/index.json`. - **Skill
+Synthesis:** Paste a URL, and Ariotica scrapes it, writes a markdown
+cheatsheet, and saves it to `knowledge/skills/` for future builds. -
+**Draft vs. Verified:** New skills start as `draft` --- the AI can't
+rely on them until a human promotes them to `verified`.
+
+### 🛡️ Built-in Security (SAST)
+
+-   **Trusted Domains Allowlist:** Only approved CDNs (Bootstrap,
+    Chart.js, PeerJS) can be loaded.
+-   **SRI Pinning:** Every external script is verified with SHA-384.
+-   **Dynamic CSP:** Content-Security-Policy headers are generated
+    per-app based on what it actually uses.
+-   **XSS + ESLint + Sparrow:** Multi-layer static analysis before every
+    commit.
+
+### 📊 Receipts & Analytics
+
+-   **Cryptographic Receipts:** Every build produces
+    `receipts/<slug>.json` with the `sha256` of every file, the models
+    used, and the exact token cost.
+-   **Live Leaderboard:** `analytics/leaderboard.json` tracks win rates,
+    average speed, and total spend per model.
+-   **Cost Dashboard:** The `[leaderboard]` command shows which LLM is
+    winning on speed, cost, and reliability.
+
+### 🩺 Self-Healing Pipeline
+
+-   **Smoke Tests:** Generated code is loaded into JSDOM, all buttons
+    are clicked, and errors are captured.
+-   **Automatic Repair Loop:** Failures are fed back to the AI up to 3
+    times with increasing strictness.
+-   **Regression Guard:** `[improve]` and `[fix]` commands **abort** if
+    they would replace a passing version with a failing one.
+-   **Graceful Degradation:** If all providers fail, the pipeline
+    catches the error and posts a helpful message instead of crashing.
+
+------------------------------------------------------------------------
 
 ## 🎮 Command Guide
 
-Interact with the agent entirely through GitHub Issues. 
-1. Create an issue titled: `[BUILD] my-app-name [create]`
-2. Add instructions in the body.
-3. The agent will reply with live progress, screenshots, and a live link.
+Interact with the agent entirely through GitHub Issues.
 
-### Supported Commands (Reply as comments)
-| Command | Action |
-| :--- | :--- |
-| `[improve] <prompt>` | Enhances the app, bumps the minor version, and updates the changelog. |
-| `[fix] <bug>` | Targeted bug fix. Aborts if it introduces a regression. |
-| `[audit]` | Runs a security scan and fixes vulnerabilities. |
-| `[inspire] <prompt>` | Searches GitHub for highly-starred similar apps and builds a brand new app based on them. |
-| `[revert] <version>` | Rolls the app back to a specific version via Git history + Receipts. |
-| `[delete]` | Deletes the app folder, PWA files, and receipt atomically. |
-| `[skill] <topic>` | Generates a dense markdown cheatsheet and saves it to the Knowledge Library. |
-| `[ask] <question>` | Searches the repo's code and issue history (BM25) to answer you. |
-| `[leaderboard]` | Shows which LLM is currently winning on speed, cost, and win-rate. |
+  -----------------------------------------------------------------------
+  Command                             Action
+  ----------------------------------- -----------------------------------
+  **`[create]`**                      Build a new app from scratch (issue
+                                      body = prompt).
 
----
+  **`[improve] <prompt>`**            Enhance existing app, bump minor
+                                      version. Aborts on regression.
 
-## 📊 Analytics
-Every run generates a **Receipt** (`receipts/<slug>.json`) containing the `sha256` of the output, the exact tokens/cost, and the models used. 
-The `analytics/leaderboard.json` tracks lifetime performance:
-- **Win Rate:** Which model passes Cyclops/grader most often.
-- **Avg Cost:** Total spend divided by successful builds.
-- **Avg Speed:** Seconds per generation. 
----
+  **`[fix] <bug>`**                   Targeted bug fix with regression
+                                      protection.
 
-## 🎮 How to Use (Commands)
+  **`[audit]`**                       Deep security scan + auto-fix
+                                      vulnerabilities.
 
-Ariotica is controlled entirely through **GitHub Issues**.
+  **`[inspire] <prompt>`**            Searches GitHub for similar
+                                      top-starred apps, then builds from
+                                      that inspiration.
 
-### 1. Create a New App
-Open a new issue:
-*   **Title:** `[BUILD] my-app-name [create]`
-*   **Body:** `Create a simple todo app with a dark theme and local storage.`
+  **`[revert]`**                      Show version history.
 
-### 2. Upgrade or Modify
-On the closed issue, leave a comment:
-*   `[improve] Add a reset button and change the background to a gradient.`
-*   `[fix] The reset button is throwing a ReferenceError.`
+  **`[revert] <version>`**            Rollback to a specific version (as
+                                      a forward commit).
 
-### 3. Manage Versions
-*   `[revert]` (Shows version history)
-*   `[revert] 1.0.2` (Rolls back to v1.0.2 as a new forward commit)
+  **`[delete]`**                      Atomically delete the app + PWA
+                                      files + receipt.
 
-### 4. Search the Repo
-*   `[ask] what changed in my-app-name last week?`
-*   `[ask] how does the model race work?`
+  **`[skill] <topic>`**               Generate a markdown skill
+                                      cheatsheet and save to the RAG
+                                      library.
 
-### 5. Teach the AI (Skills)
-*   `[BUILD] skill-name [skill] how to build a WebRTC peer-to-peer video call`
-*   *(This saves a `.md` cheatsheet to `knowledge/skills/`. The next time you build a relevant app, the AI will automatically read this file!)*
+  **`[skills]`**                      List all skills in the library.
 
-### 6. View Analytics
-*   `[leaderboard]` (Shows top models, win rates, and total API spend)
+  **`[ask] <question>`**              Search the repo's code + issue
+                                      history (BM25) and answer you.
 
-### 7. Evolve the Agent
-*   `[evolve] lib/providers.js add a new fallback provider for Cohere`
-*   *(Includes safety checks for JavaScript syntax and module resolution).*
+  **`[leaderboard]`**                 Show model win rates, avg cost, and
+                                      total spend.
 
----
+  **`[forge] <capability>`**          Synthesize a new plugin and save it
+                                      as a proposal.
+  -----------------------------------------------------------------------
+
+------------------------------------------------------------------------
 
 ## 🏗️ Architecture
 
-Ariotica operates in a 5-step pipeline triggered by GitHub Actions:
-
-1.  **Parse & Route:** Reads the issue title (`[BUILD] name [mode]`) and passes it to `generate.js`.
-2.  **Generate:** Sends the prompt, the library rules, and any retrieved RAG skills to the model race.
-3.  **Test & Heal:** Merges CSS/JS into a single HTML file, runs a `jsdom` smoke test, scans for vulnerabilities (ESLint/Sparrow), and calculates a grade.
-4.  **Library Resolution:** Validates external scripts against `trusted_domains.json`, computes SRI hashes, and builds the CSP.
-5.  **Commit & Deploy:** Commits the app, the receipt (SHA256 hashes), the changelog, and the analytics to `main`. GitHub Pages takes over from there.
-
----
-
-## 📂 Repository Structure
-
-*   `projects/` — All generated apps (each has its own `index.html`, `CHANGELOG.md`, etc.)
-*   `receipts/` — Cryptographic proof of every build (hashes, model used, security scores)
-*   `analytics/` — `costs.json` and `leaderboard.json`
-*   `knowledge/skills/` — Markdown cheatsheets the AI reads via RAG
-*   `lib/` — The core engine (`providers.js`, `libraries.js`, `rag.js`, `smoke.js`)
-*   `libraries_catalog.json` — Approved CDN libraries and their usage instructions
-*   `trusted_domains.json` — The security gate for external scripts
-
----
-
-## 🖥️ The Dashboard
-
-Ariotica comes with a built-in **Mission Control** dashboard. 
-Visit `https://<your-username>.github.io/<repo-name>/` to see:
-*   All deployed apps and their grades.
-*   The model leaderboard.
-*   Token and cost charts.
-*   A built-in RAG search bar to query your repo without GitHub issues.
-
----
-
-## 🛡️ Security
-
-*   **Zero External Code:** Apps cannot use `eval`, `innerHTML` (unless sanitized), or unapproved CDNs.
-*   **SRI Pinned:** Every external library is verified via SHA-384 hashes. If the CDN is compromised, the app refuses to load.
-*   **CSP Lockdown:** Content-Security-Policy headers are dynamically generated per app based on what it actually uses.
-*   **Repository Write Lock:** GitHub Actions are the only entities allowed to commit to `main`.
-
----
-By leveraging a multi-provider free API fallback (Groq → Gemini → OpenRouter → Pollinations), it runs **100% free forever** without needing a credit card.
-
-## ✨ Key Superpowers
-
-- 🧠 **RAG Memory (BM25):** The agent remembers every app it has ever built. If you ask for a new app, it searches its own codebase and issue history to reuse your favorite styling and patterns.
-- 🩺 **Self-Healing (JSDOM Smoke Tests):** Before committing, it loads the generated app in a headless browser, clicks every button, and catches runtime errors. If it crashes, it feeds the error back to the AI and forces it to fix itself.
-- 🛡️ **Built-in Security (SAST):** Every app is scanned by custom XSS filters, ESLint, and Sparrow SAST.
-- 💬 **Repo Chat:** Ask the agent questions directly in the issue thread, and it will answer with exact file citations.
-- 🎨 **Strictly Vanilla:** Enforces 100% vanilla HTML/CSS/JS. No React, no Tailwind, no CDNs. Just pure, lightweight, offline-ready code.
-
----
-
-## 🎮 How to Use the Agent
-
-Create a new issue or reply to an existing one using these tags:
-
-| Command | Action |
-| :--- | :--- |
-| **`[BUILD] my-app`** | Create a new app (use the issue body as the prompt). |
-| **`[improve] ...`** | Add features or change the UI of an existing app. |
-| **`[fix] ...`** | Describe a bug, and the agent will patch it. |
-| **`[audit]`** | Force a deep security scan and auto-fix any vulnerabilities. |
-| **`[delete]`** | Completely remove the app from the repo. |
-| **`[ask] ...`** | Ask the AI a question about the repo (e.g., *"[ask] how does the drag-and-drop work?"*). |
-
-*Example: Reply to an issue with `[improve] make the buttons larger and add a hover animation`.*
-
----
-
-## 🖥️ The Live Dashboard
-
-Visit the **[Ariotica Web UI](https://suryasticsai.github.io/Ariotica/)** to interact with the agent visually.
-
-- **Direct Mode:** Paste a Fine-Grained Personal Access Token (with Actions & Contents Read/Write) to trigger builds directly from the UI.
-- **Issue Mode:** No token required. Simply opens a pre-filled GitHub issue.
-- **Live Progress:** Watch the agent think, write code, run tests, and commit in real-time via the progress modal.
-
----
-
-## 🏗️ Architecture
-
-Ariotica runs entirely inside a single GitHub Actions workflow:
-
-```text
-User Prompt (Issue/UI)
+``` text
+User Prompt (Issue / Dashboard)
       │
       ▼
-[RAG Search] ──► Finds similar past apps & code chunks
+[RAG BM25 Search] ──► Finds similar apps, skills, and past code
       │
       ▼
-[LLM Providers] ──► Groq ──► Gemini ──► OpenRouter ──► Pollinations
+[Prompt Assembly] ──► Template HTML (CSS stripped) + Skills + RAG
       │
       ▼
-[JSON Parser] ──► Extracts HTML
+[Model Race] ──► Groq ⚡ Skritimai ⚡ GitHub Models ⚡ OpenRouter
+      │
+      ▼ (first to pass grading wins)
+[Cyclops QA] ──► Playwright renders → captures runtime errors → vision critique
+      │
+      ▼ (if errors found, auto-repair loop ×3)
+[CSS Injection] ──► Guarantees template styling survives AI laziness
       │
       ▼
-[SAST Scanners] ──► Custom XSS + ESLint + Sparrow
+[SAST Scan] ──► XSS + ESLint + Sparrow security audit
       │
       ▼
-[JSDOM Smoke Test] ──► Clicks all buttons, catches errors
-      │
-      ▼ (If error, automatically fixes and retests)
+[PWA Generation] ──► manifest.json + sw.js + content-hashed cache
       │
       ▼
-[Commit] ──► Saves to `projects/app-name.html`
+[Atomic Git Commit] ──► Single tree commit → GitHub Pages deploy
+      │
+      ▼
+[Analytics & Receipts] ──► SHA256 proofs + leaderboard update
 ```
 
-## 📁 Project Structure
+------------------------------------------------------------------------
 
-- `generate.js` — The core agentic loop.
-- `lib/providers.js` — The self-healing AI provider fallback system.
-- `lib/rag.js` — Zero-dependency BM25 search engine.
-- `lib/smoke.js` — JSDOM headless browser testing.
-- `lib/scan.js` — ESLint & SAST security scanners.
-- `index.html` — The GitHub Pages dashboard.
+📂 Repository Structure
 
----
+``` text
+generate.js              the agent: pipeline, status comments, mode routing
+build-index.js           builds knowledge/index.json on demand
+build-dashboard.js       generates the showcase dashboard (dashboard.html)
+lib/
+  cyclops.js             Playwright headless QA (visual + runtime)
+  vision.js              Groq vision critique (llama-3.2-11b-vision-instruct)
+  providers.js           multi-model racing + health checks + cooldowns
+  skritimai.js           Cloudflare Worker client (Kaggle proxy)
+  git.js                 atomic Trees API commits + syncCheckout
+  rag.js                 zero-dependency BM25 search engine
+  knowledge.js           file + manifest + issue chunks for RAG
+  scan.js                SAST scanners (XSS + ESLint + Sparrow)
+  smoke.js               JSDOM headless runtime testing
+  pricing.js             per-model cost calculation
+  text.js                parsing + slugify + JSON extraction
+projects/                every app the agent has ever built
+receipts/                sha256 proofs of every build
+analytics/               costs.json + leaderboard.json
+knowledge/skills/        RAG-readable cheatsheets
+app-template.html        the "Letterhead" base template
+```
+
+------------------------------------------------------------------------
 
 ## 🛠️ Setup Your Own Instance
 
-Want to fork this and run your own AI engineering team?
+Want to fork this and run your own autonomous engineering team?
 
-1. Fork this repository.
-2. Go to **Settings → Actions → General** and set Workflow permissions to **Read and write**.
-3. Go to **Settings → Secrets and variables → Actions** and add these free API keys:
-   - `GROQ_API_KEY` (Get it free here)
-   - `GEMINI_API_KEY` (Get it free here)
-   - `OPENROUTER_API_KEY` (Get it free here)
-4. Go to **Settings → Pages** and set the source to **Deploy from a branch → main → / (root)**.
-5. Open a new issue titled `[BUILD] calculator` and watch the magic happen.
+1.  Fork this repository.
 
----
+2.  Settings → Actions → General → Workflow permissions → Read and
+    write.
 
+3.  Settings → Secrets and variables → Actions → add your keys:
 
-<details>
-<summary><b>Project layout</b></summary>
+    **Required:**
 
-<br/>
+    -   `GROQ_API_KEY` --- free
+    -   `GITHUB_TOKEN` --- auto-provided by Actions
 
-```text
-generate.js          the agent: inputs, pipeline, status comment, [ask]
-build-index.js       builds knowledge/index.json on demand
-lib/providers.js     multi-provider LLM client with fallback
-lib/rag.js           BM25 search (runs in Node and in the browser)
-lib/knowledge.js     what the agent knows: files, manifest, issues
-lib/scan.js          static security scanners
-lib/smoke.js         jsdom runtime test
-lib/text.js          parsing and validation helpers
-projects/            the apps it has built
-projects.json        manifest of every build
-```
+    **Optional (unlock racing):**
 
-</details>
+    -   `OPENROUTER_API_KEY` --- free tier
+    -   `SKRITIMAI_BASE_URL` --- your Cloudflare Worker URL
+    -   `SKRITIMAI_API_KEY` --- if your worker enforces auth
 
----
+    **Tuning variables (optional):**
 
-## 🚀 Give it a home in your GitHub
+    -   `PROVIDER_ORDER = groq,skritimai,github,openrouter`
+    -   `RACE_SIZE = 1` (or 2 to race two models)
+    -   `RUN_BUDGET_MS = 540000` (9-minute limit)
 
-1. **Fork** this repository.
-2. Under **Settings → Actions → General**, set workflow permissions to **Read and write**.
-3. Under **Settings → Secrets and variables → Actions**, add one or more keys: `GROQ_API_KEY`, `OPENROUTER_API_KEY`, `HF_TOKEN`. None are required, because Pollinations works without a key.
-4. Turn on **GitHub Pages** from the `main` branch for the dashboard.
-5. Open an issue titled `[BUILD] calculator` and describe what you want.
+4.  Settings → Pages → Deploy from main / root /.
 
-No Python environment, no Docker image, no server fleet.
+5.  Open a new issue: `[BUILD] calculator [create]`
 
-> **Security note:** The dashboard's Direct mode uses a GitHub personal access token. Treat it like a password, give it fine-grained permissions on this repo only, and never commit it. Issue mode needs no token.
+That's it. No Python, no Docker, no servers to manage.
 
----
+------------------------------------------------------------------------
 
-<div align="center">
+## 🏆 The Model Leaderboard
 
-## ☀️ The human behind the agent
+Run `[BUILD] stats [leaderboard]` on any issue to see the current state:
 
-<a href="https://github.com/suryasticsai">
-  <img src="https://github.com/suryasticsai.png" alt="Surya, creator of Ariotica" width="140" style="border-radius:50%" />
-</a>
+  Model                     Wins   Losses   Win Rate   Total Cost
+  ----------------------- ------ -------- ---------- ------------
+  `openai/gpt-oss-120b`       42        8        84%       \$0.12
+  `skritimai`                 18        3        86%       \$0.00
+  `gpt-4o-mini`                5       14        26%       \$0.04
 
-**Surya** · [@suryasticsai](https://github.com/suryasticsai)
+(Skritimai has the best win-rate-to-cost ratio because it runs on your
+own GPU.)
 
-*AI toolmaker · independent developer · automation architect*
+------------------------------------------------------------------------
 
-> "I didn't want another AI that tells me how to write code.
-> I wanted one that actually does the work."
+## 🔐 Security Notes
 
-<br/>
+-   No eval, no unsanitized innerHTML: Every output is scanned before
+    commit.
+-   Trusted domains only: External CDNs must be pre-approved in
+    `libraries_catalog.json`.
+-   SRI-pinned: Every external script is verified by SHA-384 hash.
+-   Dashboard token: The dashboard's "Direct Mode" uses a fine-grained
+    PAT. Issue mode requires no token.
+
+------------------------------------------------------------------------
+
+## ☀️ The Human Behind the Agent
+
+::: {align="center"}
+`<a href="https://github.com/suryasticsai">`{=html}
+`<img src="https://github.com/suryasticsai.png" alt="Surya, creator of Ariotica" width="140" style="border-radius:50%" />`{=html}
+`</a>`{=html}
+
+Surya · @suryasticsai
+
+AI toolmaker · independent developer · automation architect
+
+"I didn't want another AI that tells me how to write code. I wanted one
+that actually does the work."
 
 [![GitHub](https://img.shields.io/badge/GitHub-181717?style=for-the-badge&logo=github&logoColor=white)](https://github.com/suryasticsai)
 [![LinkedIn](https://img.shields.io/badge/LinkedIn-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/suryasticsai)
-[![Medium](https://img.shields.io/badge/Medium-000000?style=for-the-badge&logo=medium&logoColor=white)](https://suryasticsai.medium.com/)
-[![Hugging Face](https://img.shields.io/badge/Hugging_Face-FFD21E?style=for-the-badge&logo=huggingface&logoColor=black)](https://huggingface.co/Suryasticsai)
-[![Portfolio](https://img.shields.io/badge/Portfolio-2563EB?style=for-the-badge&logo=googlechrome&logoColor=white)](https://suryasticsai.8b.io/)
-[![Alkembic](https://img.shields.io/badge/Alkembic-8B5CF6?style=for-the-badge&logo=netlify&logoColor=white)](https://alkembic.netlify.app/)
 
-<br/>
+`<br/>`{=html}
 
-**The agent writes software. The human wrote the agent.**
+The agent writes software. The human wrote the agent.
 
-<sub>Built with JavaScript. Powered by GitHub. Designed to ship. © 2026 Surya</sub>
+`<sub>`{=html}Built with JavaScript. Powered by GitHub. Designed to
+ship. © 2026 Surya`</sub>`{=html}
 
-<img src="https://capsule-render.vercel.app/api?type=waving&height=110&color=0:5ab552,50:1f6f3a,100:0b1410&section=footer" alt="" width="100%" />
-
-</div>
+`<img src="https://capsule-render.vercel.app/api?type=waving&height=110&color=0:5ab552,50:1f6f3a,100:0b1410&section=footer" alt="" width="100%" />`{=html}
+:::
